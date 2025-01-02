@@ -2,7 +2,7 @@
   <q-layout view="hHh lpR lFr">
 
     <!-- Layout Header -->
-    <q-header reveal elevated class="bg-indigo-2 text-white" height-hint="98">
+    <q-header v-model="show_header" reveal elevated class="bg-indigo-2 text-white" height-hint="98">
 
       <!-- 標題列 -->
       <q-toolbar>
@@ -12,7 +12,7 @@
 
         <!-- 標題 -->
         <q-toolbar-title>
-          <div style="display: flex; flex-direction: row; align-items: center;">
+          <div style="width: fit-content; display: flex; flex-direction: row; align-items: center; cursor: pointer;" @click="to_index">
             <!-- logo -->
             <div class="logo" style="height: 35px; margin-inline: 10px;">
               <img src="/icon.png" style="height: 100%;">
@@ -55,17 +55,61 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
 
+/* Import modules */
+import { ref, onMounted, watch } from 'vue'
+import { useRouter, useRoute } from 'vue-router';
+
+/* refs */
+const router = useRouter();
+const route = useRoute();
 const leftDrawerOpen = ref(false)
 const rightDrawerOpen = ref(false)
+const show_header = ref(true);
 
+/* functions */
+
+// 開關左邊選單
 const toggleLeftDrawer = () => {
   leftDrawerOpen.value = !leftDrawerOpen.value
 }
 
+// 開關右邊選單
 const toggleRightDrawer = () => {
   rightDrawerOpen.value = !rightDrawerOpen.value
 }
+
+// 開關標題列
+const closeHeader = () => {
+  show_header.value = false;
+}
+
+// 開啟標題列
+const openHeader = () => {
+  show_header.value = true;
+}
+
+// 跳轉到首頁
+const to_index = () => {
+  router.push('/');
+}
+
+/* onMounted */
+onMounted(() => {
+  if (route.path === '/login') {
+    closeHeader();
+  } else {
+    openHeader();
+  }
+});
+
+/* watch */
+watch(route, () => {
+  if (route.path === '/login') {
+    closeHeader();
+  } else {
+    openHeader();
+  }
+});
 
 </script>

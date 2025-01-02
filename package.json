@@ -16,9 +16,11 @@
   "dependencies": {
     "@quasar/extras": "^1.16.4",
     "core-js": "^3.31.1",
+    "pinia": "^2.3.0",
     "quasar": "^2.16.0",
     "vue": "^3.4.18",
-    "vue-router": "^4.0.12"
+    "vue-router": "^4.0.12",
+    "vuex": "^4.0.2"
   },
   "devDependencies": {
     "@babel/eslint-parser": "^7.13.14",
