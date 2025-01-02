@@ -1,41 +1,66 @@
-# Suspect-X-Web (suspect-x-web)
+# Suspect-X Web Service
 
 This is web service version of Suspect-X project
 
-## Install the dependencies
+### 加入新的 Organization
+
+* 只要在 `AppDataConfig.json` 中修改 / 新增 / 刪除 organization 即可, 會自動讀取和處理
+
+AppDataConfig.json
+
+```json
+{
+// previous settings ......
+  "organization_list": [
+    "Organization_1",
+    "Organization_2",
+    "Organization_3",
+    "Organization_4",
+    "Organization_5",
+    "Organization_6",
+    "Organization_7",
+    "Organization_8",
+    "Organization_9",
+    "Organization_10",
+    "Add new organization..."
+  ],
+// other settings ......
+}
+
+```
+
+
+### Install the dependencies
+
 ```bash
-yarn
-# or
 npm install
 ```
 
-### Start the app in development mode (hot-code reloading, error reporting, etc.)
+### Dev mode
+Start the app in development mode (hot-code reloading, error reporting, etc.)
+
 ```bash
-quasar dev
+npm run dev
 ```
 
-
 ### Lint the files
+
 ```bash
-yarn lint
-# or
 npm run lint
 ```
 
-
 ### Format the files
+
 ```bash
-yarn format
-# or
 npm run format
 ```
 
+### Build and Deploy
 
-
-### Build the app for production
 ```bash
-quasar build
+npm run deploy
 ```
 
-### Customize the configuration
+### Customize configuration
+
 See [Configuring quasar.config.js](https://v2.quasar.dev/quasar-cli-webpack/quasar-config-js).

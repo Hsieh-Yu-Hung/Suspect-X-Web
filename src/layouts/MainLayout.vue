@@ -1,106 +1,115 @@
 <template>
-  <q-layout view="lHh Lpr lFf">
-    <q-header elevated>
-      <q-toolbar>
-        <q-btn
-          flat
-          dense
-          round
-          icon="menu"
-          aria-label="Menu"
-          @click="toggleLeftDrawer"
-        />
+  <q-layout view="hHh lpR lFr">
 
+    <!-- Layout Header -->
+    <q-header v-model="show_header" reveal elevated class="bg-indigo-2 text-white" height-hint="98">
+
+      <!-- 標題列 -->
+      <q-toolbar>
+
+        <!-- 左邊選單按鈕 -->
+        <q-btn flat round icon="menu" @click="toggleLeftDrawer" />
+
+        <!-- 標題 -->
         <q-toolbar-title>
-          Quasar App
+          <div style="width: fit-content; display: flex; flex-direction: row; align-items: center; cursor: pointer;" @click="to_index">
+            <!-- logo -->
+            <div class="logo" style="height: 35px; margin-inline: 10px;">
+              <img src="/icon.png" style="height: 100%;">
+            </div>
+            <!-- 標題文字 -->
+            <div style="height: 40px; margin-inline: 10px; display: flex; flex-direction: row; align-items: center;">
+              <span style="font-size: 1.4em; font-weight: bold; color: black;">ACCUiNspection
+                <span style="font-size: 0.4em; font-weight: bold; color: slategray; margin-inline: 5px;">WEB Service</span>
+              </span>
+            </div>
+          </div>
         </q-toolbar-title>
 
-        <div>Quasar v{{ $q.version }}</div>
+        <!-- 右邊選單按鈕 -->
+        <q-btn dense flat icon="group" label="Show Account" @click="toggleRightDrawer" color="black"/>
       </q-toolbar>
+
+      <!-- 頁籤按鈕 -->
+      <q-tabs align="right" class="text-blue-grey-8">
+        <q-route-tab to="/page-import" label="Import" />
+        <q-route-tab to="/page-analysis" label="Analysis" />
+        <q-route-tab to="/page-export" label="Export" />
+      </q-tabs>
+
     </q-header>
 
-    <q-drawer
-      v-model="leftDrawerOpen"
-      show-if-above
-      bordered
-    >
-      <q-list>
-        <q-item-label
-          header
-        >
-          Essential Links
-        </q-item-label>
+    <q-drawer v-model="leftDrawerOpen" side="left" overlay bordered>
+      <!-- drawer content -->
+    </q-drawer>
 
-        <EssentialLink
-          v-for="link in linksList"
-          :key="link.title"
-          v-bind="link"
-        />
-      </q-list>
+    <q-drawer v-model="rightDrawerOpen" side="right" overlay behavior="mobile" bordered>
+      <!-- drawer content -->
     </q-drawer>
 
     <q-page-container>
       <router-view />
     </q-page-container>
+
   </q-layout>
 </template>
 
 <script setup>
-import { ref } from 'vue'
-import EssentialLink from 'components/EssentialLink.vue'
 
-defineOptions({
-  name: 'MainLayout'
-})
+/* Import modules */
+import { ref, onMounted, watch } from 'vue'
+import { useRouter, useRoute } from 'vue-router';
 
-const linksList = [
-  {
-    title: 'Docs',
-    caption: 'quasar.dev',
-    icon: 'school',
-    link: 'https://quasar.dev'
-  },
-  {
-    title: 'Github',
-    caption: 'github.com/quasarframework',
-    icon: 'code',
-    link: 'https://github.com/quasarframework'
-  },
-  {
-    title: 'Discord Chat Channel',
-    caption: 'chat.quasar.dev',
-    icon: 'chat',
-    link: 'https://chat.quasar.dev'
-  },
-  {
-    title: 'Forum',
-    caption: 'forum.quasar.dev',
-    icon: 'record_voice_over',
-    link: 'https://forum.quasar.dev'
-  },
-  {
-    title: 'Twitter',
-    caption: '@quasarframework',
-    icon: 'rss_feed',
-    link: 'https://twitter.quasar.dev'
-  },
-  {
-    title: 'Facebook',
-    caption: '@QuasarFramework',
-    icon: 'public',
-    link: 'https://facebook.quasar.dev'
-  },
-  {
-    title: 'Quasar Awesome',
-    caption: 'Community Quasar projects',
-    icon: 'favorite',
-    link: 'https://awesome.quasar.dev'
-  }
-]
-
+/* refs */
+const router = useRouter();
+const route = useRoute();
 const leftDrawerOpen = ref(false)
+const rightDrawerOpen = ref(false)
+const show_header = ref(true);
 
-function toggleLeftDrawer () {
+/* functions */
+
+// 開關左邊選單
+const toggleLeftDrawer = () => {
   leftDrawerOpen.value = !leftDrawerOpen.value
 }
+
+// 開關右邊選單
+const toggleRightDrawer = () => {
+  rightDrawerOpen.value = !rightDrawerOpen.value
+}
+
+// 開關標題列
+const closeHeader = () => {
+  show_header.value = false;
+}
+
+// 開啟標題列
+const openHeader = () => {
+  show_header.value = true;
+}
+
+// 跳轉到首頁
+const to_index = () => {
+  router.push('/');
+}
+
+/* onMounted */
+onMounted(() => {
+  if (route.path === '/login') {
+    closeHeader();
+  } else {
+    openHeader();
+  }
+});
+
+/* watch */
+watch(route, () => {
+  if (route.path === '/login') {
+    closeHeader();
+  } else {
+    openHeader();
+  }
+});
+
 </script>
