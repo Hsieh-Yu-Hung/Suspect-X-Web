@@ -9,7 +9,7 @@
     "lint": "eslint --ext .js,.vue ./",
     "format": "prettier --write \"**/*.{js,vue,scss,html,md,json}\" --ignore-path .gitignore",
     "test": "echo \"No test specified\" && exit 0",
-    "dev": "quasar dev",
+    "dev": "concurrently \"quasar dev\" \"firebase emulators:start\"",
     "build": "quasar build",
     "deploy": "quasar build && firebase deploy"
   },
@@ -22,12 +22,13 @@
   },
   "devDependencies": {
     "@babel/eslint-parser": "^7.13.14",
+    "@quasar/app-webpack": "^3.13.0",
+    "concurrently": "^9.1.2",
     "eslint": "^8.57.0",
+    "eslint-config-prettier": "^8.1.0",
     "eslint-plugin-vue": "^9.0.0",
     "eslint-webpack-plugin": "^3.1.1",
-    "eslint-config-prettier": "^8.1.0",
-    "prettier": "^2.5.1",
-    "@quasar/app-webpack": "^3.13.0"
+    "prettier": "^2.5.1"
   },
   "browserslist": [
     "last 10 Chrome versions",
