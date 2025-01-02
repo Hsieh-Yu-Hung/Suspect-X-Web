@@ -21,7 +21,8 @@ AppDataConfig.json
     "Organization_7",
     "Organization_8",
     "Organization_9",
-    "Organization_10"
+    "Organization_10",
+    "Add new organization..."
   ],
 // other settings ......
 }
@@ -35,7 +36,8 @@ AppDataConfig.json
 npm install
 ```
 
-### Start the app in development mode (hot-code reloading, error reporting, etc.)
+### Dev mode
+Start the app in development mode (hot-code reloading, error reporting, etc.)
 
 ```bash
 npm run dev
@@ -53,12 +55,12 @@ npm run lint
 npm run format
 ```
 
-### Build and Deploy to firebase
+### Build and Deploy
 
 ```bash
 npm run deploy
 ```
 
-### Customize the configuration
+### Customize configuration
 
 See [Configuring quasar.config.js](https://v2.quasar.dev/quasar-cli-webpack/quasar-config-js).
