@@ -7,3 +7,5 @@
 .eslintrc.cjs
 babel.config.cjs
 /quasar.config.*.temporary.compiled*
+functions/venv
+.venv
