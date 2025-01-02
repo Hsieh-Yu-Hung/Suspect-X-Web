@@ -1,4 +1,4 @@
-# Suspect-X-Web (suspect-x-web)
+# Suspect-X Web Service
 
 This is web service version of Suspect-X project
 
