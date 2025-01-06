@@ -4,6 +4,7 @@
 .venv
 .vscode
 node_modules
+logs
 
 # Quasar core related directories
 .quasar

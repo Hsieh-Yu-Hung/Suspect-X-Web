@@ -20,8 +20,6 @@
 
           <!--Input fields -->
           <div class="flex-column-center" style="min-width: 400px;">
-            <!-- Organization input -->
-            <DropDownList label="Organization" icon="public" />
 
             <!-- E-mail input -->
             <q-input label="E-mail" class="input-field">
@@ -83,7 +81,6 @@ function switch_to_register() {
 
 <style scoped>
 .form {
-  height: 85vh;
   background-color: rgb(212, 232, 253);
   border-radius: 1em;
 }
@@ -101,7 +98,8 @@ function switch_to_register() {
 }
 .input-field{
   width: 100%;
-  margin-block: 1.2em;
+  margin-block: 0.5em;
+  padding-bottom: 20px;
 }
 .login-button{
   width: 100%;

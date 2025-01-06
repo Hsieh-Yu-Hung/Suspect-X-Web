@@ -2,33 +2,9 @@
 
 This is web service version of Suspect-X project
 
-### 加入新的 Organization
+### 開發者工具
 
-* 只要在 `AppDataConfig.json` 中修改 / 新增 / 刪除 organization 即可, 會自動讀取和處理
-
-AppDataConfig.json
-
-```json
-{
-// previous settings ......
-  "organization_list": [
-    "Organization_1",
-    "Organization_2",
-    "Organization_3",
-    "Organization_4",
-    "Organization_5",
-    "Organization_6",
-    "Organization_7",
-    "Organization_8",
-    "Organization_9",
-    "Organization_10",
-    "Add new organization..."
-  ],
-// other settings ......
-}
-
-```
-
+1. 使用 utility/logger.js 輸出和儲存 logs 檔案 --> 說明
 
 ### Install the dependencies
 
@@ -37,22 +13,19 @@ npm install
 ```
 
 ### Dev mode
-Start the app in development mode (hot-code reloading, error reporting, etc.)
+
+* Start the app in development mode (hot-code reloading, error reporting, etc.)
+* 該模式無法使用 firebase function, 適合用於介面開發
 
 ```bash
 npm run dev
 ```
 
-### Lint the files
+### Build and Enumerate
 
 ```bash
-npm run lint
-```
-
-### Format the files
-
-```bash
-npm run format
+npm run emulate:prod # 用 production 設定開啟模擬
+npm run emulate:dev  # 用 development 設定開啟模擬
 ```
 
 ### Build and Deploy

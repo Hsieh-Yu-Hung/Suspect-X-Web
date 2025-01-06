@@ -11,21 +11,32 @@
     "test": "echo \"No test specified\" && exit 0",
     "dev": "concurrently \"quasar dev\" \"firebase emulators:start\"",
     "build": "quasar build",
-    "deploy": "quasar build && firebase deploy"
+    "deploy": "quasar build && firebase deploy",
+    "emulate:prod": "ENV_FILE=production quasar build && firebase emulators:start",
+    "emulate:dev": "ENV_FILE=development quasar build && firebase emulators:start"
   },
   "dependencies": {
     "@quasar/extras": "^1.16.4",
     "core-js": "^3.31.1",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.7",
+    "firebase": "^11.1.0",
+    "firebase-admin": "^13.0.2",
+    "loglevel": "^1.9.2",
+    "moment": "^2.30.1",
     "pinia": "^2.3.0",
     "quasar": "^2.16.0",
     "vue": "^3.4.18",
     "vue-router": "^4.0.12",
-    "vuex": "^4.0.2"
+    "vuex": "^4.0.2",
+    "winston": "^3.17.0",
+    "winston-browser": "^1.0.0"
   },
   "devDependencies": {
     "@babel/eslint-parser": "^7.13.14",
     "@quasar/app-webpack": "^3.13.0",
     "concurrently": "^9.1.2",
+    "cross-env": "^7.0.3",
     "eslint": "^8.57.0",
     "eslint-config-prettier": "^8.1.0",
     "eslint-plugin-vue": "^9.0.0",

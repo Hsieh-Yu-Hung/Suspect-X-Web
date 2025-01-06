@@ -20,6 +20,10 @@ const props = defineProps({
   icon: {
     type: String,
     required: true
+  },
+  data_key: {
+    type: String,
+    required: true
   }
 });
 
@@ -38,18 +42,15 @@ function update_organization_list() {
 
   // 設定下拉選單的選項
   options.value = organization_list;
-  if (options.value.length > 0) {
-    selected_value.value = options.value[0];
-  }
 }
 
 /* onMounted */
 onMounted(() => {
-  // 載入組織列表
-  update_organization_list();
+  if (props.data_key === 'organization') {
+    // 載入組織列表
+    update_organization_list();
+  }
 });
-
-
 
 </script>
 
