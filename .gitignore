@@ -6,6 +6,8 @@
 node_modules
 logs
 firebase-debug.log
+firestore-debug.log
+suspect-x-web-service.json
 
 # Quasar core related directories
 .quasar

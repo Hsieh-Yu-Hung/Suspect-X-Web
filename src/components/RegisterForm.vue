@@ -38,7 +38,7 @@
             <!-- Login button -->
             <div class="flex-column-center input-field" style="width: 100%;">
               <q-btn class="submit-button" color="deep-orange-1" label="Register" text-color="black" rounded @click="onSubmit"/>
-              <q-btn icon="img:/google_logo.png" class="submit-button" color="grey-2" rounded no-caps label="Register with Google" text-color="black"/>
+              <q-btn icon="img:/google_logo.png" class="submit-button" color="grey-2" rounded no-caps label="Register with Google" text-color="black" @click="onGoogleLogin"/>
               <q-btn no-caps icon="undo" class="submit-button" color="grey-2" label="Back to Login" text-color="black" rounded @click="switch_to_login" />
             </div>
           </div>
@@ -55,7 +55,7 @@
 
 /* Import modules */
 import { ref, watch } from 'vue';
-import { create_User_Account } from '@/firebase';
+import { create_User_Account, signInWithGoogle } from '@/firebase';
 import { useQuasar } from 'quasar';
 import logger from '@/utility/logger';
 
@@ -120,6 +120,14 @@ function onSubmit() {
       icon: 'error',
       position: 'top'
     });
+  });
+}
+
+// Google 登入
+async function onGoogleLogin() {
+  await signInWithGoogle()
+  .catch((error) => {
+    logger.error(`Google login failed, error: ${error}`);
   });
 }
 

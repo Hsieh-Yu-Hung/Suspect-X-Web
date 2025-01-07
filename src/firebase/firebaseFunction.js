@@ -5,7 +5,9 @@ import { getFunctions, httpsCallable, connectFunctionsEmulator } from "firebase/
 const functions = getFunctions(app, 'asia-east1');
 
 // 連接 functions emulator
-connectFunctionsEmulator(functions, 'localhost', 5001);
+if (process.env.VUE_APP_FILE_ENV === "development") {
+  connectFunctionsEmulator(functions, 'localhost', 5001);
+}
 
 // 呼叫 saveLoggers
 const saveLoggers = httpsCallable(functions, 'saveLogs');

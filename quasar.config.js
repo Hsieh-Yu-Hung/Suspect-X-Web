@@ -11,13 +11,17 @@
 const path = require('path');
 const ESLintPlugin = require('eslint-webpack-plugin')
 const { configure } = require('quasar/wrappers');
-const env = require('dotenv').config({
-  path: `.env.${(process.env.VUE_APP_FILE_ENV || process.env.NODE_ENV).toLowerCase()}`
-}).parsed;
+
+// 這裡設定的 env 會被傳到 前端 中
+const dotenv = require('dotenv');
+const envPath = process.env.ENV_PATH || '.env';
+const env = dotenv.config({ path: envPath }).parsed;
 
 module.exports = configure(function (ctx) {
 
   return {
+    ENV_PATH: envPath,
+
     // https://v2.quasar.dev/quasar-cli-webpack/supporting-ts
     supportTS: false,
 
@@ -55,6 +59,7 @@ module.exports = configure(function (ctx) {
     build: {
       vueRouterMode: 'hash', // available values: 'hash', 'history'
 
+      // 設定 env 傳給前端使用
       env: {...env},
 
       // transpile: false,

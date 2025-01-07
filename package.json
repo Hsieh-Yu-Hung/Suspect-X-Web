@@ -11,9 +11,9 @@
     "test": "echo \"No test specified\" && exit 0",
     "dev": "concurrently \"quasar dev\" \"firebase emulators:start\"",
     "build": "quasar build",
-    "deploy": "quasar build && firebase deploy",
-    "emulate:prod": "ENV_FILE=production quasar build && firebase emulators:start",
-    "emulate:dev": "ENV_FILE=development quasar build && firebase emulators:start"
+    "deploy": "ENV_PATH=.env.production quasar build && firebase deploy",
+    "emulate:prod": "ENV_PATH=.env.production quasar build && firebase emulators:start",
+    "emulate:dev": "ENV_PATH=.env.development quasar build --debug && firebase emulators:start"
   },
   "dependencies": {
     "@quasar/extras": "^1.16.4",

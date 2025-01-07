@@ -1,24 +1,23 @@
 /* import module */
-import admin from "firebase-admin";
 import moment from "moment";
 import {createLogger, transports, format} from "winston";
+import env from "./config_env.js";
+import configAdmin from "./config_admin.js";
 
-/* 初始化 Firebase Admin SDK 並連接到 Storage Emulator */
+// 取得 currentEnv
+const currentEnv = env.VUE_APP_FILE_ENV;
 
-// 設定 Storage Emulator 的主機和端口
-process.env.FIREBASE_STORAGE_EMULATOR_HOST = "localhost:9199";
-
-// 初始化 Firebase Admin SDK
-admin.initializeApp({
-  projectId: "accuinbio-suspect-x", // 使用你的專案 ID
-  storageBucket: "gs://accuinbio-suspect-x.firebasestorage.app/",
-});
+/* 如果 currentEnv 是 development 則連接到 Storage Emulator */
+if (currentEnv === "development") {
+  // 設定 Storage Emulator 的主機和端口
+  process.env.FIREBASE_STORAGE_EMULATOR_HOST = "localhost:9199";
+}
 
 // 取得 bucket
-const bucket = admin.storage().bucket();
+const bucket = configAdmin.admin.storage().bucket();
 
 // 存檔路徑
-const logPath = "../logs/";
+const logPath = "logs/";
 
 // 取的當前時間
 const timestamp = moment().format("YYYY-MM-DD HH:mm:ss");
@@ -81,8 +80,8 @@ const uploadLogToEmulator = async () => {
 
   try {
     // 上傳日誌檔案到 Storage Emulator logs/
-    await bucket.upload(logFiles, {destination: `logs/${logFiles}`});
-    await bucket.upload(logFilesJson, {destination: `logs/${logFilesJson}`});
+    await bucket.upload(logFiles, {destination: `${logFiles}`});
+    await bucket.upload(logFilesJson, {destination: `${logFilesJson}`});
     return {"status": "success", "message": "日誌已成功上傳到 Storage"};
   } catch (error) {
     return {"status": "error", "message": error.message};
