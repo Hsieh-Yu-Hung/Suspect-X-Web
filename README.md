@@ -42,9 +42,7 @@ npm run deploy
 
 ### Customize configuration
 
-Quasar 設定
-
-See [Configuring quasar.config.js](https://v2.quasar.dev/quasar-cli-webpack/quasar-config-js).
+Quasar 設定： [Configuring quasar.config.js](https://v2.quasar.dev/quasar-cli-webpack/quasar-config-js).
 
 ### 設定 Service Account 憑證
 
