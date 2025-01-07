@@ -42,6 +42,8 @@ npm run deploy
 
 ### Customize configuration
 
+Quasar 設定
+
 See [Configuring quasar.config.js](https://v2.quasar.dev/quasar-cli-webpack/quasar-config-js).
 
 ### 設定 Service Account 憑證
@@ -58,4 +60,5 @@ firebase console --> Suspect-X --> 專案總覽 --> 專案設定 --> 服務脹�
 firebase functions:config:set google.credentials="/path/to/your/credentials.json"
 ```
 4. 在程式碼中使用 applicationDefault() 預設就可以使用到 Service Account 憑證了
+
 ＊ 目前 firebase function 相關的 admin 設定被集中管理在 `config_admin.js`
