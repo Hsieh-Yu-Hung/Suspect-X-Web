@@ -5,7 +5,7 @@ This is web service version of Suspect-X project
 ### 開發者工具
 
 1. 使用 utility/logger.js 輸出和儲存 logs 檔案 --> [說明](https://github.com/Hsieh-Yu-Hung/Suspect-X-Web/wiki/%E9%81%8B%E8%A1%8C%E4%B8%AD-Log-%E7%94%9F%E6%88%90)
-2. 使用 firebase functions --> [說明]
+2. 使用 firebase functions --> [說明](https://github.com/Hsieh-Yu-Hung/Suspect-X-Web/wiki/%E4%BD%BF%E7%94%A8-firebase-function(%E5%BE%8C%E7%AB%AF))
 3. 使用 .env 控制環境變數 --> [說明](https://github.com/Hsieh-Yu-Hung/Suspect-X-Web/wiki/%E6%8E%A7%E5%88%B6%E7%92%B0%E5%A2%83%E8%AE%8A%E6%95%B8)
 4. 使用 firebase SDK --> [說明]
 
