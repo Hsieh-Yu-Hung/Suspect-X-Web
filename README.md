@@ -5,6 +5,9 @@ This is web service version of Suspect-X project
 ### 開發者工具
 
 1. 使用 utility/logger.js 輸出和儲存 logs 檔案 --> [說明](https://github.com/Hsieh-Yu-Hung/Suspect-X-Web/wiki/%E9%81%8B%E8%A1%8C%E4%B8%AD-Log-%E7%94%9F%E6%88%90)
+2. 使用 firebase functions --> 說明
+3. 使用 .env 控制環境變數 --> 說明
+4. 使用 firebase SDK --> 說明
 
 ### Install the dependencies
 
@@ -54,9 +57,11 @@ firebase console --> Suspect-X --> 專案總覽 --> 專案設定 --> 服務脹�
 
 2. 下載密鑰 (json) 之後 , 放到 Suspect-X-web 專案資料夾中
 3. 在專案中設定 Service Account 憑證, 執行以下指令
+
 ```bash
 firebase functions:config:set google.credentials="/path/to/your/credentials.json"
 ```
+
 4. 在程式碼中使用 applicationDefault() 預設就可以使用到 Service Account 憑證了
 
 ＊ 目前 firebase function 相關的 admin 設定被集中管理在 `config_admin.js`
