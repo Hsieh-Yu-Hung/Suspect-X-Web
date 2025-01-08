@@ -20,7 +20,6 @@ const env = dotenv.config({ path: envPath }).parsed;
 module.exports = configure(function (ctx) {
 
   return {
-    ENV_PATH: envPath,
 
     // https://v2.quasar.dev/quasar-cli-webpack/supporting-ts
     supportTS: false,
