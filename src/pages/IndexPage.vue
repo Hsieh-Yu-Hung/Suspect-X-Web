@@ -26,6 +26,7 @@ import { ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { useQuasar } from 'quasar';
 import { useStore } from 'vuex';
+import { getData, dataset_list } from '@/firebase';
 
 /* refs */
 
@@ -46,12 +47,19 @@ defineOptions({
 });
 
 /* functions */
-const main = () => {
+const main = async () => {
 
   // 取得登入狀態
   const is_login = store.getters['login_status/getLoginStatus'];
 
-  if (is_login) {
+  // 檢查使用者是否存在
+  const user_info = store.getters['login_status/getUserInfo'];
+  const user_email = user_info.email;
+  const user_exist = await check_user_exist(user_email).then((result) => {
+    return result;
+  });
+
+  if (is_login && user_exist) {
     $q.notify({
       message: '帳號已經登入',
       color: 'teal-7',
@@ -88,6 +96,21 @@ const to_login = () => {
   setTimeout(() => {
     router.push('/login');
   }, 200);
+}
+
+// 檢查使用者是否存在
+const check_user_exist = async (user_email) => {
+  let user_exist = false;
+  await getData(dataset_list.email_list, user_email)
+  .then((result) => {
+    if (result.status === 'success' && result.data) {
+      user_exist = true;
+    }
+  })
+  .catch((error) => {
+    console.log('error', error);
+  });
+  return user_exist;
 }
 
 /* onMounted */

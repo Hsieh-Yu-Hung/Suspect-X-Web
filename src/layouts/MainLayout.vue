@@ -39,8 +39,8 @@
 
     </q-header>
 
-    <q-drawer v-model="leftDrawerOpen" side="left" overlay bordered>
-      <!-- drawer content -->
+    <q-drawer v-model="leftDrawerOpen" side="left" overlay behavior="desktop" bordered>
+      <LeftDrawer />
     </q-drawer>
 
     <q-drawer v-model="rightDrawerOpen" side="right" overlay behavior="mobile" bordered>
@@ -67,6 +67,7 @@ import { ref, onMounted, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router';
 import { useStore } from 'vuex';
 import RightDrawer from '@/components/RightDrawer.vue';
+import LeftDrawer from '@/components/LeftDrawer.vue';
 
 // 取得 router, route, store
 const router = useRouter();
