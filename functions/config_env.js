@@ -7,7 +7,7 @@
  */
 
 // 選擇環境 ../.env.production (production) 或 ../.env.development (development)
-const envPath = "../.env.production";
+const envPath = "../.env.development";
 
 // 讀取 .env 檔案
 const dotenv = require("dotenv");

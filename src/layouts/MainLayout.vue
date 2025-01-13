@@ -2,7 +2,7 @@
   <q-layout view="hHh lpR lFr">
 
     <!-- Layout Header -->
-    <q-header v-model="show_header" reveal elevated class="bg-indigo-2 text-white" height-hint="98">
+    <q-header v-model="show_header" reveal elevated class="text-white" :class="header_color" height-hint="98">
 
       <!-- 標題列 -->
       <q-toolbar>
@@ -20,14 +20,14 @@
             <!-- 標題文字 -->
             <div style="height: 40px; margin-inline: 10px; display: flex; flex-direction: row; align-items: center;">
               <span style="font-size: 1.4em; font-weight: bold; color: black;">ACCUiNspection
-                <span style="font-size: 0.4em; font-weight: bold; color: slategray; margin-inline: 5px;">WEB Service</span>
+                <span style="font-size: 0.4em; font-weight: bold; color: slategray; margin-inline: 5px;">{{ mode_display_name }}</span>
               </span>
             </div>
           </div>
         </q-toolbar-title>
 
         <!-- 右邊選單按鈕 -->
-        <q-btn dense flat icon="group" label="Show Account" @click="toggleRightDrawer" color="black"/>
+        <q-btn no-caps dense flat :icon="account_icon_display_name" :label="account_display_name" @click="toggleRightDrawer" color="black"/>
       </q-toolbar>
 
       <!-- 頁籤按鈕 -->
@@ -44,7 +44,13 @@
     </q-drawer>
 
     <q-drawer v-model="rightDrawerOpen" side="right" overlay behavior="mobile" bordered>
-      <!-- drawer content -->
+      <RightDrawer
+        ref="rightDrawer"
+        :account_name="account_display_name"
+        :account_role="account_role"
+        :account_organization="account_organization"
+        :account_status="display_account_status"
+      />
     </q-drawer>
 
     <q-page-container>
@@ -59,13 +65,38 @@
 /* Import modules */
 import { ref, onMounted, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router';
+import { useStore } from 'vuex';
+import RightDrawer from '@/components/RightDrawer.vue';
 
-/* refs */
+// 取得 router, route, store
 const router = useRouter();
 const route = useRoute();
+const store = useStore();
+
+/* refs */
+
+// rightDrawer
+const rightDrawer = ref(null);
+
+// Store 相關
+const is_login = ref(false);
+const user_info = ref(null);
+
+// Drawers 開關
 const leftDrawerOpen = ref(false)
 const rightDrawerOpen = ref(false)
+
+// 標題列顯示
 const show_header = ref(true);
+const header_color = ref('bg-indigo-2');
+
+// 顯示帳號
+const display_account_status = ref(false);
+const account_display_name = ref('show account');
+const account_organization = ref('NULL');
+const account_role = ref('NULL');
+const mode_display_name = ref('Web Service');
+const account_icon_display_name = ref('group');
 
 /* functions */
 
@@ -94,22 +125,75 @@ const to_index = () => {
   router.push('/');
 }
 
-/* onMounted */
-onMounted(() => {
+// 開關標題列
+const toggle_header = () => {
   if (route.path === '/login') {
     closeHeader();
   } else {
     openHeader();
   }
+}
+
+// 取得登入狀態
+const updateLoginStatus = () => {
+  is_login.value = store.getters['login_status/getLoginStatus'];
+  user_info.value = store.getters['login_status/getUserInfo'];
+}
+
+// 更新UI
+const updateUI = () => {
+
+  // 若未登入, 則不更新UI
+  if (!is_login.value) {return;}
+
+  // 設定顯示帳號
+  account_display_name.value = user_info.value.email;
+  account_organization.value = user_info.value.organization;
+  account_role.value = user_info.value.role;
+  display_account_status.value = user_info.value.account_approved;
+
+  // 設定顯示帳號 role
+  if (user_info.value.role === 'admin') {
+    // 設定標題列顏色和身份標籤
+    account_display_name.value = account_display_name.value + '(Admin)';
+    mode_display_name.value = 'Developper';
+    header_color.value = 'bg-teal-2';
+    account_icon_display_name.value = 'manage_accounts';
+  } else {
+    account_display_name.value = account_display_name.value.replace('(Admin)', '');
+    mode_display_name.value = 'Web Service';
+    header_color.value = 'bg-indigo-2';
+    account_icon_display_name.value = 'group';
+  }
+
+  // 更新右邊選單
+  rightDrawer.value.update_display_account_name();
+}
+
+/* onMounted */
+onMounted(() => {
+
+  // 取得登入狀態
+  updateLoginStatus();
+
+  // 決定是否要開啟標題列
+  toggle_header();
+
+  // 更新UI
+  updateUI();
 });
 
 /* watch */
 watch(route, () => {
-  if (route.path === '/login') {
-    closeHeader();
-  } else {
-    openHeader();
-  }
+
+  // 取得登入狀態
+  updateLoginStatus();
+
+  // 決定是否要開啟標題列
+  toggle_header();
+
+  // 更新UI
+  updateUI();
 });
 
 </script>

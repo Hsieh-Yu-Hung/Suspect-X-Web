@@ -22,13 +22,21 @@
 <script setup>
 
 /* Import modules */
-import { ref } from 'vue';
+import { ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
+import { useQuasar } from 'quasar';
+import { useStore } from 'vuex';
 
 /* refs */
 
+// Quasar
+const $q = useQuasar();
+
 // Router
 const router = useRouter();
+
+// Store
+const store = useStore();
 
 // State to control visibility
 const display_page_content = ref(true);
@@ -38,6 +46,38 @@ defineOptions({
 });
 
 /* functions */
+const main = () => {
+
+  // 取得登入狀態
+  const is_login = store.getters['login_status/getLoginStatus'];
+
+  if (is_login) {
+    $q.notify({
+      message: '帳號已經登入',
+      color: 'teal-7',
+      icon: 'check',
+      position: 'top',
+      timeout: 500
+    });
+    // 跳轉至 page-import page
+    setTimeout(() => {
+      router.push('/page-import');
+    }, 500);
+  } else {
+    // 顯示登入提示
+    $q.notify({
+      message: '嘗試登入中...',
+      color: 'teal-7',
+      icon: 'warning',
+      position: 'top',
+      timeout: 500
+    });
+    // 跳轉至 login page
+    setTimeout(() => {
+      to_login();
+    }, 500);
+  }
+};
 
 // Login function
 const to_login = () => {
@@ -49,6 +89,12 @@ const to_login = () => {
     router.push('/login');
   }, 200);
 }
+
+/* onMounted */
+onMounted(() => {
+  // 執行主函式
+  main();
+});
 
 </script>
 

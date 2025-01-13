@@ -54,18 +54,37 @@
 <script setup>
 
 /* Import modules */
-import { ref, watch } from 'vue';
-import { create_User_Account, signInWithGoogle } from '@/firebase';
+
+// Quasar and Vue
 import { useQuasar } from 'quasar';
+import { useStore } from 'vuex';
+import { useRouter } from 'vue-router';
+import { ref, watch } from 'vue';
+
+// Firebase SDK: Auth
+import { create_User_Account, signInWithGoogle } from '@/firebase';
+import { get_login_status } from '@/firebase';
+
+// Firebase SDK: Database
+import { dataset_list, USER_INFO, EMAIL_INFO, login_method } from '@/firebase';
+import { addLoginInfoDatabase, addEmailListDatabase, getData } from '@/firebase';
+
+// Logger
 import logger from '@/utility/logger';
 
 /* emit */
 const emit = defineEmits(['switch_to_login']);
 
-/* refs */
+// Router
+const router = useRouter();
 
 // 通知
 const $q = useQuasar();
+
+// 取得 store
+const store = useStore();
+
+/* refs */
 
 // 儲存輸入的值
 const input_email = ref('');
@@ -80,7 +99,10 @@ const password_error_message = ref('');
 /* functions */
 
 // 送出註冊
-function onSubmit() {
+async function onSubmit() {
+
+  // 註冊狀態
+  let status = 'pending';
 
   // 如果輸入有錯誤，則不送出
   if (!validate_input(input_email.value, 'email') ||
@@ -89,22 +111,62 @@ function onSubmit() {
   // 顯示 loading
   $q.loading.show({message: '帳號註冊中...'});
 
+  // 取得 email_list
+  const email_list = await getEmailList();
+  if (email_list.some(email => email.email === input_email.value && email.login_method === login_method.google)) {
+    $q.notify({
+      message: '此帳號已經註冊, 請使用Google登入',
+      color: 'deep-orange',
+      icon: 'warning',
+      position: 'top'
+    });
+    setTimeout(() => {
+      $q.loading.hide();
+      onGoogleLogin();
+    }, 500);
+    return;
+  }
+
   // 送出註冊
-  create_User_Account(input_email.value, input_password.value)
-  .then(() => {
+  await create_User_Account(input_email.value, input_password.value)
+  .then((result) => {
     // 紀錄到 logger
     logger.info(`New user registered: ${input_email.value}`);
+
+    // 將登入資訊加入到 database
+    const id = result.user.uid;
+    const LoginInfo = USER_INFO(input_email.value, id, login_method.email_password);
+    addLoginInfoDatabase(LoginInfo, id);
+
+    // 將 email 加入到 email_list
+    const EmailInfo = EMAIL_INFO(input_email.value, login_method.email_password);
+    addEmailListDatabase(EmailInfo);
+
+    // 取得登入狀態
+    storeUserInfo();
 
     // 註冊成功
     $q.notify({
       message: '已經成功註冊帳號',
       color: 'green',
       icon: 'check',
-      position: 'top'
+      position: 'top',
+      timeout: 500
     });
+
+    // change status
+    status = 'success';
+
   }).finally(() => {
     // 隱藏 loading
     $q.loading.hide();
+
+    // 如果註冊成功，則跳轉到 tmpImportView
+    if (status === 'success') {
+      setTimeout(() => {
+        router.push('/page-import');
+      }, 1000);
+    }
   })
   .catch((error) => {
     // 補捉重複註冊
@@ -120,15 +182,81 @@ function onSubmit() {
       icon: 'error',
       position: 'top'
     });
+
+    // change status
+    status = 'error';
   });
 }
 
 // Google 登入
 async function onGoogleLogin() {
+
+  // 註冊狀態
+  let status = 'pending';
+
   await signInWithGoogle()
+  .then((result) => {
+    if (result.status === 'success') {
+      // 將登入資訊加入到 database (Google 登入沒有輸入密碼)
+      const id = result.user_uid;
+      const LoginInfo = USER_INFO(result.user_email, id, login_method.google);
+      addLoginInfoDatabase(LoginInfo, id);
+
+      // 將 email 加入到 email_list
+      const EmailInfo = EMAIL_INFO(result.user_email, login_method.google);
+      addEmailListDatabase(EmailInfo);
+
+      // 取得登入狀態
+      storeUserInfo();
+
+      // 註冊成功
+      $q.notify({
+        message: '已經成功使用 Google 帳戶登入',
+        color: 'green',
+        icon: 'check',
+        position: 'top',
+        timeout: 500
+      });
+
+      // change status
+      status = 'success';
+    }
+  })
   .catch((error) => {
-    logger.error(`Google login failed, error: ${error}`);
+    logger.warn(`[Frontend] Google login failed, error: ${error}`);
+    // change status
+    status = 'error';
+  }).finally(() => {
+    // 如果註冊成功，則跳轉到 tmpImportView
+    if (status === 'success') {
+      setTimeout(() => {
+        router.push('/page-import');
+      }, 1000);
+    }
   });
+}
+
+// 取得 email_list
+async function getEmailList(){
+  //
+  let email_array = [];
+  await getData(dataset_list.email_list)
+  .then((result) => {
+    if (result.status === 'success') {
+      logger.debug(`[Frontend] Get email list success`);
+      if (result.data) {
+        result.data.forEach((email) => {
+          email_array.push({email: email.email, login_method: email.login_method});
+        });
+      }
+    } else {
+      logger.error(`[Frontend] Get email list failed, Error: ${result.message}`);
+    }
+  })
+  .catch((error) => {
+    logger.error(`[Frontend] Get email list failed, Error: ${error}`);
+  });
+  return email_array;
 }
 
 // 補捉重複註冊
@@ -175,6 +303,66 @@ function validate_input(value, type) {
     }
   }
   return valid;
+}
+
+// 取得 user_info 並將 user_info 加入到 store
+async function storeUserInfo() {
+  // 取得登入狀態
+  const login_status = get_login_status();
+
+  // 若未登入, 則不執行
+  if (!login_status.is_login) {return;}
+
+  // 取得 user_id
+  const user_id = login_status.user_info.uid;
+
+  // 取得 user_info 並將 user_info 加入到 store
+  await getData(dataset_list.user_info, user_id)
+  .then((result) => {
+    if (result.status === 'success') {
+      if (result.data) {
+
+        // 取得 user_info
+        const record_id = result.data.id;
+        const record_role = result.data.role;
+        const record_email = result.data.email;
+        const record_organization = result.data.organization;
+        const record_account_approved = result.data.account_active;
+
+        // 將 user_info 加入到 store
+        store.commit('login_status/set_login_status', {
+          is_login: true,
+          uid: record_id,
+          role: record_role,
+          email: record_email,
+          organization: record_organization,
+          account_approved: record_account_approved
+        });
+
+        // 通知
+        $q.notify({
+          message: '已經成功登入',
+          color: 'green',
+          icon: 'check',
+          position: 'top',
+          timeout: 500
+        });
+
+        // 跳轉到 tmpImportView
+        setTimeout(() => {
+          router.push('/page-import');
+        }, 300);
+
+      } else {
+        logger.error(`[Frontend] Get user info failed, Error: No user info found!`);
+      }
+    } else {
+      logger.error(`[Frontend] Get user info failed, Error: ${result.message}`);
+    }
+  })
+  .catch((error) => {
+      logger.error(`[Frontend] Get user info failed, Error: ${error}`);
+    });
 }
 
 /* watch */

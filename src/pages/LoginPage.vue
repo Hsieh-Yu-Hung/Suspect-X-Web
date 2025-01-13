@@ -22,7 +22,7 @@ defineOptions({
 });
 
 /* Import modules */
-import { ref, onMounted, onUnmounted, watch } from 'vue';
+import { ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 
 /* Import components */

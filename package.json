@@ -9,7 +9,7 @@
     "lint": "eslint --ext .js,.vue ./",
     "format": "prettier --write \"**/*.{js,vue,scss,html,md,json}\" --ignore-path .gitignore",
     "test": "echo \"No test specified\" && exit 0",
-    "dev": "concurrently \"quasar dev\" \"firebase emulators:start\"",
+    "dev": "ENV_PATH=.env.development quasar dev",
     "build": "quasar build",
     "deploy": "ENV_PATH=.env.production quasar build && firebase deploy",
     "emulate:prod": "ENV_PATH=.env.production quasar build && firebase emulators:start",
@@ -29,6 +29,7 @@
     "vue": "^3.4.18",
     "vue-router": "^4.0.12",
     "vuex": "^4.0.2",
+    "vuex-persistedstate": "^4.1.0",
     "winston": "^3.17.0",
     "winston-browser": "^1.0.0"
   },
