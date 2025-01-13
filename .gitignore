@@ -8,6 +8,7 @@ logs
 firebase-debug.log
 firestore-debug.log
 suspect-x-web-service.json
+.env*
 
 # Quasar core related directories
 .quasar
