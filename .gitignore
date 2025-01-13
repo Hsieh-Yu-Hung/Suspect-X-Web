@@ -5,8 +5,7 @@
 .vscode
 node_modules
 logs
-firebase-debug.log
-firestore-debug.log
+*.log
 suspect-x-web-service.json
 .env*
 
