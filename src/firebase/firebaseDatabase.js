@@ -51,7 +51,7 @@ const database = getFirestore(app);
 
 // 如果是開發環境，則連接 firestore emulator
 if (process.env.VUE_APP_FILE_ENV === "development") {
-  connectFirestoreEmulator(database, 'localhost', 8080);
+  connectFirestoreEmulator(database, 'localhost', 8085);
 }
 
 // 加入資料

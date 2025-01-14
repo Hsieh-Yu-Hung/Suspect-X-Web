@@ -9,15 +9,10 @@
 <script setup>
 
 /* functions */
-import { on_request_example } from '@/firebase';
 
 // Debug test
 async function debug_test() {
   console.log('debug_test');
-  const res = await on_request_example().then((response) => {
-    return response.data;
-  });
-  console.log("response:", res);
 }
 
 </script>

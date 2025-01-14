@@ -5,7 +5,8 @@ const routes = [
     children: [
       { path: '', component: () => import('pages/IndexPage.vue') },                 // Index page
       { path: 'login', component: () => import('pages/LoginPage.vue') },            // Login page
-      { path: 'page-import', component: () => import('pages/tmpImportView.vue') } // tmpImportView
+      { path: 'page-import', component: () => import('pages/tmpImportView.vue') },   // tmpImportView
+      { path: 'page-admin', component: () => import('pages/AdminPage.vue') }        // Admin page
     ]
   },
 

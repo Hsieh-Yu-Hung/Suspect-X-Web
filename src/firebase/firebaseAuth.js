@@ -4,7 +4,7 @@ import { GoogleAuthProvider, signInWithPopup } from "firebase/auth";
 import { signInWithEmailAndPassword } from "firebase/auth";
 import logger from "@/utility/logger";
 import { USER_INFO, EMAIL_INFO, addLoginInfoDatabase, addEmailListDatabase } from "./firebaseDatabase";
-import { login_method } from "./firebaseDatabase";
+import { login_method, getData } from "./firebaseDatabase";
 
 // 取得 auth
 const auth = getAuth(app);
@@ -14,11 +14,22 @@ let user_info = null;
 
 // 如果是開發環境，則連接 auth emulator
 if (process.env.VUE_APP_FILE_ENV === "development") {
+
+  // 取得 admin 的 email
+  const env_admin_email = process.env.VUE_APP_ADMIN_ACCOUNT;
+  const env_admin_password = process.env.VUE_APP_ADMIN_PASSWORD;
+
   // 連接 auth emulator
   connectAuthEmulator(auth, "http://localhost:9099");
 
-  // 建立管理員帳號
-  login_admin();
+  // 取得 admin 的 email
+  const admin_email = await getData("email_list", env_admin_email).then(Response => {
+    return Response.data;
+  });
+  // 如果 admin_email 不存在，則建立管理員帳號
+  if (!admin_email) {
+    login_admin(env_admin_email, env_admin_password);
+  }
 }
 
 // 建立註冊函式
@@ -54,8 +65,8 @@ export const signInWithGoogle = async () => {
 };
 
 // 登入 admin
-async function login_admin() {
-  await createUserWithEmailAndPassword(auth, 'yuhunghsieh@accuinbio.com', 'admin123')
+async function login_admin(admin_email, admin_password) {
+  await createUserWithEmailAndPassword(auth, admin_email, admin_password)
   .then((result) => {
     // 將登入資訊加入到 database
     const id = result.user.uid;

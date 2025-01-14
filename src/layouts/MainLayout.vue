@@ -12,7 +12,7 @@
 
         <!-- 標題 -->
         <q-toolbar-title>
-          <div style="width: fit-content; display: flex; flex-direction: row; align-items: center; cursor: pointer;" @click="debug">
+          <div style="width: fit-content; display: flex; flex-direction: row; align-items: center; cursor: pointer;" @click="to_index">
             <!-- logo -->
             <div class="logo" style="height: 35px; margin-inline: 10px;">
               <img src="/icon.png" style="height: 100%;">
@@ -32,6 +32,7 @@
 
       <!-- 頁籤按鈕 -->
       <q-tabs align="right" class="text-blue-grey-8">
+        <q-route-tab to="/page-admin" label="Admin" v-if="account_role === 'admin'" />
         <q-route-tab to="/page-import" label="Import" />
         <q-route-tab to="/page-analysis" label="Analysis" />
         <q-route-tab to="/page-export" label="Export" />
@@ -68,7 +69,6 @@ import { useRouter, useRoute } from 'vue-router';
 import { useStore } from 'vuex';
 import RightDrawer from '@/components/RightDrawer.vue';
 import LeftDrawer from '@/components/LeftDrawer.vue';
-import logger from '@/utility/logger';
 
 // 取得 router, route, store
 const router = useRouter();
@@ -101,10 +101,6 @@ const mode_display_name = ref('Web Service');
 const account_icon_display_name = ref('group');
 
 /* functions */
-
-const debug = () => {
-  logger.warn("Warn Messagfe");
-}
 
 // 開關左邊選單
 const toggleLeftDrawer = () => {
