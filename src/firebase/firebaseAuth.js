@@ -11,6 +11,7 @@ const auth = getAuth(app);
 const provider = new GoogleAuthProvider();
 let is_login = false;
 let user_info = null;
+
 // 如果是開發環境，則連接 auth emulator
 if (process.env.VUE_APP_FILE_ENV === "development") {
   // 連接 auth emulator

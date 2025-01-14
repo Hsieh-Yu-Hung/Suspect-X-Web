@@ -179,16 +179,24 @@ async function onGoogleLogin() {
   let status = 'pending';
 
   await signInWithGoogle()
-  .then((result) => {
+  .then(async (result) => {
     if (result.status === 'success') {
-      // 將登入資訊加入到 database (Google 登入沒有輸入密碼)
-      const id = result.user_uid;
-      const LoginInfo = USER_INFO(result.user_email, id, login_method.google);
-      addLoginInfoDatabase(LoginInfo, id);
 
-      // 將 email 加入到 email_list
-      const EmailInfo = EMAIL_INFO(result.user_email, login_method.google);
-      addEmailListDatabase(EmailInfo);
+      // 取得 email_list
+      const email_list = await getEmailList();
+
+      // 檢查 email 是否已存在於 email_list 中
+      const emailExists = email_list.some(email => email.email === result.user_email);
+      if (!emailExists) {
+        // 將登入資訊加入到 database (Google 登入沒有輸入密碼)
+        const id = result.user_uid;
+        const LoginInfo = USER_INFO(result.user_email, id, login_method.google);
+        addLoginInfoDatabase(LoginInfo, id);
+
+        // 將 email 加入到 email_list
+        const EmailInfo = EMAIL_INFO(result.user_email, login_method.google);
+        addEmailListDatabase(EmailInfo);
+      }
 
       // 將 user_info 加入到 store
       storeUserInfo();

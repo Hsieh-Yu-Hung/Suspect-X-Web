@@ -12,7 +12,7 @@
 
         <!-- 標題 -->
         <q-toolbar-title>
-          <div style="width: fit-content; display: flex; flex-direction: row; align-items: center; cursor: pointer;" @click="to_index">
+          <div style="width: fit-content; display: flex; flex-direction: row; align-items: center; cursor: pointer;" @click="debug">
             <!-- logo -->
             <div class="logo" style="height: 35px; margin-inline: 10px;">
               <img src="/icon.png" style="height: 100%;">
@@ -68,6 +68,7 @@ import { useRouter, useRoute } from 'vue-router';
 import { useStore } from 'vuex';
 import RightDrawer from '@/components/RightDrawer.vue';
 import LeftDrawer from '@/components/LeftDrawer.vue';
+import logger from '@/utility/logger';
 
 // 取得 router, route, store
 const router = useRouter();
@@ -100,6 +101,10 @@ const mode_display_name = ref('Web Service');
 const account_icon_display_name = ref('group');
 
 /* functions */
+
+const debug = () => {
+  logger.warn("Warn Messagfe");
+}
 
 // 開關左邊選單
 const toggleLeftDrawer = () => {

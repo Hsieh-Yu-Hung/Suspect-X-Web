@@ -27,28 +27,31 @@ const formatMessage = (message) => {
 
 // 呼叫 saveLogs
 async function call_saveLogs(logMsg, logType) {
-  const message = {"logs": logMsg, "logType": logType};
-  const res = await saveLoggers(message);
-  return res;
+  const input_data = {"message": logMsg, "logType": logType};
+  const res = await saveLoggers(input_data).then((response) => {
+    return response.data;
+  });
+  return res
 }
 
 // 封裝前端 Logger
+const prefix = "[RUNNING MESSAGE] - ";
 const frontendLogger = {
-  info: (message) => {
+  info: async (message) => {
     log.info(formatMessage(`[Info] ${message}`));
-    call_saveLogs(message, "info"); // log 存入 firebase
+    await call_saveLogs(`${prefix} ${message}`, "info"); // log 存入 firebase
   },
-  warn: (message) => {
+  warn: async (message) => {
     log.warn(formatMessage(`[Warn] ${message}`));
-    call_saveLogs(message, "warn"); // log 存入 firebase
+    await call_saveLogs(`${prefix} ${message}`, "warn"); // log 存入 firebase
   },
-  error: (message) => {
+  error: async (message) => {
     log.error(formatMessage(`[Error] ${message}`));
-    call_saveLogs(message, "error"); // log 存入 firebase
+    await call_saveLogs(`${prefix} ${message}`, "error"); // log 存入 firebase
   },
-  debug: (message) => {
+  debug: async (message) => {
     log.debug(formatMessage(`[Debug] ${message}`));
-    call_saveLogs(message, "debug"); // log 存入 firebase
+    await call_saveLogs(`${prefix} ${message}`, "debug"); // log 存入 firebase
   },
 };
 

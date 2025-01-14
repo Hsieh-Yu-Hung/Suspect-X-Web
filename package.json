@@ -9,11 +9,11 @@
     "lint": "eslint --ext .js,.vue ./",
     "format": "prettier --write \"**/*.{js,vue,scss,html,md,json}\" --ignore-path .gitignore",
     "test": "echo \"No test specified\" && exit 0",
-    "dev": "ENV_PATH=.env.development quasar dev",
+    "dev": "export ENV_PATH=.env.development && quasar dev",
     "build": "quasar build",
-    "deploy": "ENV_PATH=.env.production quasar build && firebase deploy",
-    "emulate:prod": "ENV_PATH=.env.production quasar build && firebase emulators:start",
-    "emulate:dev": "ENV_PATH=.env.development quasar build --debug && firebase emulators:start"
+    "deploy": "export ENV_PATH=.env.production && quasar build && firebase deploy",
+    "emulate:prod": "export ENV_PATH=.env.production && quasar build && firebase emulators:start",
+    "emulate:dev": "export ENV_PATH=.env.development && quasar build --debug && firebase emulators:start"
   },
   "dependencies": {
     "@quasar/extras": "^1.16.4",
