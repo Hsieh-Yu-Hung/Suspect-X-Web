@@ -1,11 +1,9 @@
+// 導入會用到的功能
 import app from "./firebaseApp";
-import { getStorage, connectStorageEmulator } from "firebase/storage";
+import { getStorage } from "firebase/storage";
 
+// 取得 storage
 const storage = getStorage(app);
 
-// 如果是開發環境，則連接 storage emulator
-if (process.env.VUE_APP_FILE_ENV === "development") {
-  connectStorageEmulator(storage, "localhost", 9199);
-}
-
-export default storage;
+// 導出 storage
+export const Storage = storage;

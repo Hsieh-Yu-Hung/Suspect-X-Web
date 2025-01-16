@@ -4,7 +4,6 @@ import createPersistedState from 'vuex-persistedstate';
 import Vuex from 'vuex';
 
 // 自定義 Modules
-import organization_list from './organizationList';
 import login_status from './LoginStatus';
 
 // 從 localStorage 中恢復登入狀態
@@ -23,9 +22,6 @@ export default store(function () {
 
     // 加入自定義 Modules
     modules: {
-
-      // 組織列表
-      organization_list: organization_list,
 
       // 登入狀態
       login_status: login_status

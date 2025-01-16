@@ -67,7 +67,7 @@ import { get_login_status } from '@/firebase';
 
 // Firebase SDK: Database
 import { dataset_list, USER_INFO, EMAIL_INFO, login_method } from '@/firebase';
-import { addLoginInfoDatabase, addEmailListDatabase, getData } from '@/firebase';
+import { addLoginInfoDatabase, addEmailListDatabase, getData, getEmailList } from '@/firebase';
 
 // Logger
 import logger from '@/utility/logger';
@@ -234,29 +234,6 @@ async function onGoogleLogin() {
       }, 1000);
     }
   });
-}
-
-// 取得 email_list
-async function getEmailList(){
-  //
-  let email_array = [];
-  await getData(dataset_list.email_list)
-  .then((result) => {
-    if (result.status === 'success') {
-      logger.debug(`[Frontend] Get email list success`);
-      if (result.data) {
-        result.data.forEach((email) => {
-          email_array.push({email: email.email, login_method: email.login_method});
-        });
-      }
-    } else {
-      logger.error(`[Frontend] Get email list failed, Error: ${result.message}`);
-    }
-  })
-  .catch((error) => {
-    logger.error(`[Frontend] Get email list failed, Error: ${error}`);
-  });
-  return email_array;
 }
 
 // 補捉重複註冊

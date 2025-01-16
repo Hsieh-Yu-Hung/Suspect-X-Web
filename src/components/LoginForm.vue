@@ -61,7 +61,7 @@ import { get_login_status } from '@/firebase';
 
 // firebase SDK database
 import { dataset_list, USER_INFO, EMAIL_INFO, login_method } from '@/firebase';
-import { addLoginInfoDatabase, addEmailListDatabase, getData } from '@/firebase';
+import { addLoginInfoDatabase, addEmailListDatabase, getData, getEmailList } from '@/firebase';
 
 // Quasar
 import { useQuasar } from 'quasar';
@@ -231,29 +231,6 @@ async function onGoogleLogin() {
 // 切換表單 -- 註冊
 function switch_to_register() {
   emit('switch_to_register');
-}
-
-// 取得 email_list
-async function getEmailList(){
-  //
-  let email_array = [];
-  await getData(dataset_list.email_list)
-  .then((result) => {
-    if (result.status === 'success') {
-      logger.debug(`[Frontend] Get email list success`);
-      if (result.data) {
-        result.data.forEach((email) => {
-          email_array.push({email: email.email, login_method: email.login_method});
-        });
-      }
-    } else {
-      logger.error(`[Frontend] Get email list failed, Error: ${result.message}`);
-    }
-  })
-  .catch((error) => {
-    logger.error(`[Frontend] Get email list failed, Error: ${error}`);
-  });
-  return email_array;
 }
 
 // 取得 user_info 並將 user_info 加入到 store

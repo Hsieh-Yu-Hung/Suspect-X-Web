@@ -1,13 +1,11 @@
 import app from "./firebaseApp";
-import { getFunctions, httpsCallable, connectFunctionsEmulator } from "firebase/functions";
+import { getFunctions, httpsCallable } from "firebase/functions";
 
 // 取得 functions
 const functions = getFunctions(app, 'asia-east1');
 
-// 連接 functions emulator
-if (process.env.VUE_APP_FILE_ENV === "development") {
-  connectFunctionsEmulator(functions, 'localhost', 5001);
-}
+// 導出 functions
+export const Functions = functions;
 
 // 呼叫 saveLoggers
 const saveLoggers = httpsCallable(functions, 'saveLogs');

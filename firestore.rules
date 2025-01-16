@@ -9,5 +9,11 @@ service cloud.firestore {
     match /email_list/{document} {
       allow read, write;
     }
+    match /software_version_list/{document} {
+      allow read, write;
+    }
+    match /organization_list/{document} {
+      allow read, write;
+    }
   }
 }
