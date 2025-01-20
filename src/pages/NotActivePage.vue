@@ -24,6 +24,32 @@
   </q-page>
 </template>
 
+<script setup>
+// 導入模組 composable
+import { updateGetUserInfo } from '@/composables/accessStoreUserInfo.js';
+import { useRouter } from 'vue-router';
+import { onMounted } from 'vue';
+// 取得 login_status
+const { login_status } = updateGetUserInfo();
+
+// 取得 router
+const router = useRouter();
+
+// 掛載時
+onMounted(() => {
+  // 如果未登入跳轉賺到 login page
+  if (!login_status.value.is_login) {
+    router.push('/login');
+  } else {
+    // 如果已登入且已開通則跳轉到 import page
+    if (login_status.value.user_info.account_approved === true) {
+      router.push('/page-preview');
+    }
+  }
+});
+
+</script>
+
 <style scoped>
 .container{
   display: flex;

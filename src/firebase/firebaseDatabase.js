@@ -1,6 +1,6 @@
 // 導入會用到的功能
 import { getFirestore } from "firebase/firestore";
-import { collection, addDoc, setDoc, doc, Timestamp, getDocs, getDoc, deleteDoc } from "firebase/firestore";
+import { collection, addDoc, setDoc, doc, getDocs, getDoc, deleteDoc } from "firebase/firestore";
 import { v4 as uuidv4 } from 'uuid';
 import logger from "@/utility/logger";
 import app from "./firebaseApp";
