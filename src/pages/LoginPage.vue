@@ -23,14 +23,12 @@ defineOptions({
 
 /* Import modules */
 import { ref, onMounted } from 'vue';
-import { useRouter } from 'vue-router';
 
 /* Import components */
 import LoginForm from 'components/LoginForm.vue';
 import RegisterForm from 'components/RegisterForm.vue';
 
 /* refs */
-const router = useRouter();
 const login_form = ref(null);
 const register_form = ref(null);
 const display_page_content = ref(false);

@@ -38,12 +38,16 @@
 <script setup>
 // 導入模組
 import { ref, onMounted } from 'vue';
+import { useQuasar } from 'quasar';
 
 // 導入元件
 import OrganizationItem from '@/components/OrganizationSection/OrganizationItem.vue';
 import { ORGAN_DATA, dataset_list, deleteData, getOrganizationDatabase, addOrganizationDatabase } from '@/firebase';
 import { load_software_version_for_dropdown, load_organization_from_firestore } from '@/firebase';
 import logger from '@/utility/logger';
+
+// 取得 Quasar
+const $q = useQuasar();
 
 // 顯示組織資料
 const header = ORGAN_DATA('組織名稱', '軟體選用', '成員數量', '加入日期', null, false);
@@ -62,8 +66,15 @@ const add_organization = () => {
   display_organization.value.push(new_organization);
 };
 
+// Emits
+const emit = defineEmits(['organization_List_is_updated']);
+
 // 刪除組織資料
 async function delete_organization(organization_id_to_delete) {
+
+  // 開啟loading
+  $q.loading.show();
+
   // 取得新的 display_organization
   const new_display_organization = display_organization.value.filter(
     item => item.organization_id !== organization_id_to_delete || item.organization_id === 'default'
@@ -76,7 +87,10 @@ async function delete_organization(organization_id_to_delete) {
   await deleteData(dataset_list.organization_list, organization_id_to_delete)
   .then((Response) => {
     if(Response.status === 'success') {
-      logger.info(`${Response.message} ID: ${organization_id_to_delete}`);
+      logger.debug(`${Response.message} ID: ${organization_id_to_delete}`);
+
+      // 發送事件
+      emit('organization_List_is_updated');
     }
     else {
       logger.error(`${Response.message} ID: ${organization_id_to_delete}`);
@@ -84,11 +98,18 @@ async function delete_organization(organization_id_to_delete) {
   })
   .catch((error) => {
     logger.error(`${error} ID: ${organization_id_to_delete}`);
+  })
+  .finally(() => {
+    // 關閉loading
+    $q.loading.hide();
   });
 }
 
 // 更新 organization 和 firestore 組織資料
 async function update_organization_Lists(new_organization) {
+
+  // 開啟loading
+  $q.loading.show();
 
   // 更新 display_organization
   display_organization.value = display_organization.value.map(organization =>
@@ -120,6 +141,12 @@ async function update_organization_Lists(new_organization) {
         }
     }
   });
+
+  // 發送事件
+  emit('organization_List_is_updated');
+
+  // 關閉loading
+  $q.loading.hide();
 }
 
 // 更新軟體版本列表
@@ -131,11 +158,17 @@ async function update_software_version_list() {
 // onMounted
 onMounted(async () => {
 
+  // 開啟loading
+  $q.loading.show();
+
   // 從 firestore 載入軟體資料
   await load_software_version_for_dropdown(software_versions.value);
 
   // 從 firestore 載入組織資料
   await load_organization_from_firestore(display_organization.value);
+
+  // 關閉loading
+  $q.loading.hide();
 
 });
 

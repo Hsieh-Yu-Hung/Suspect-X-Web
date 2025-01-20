@@ -94,7 +94,6 @@ async function on_logout() {
   await logout()
   .then((result) => {
     if (result.status === 'success') {
-      logger.debug(result.message);
       store.commit('login_status/init_login_status');
       router.push('/');
     }

@@ -8,6 +8,9 @@
 
 <script setup>
 
+// Import modules
+import { ref } from 'vue';
+
 /* functions */
 
 // Debug test

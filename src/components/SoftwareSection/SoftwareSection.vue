@@ -35,6 +35,7 @@
 <script setup>
 // 導入模組
 import { ref, onMounted } from 'vue';
+import { useQuasar } from 'quasar';
 
 // 導入元件
 import SoftwareItem from '@/components/SoftwareSection/SoftwareItem.vue';
@@ -42,6 +43,9 @@ import { deleteData, dataset_list } from '@/firebase';
 import { SOFTWARE_DATA, addSoftwareVersionDatabase, getSoftwareVersionDatabase } from '@/firebase';
 import { load_software_version_from_firestore } from '@/firebase';
 import logger from '@/utility/logger';
+
+// 取得 Quasar
+const $q = useQuasar();
 
 // 顯示軟體資料
 const header = SOFTWARE_DATA('軟體名稱', '軟體版本', '軟體備注', false);
@@ -61,6 +65,9 @@ function add_software_version() {
 // 刪除軟體資料
 async function delete_software(software_id_to_delete) {
 
+  // 開啟loading
+  $q.loading.show();
+
   // 取得新的 display_software_version
   const new_display_software = display_software_version.value.filter(
     item => item.list_id !== software_id_to_delete
@@ -73,21 +80,28 @@ async function delete_software(software_id_to_delete) {
   await deleteData(dataset_list.software_version_list, software_id_to_delete)
   .then((Response) => {
     if(Response.status === 'success') {
-      logger.info(`${Response.message} ID: ${software_id_to_delete}`);
+      logger.debug(`${Response.message} ID: ${software_id_to_delete}`);
+
+      // 發送事件
+      emit('software_List_is_updated');
     }
     else {
       logger.error(`${Response.message} ID: ${software_id_to_delete}`);
     }
-    // 發送事件
-    emit('software_List_is_updated');
   })
   .catch((error) => {
     logger.error(`${error} ID: ${software_id_to_delete}`);
+  }).finally(() => {
+    // 關閉loading
+    $q.loading.hide();
   });
 }
 
 // 更新 display_software_version 和 firestore 軟體資料
 async function update_software_Lists(new_software) {
+
+  // 開啟loading
+  $q.loading.show();
 
   // 更新display_software_version
   display_software_version.value = display_software_version.value.map(software =>
@@ -125,12 +139,23 @@ async function update_software_Lists(new_software) {
 
   // 發送事件
   emit('software_List_is_updated');
+
+  // 關閉loading
+  $q.loading.hide();
 }
 
 // onMounted
 onMounted(async () => {
+
+  // 開啟loading
+  $q.loading.show();
+
   // 載入軟體資料
   await load_software_version_from_firestore(display_software_version.value);
+
+  // 關閉loading
+  $q.loading.hide();
+
 });
 
 </script>

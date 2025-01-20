@@ -22,19 +22,14 @@ export const dataset_list = {
 };
 
 // 定義 USER_INFO
-export const USER_INFO = (email, id, login_method) => {
-  const organization = "not-set";
-  const role = "user";
-  const auth_level = 0;
-  const account_active = false;
-  const created_at = Timestamp.now();
-  const updated_at = Timestamp.now();
+export const USER_INFO = (email, login_method, id = null, organization = "not-set", role = "user", account_active = false) => {
+  const created_at = new Date().toLocaleString();
+  const updated_at = new Date().toLocaleString();
   return {
-    id: id,
+    id: id ? id : uuidv4(),
     email: email,
     organization: organization,
     role: role,
-    auth_level: auth_level,
     account_active: account_active,
     created_at: created_at,
     updated_at: updated_at,
@@ -149,7 +144,6 @@ export const getEmailList = async () => {
   await getData(dataset_list.email_list)
   .then((result) => {
     if (result.status === 'success') {
-      logger.debug(`[Frontend] Get email list success`);
       if (result.data) {
         result.data.forEach((email) => {
           email_array.push({email: email.email, login_method: email.login_method});
@@ -191,7 +185,6 @@ export const getSoftwareVersionDatabase = async () => {
   await getData(dataset_list.software_version_list)
   .then((result) => {
     if (result.status === 'success') {
-      logger.debug(`Get software version success`);
       if (result.data) {
         result.data.forEach((software) => {
           software_version_array.push(software);
@@ -222,7 +215,6 @@ export const getOrganizationDatabase = async () => {
   await getData(dataset_list.organization_list)
   .then((result) => {
     if (result.status === 'success') {
-      logger.debug(`Get organization success`);
       if (result.data) {
         result.data.forEach((organization) => {
           organization_array.push(organization);
@@ -266,37 +258,63 @@ export const load_software_version_from_firestore = async (old_software_version)
   });
 }
 
+// 從 firestore 載入使用者資料 (Object)
+export const load_users_from_firestore = async (old_user_list) => {
+  // 取得使用者資料
+  const user_list = await getUsers_from_firestore();
+
+  // 更新使用者資料列表
+  user_list.forEach(user => {
+    if (!old_user_list.value.find(item => item.id === user.id)) {
+      old_user_list.value.push(user);
+    }
+  });
+}
+
 // 從 firestore 載入組織資料 (下拉式選單用)
-export const load_organization_for_dropdown = async (old_organization_list) => {
+export const load_organization_for_dropdown = async (old_organization_list, masked_organization_name=null) => {
+
   // 取得組織列表
-  const organizations = await getOrganizationDatabase();
+  const new_organizations = await getOrganizationDatabase();
 
   // 移除組織列表中不存在的組織
-  organizations.forEach(organization => {
-    if(!old_organization_list.includes(organization.organization_name)) {
-      old_organization_list.splice(old_organization_list.indexOf(organization.organization_name), 1);
+  old_organization_list.forEach(organization => {
+    if(!new_organizations.includes(organization)) {
+      old_organization_list.splice(old_organization_list.indexOf(organization), 1);
     }
   });
 
   // 將組織列表加入到 old_organization
-  organizations.forEach(organization => {
-    old_organization_list.push(organization.organization_name);
+  if (masked_organization_name) {
+    if (!old_organization_list.includes(masked_organization_name)) {
+      old_organization_list.push(masked_organization_name);
+    }
+  }
+  new_organizations.forEach(organization => {
+    if (!old_organization_list.includes(organization.organization_name)) {
+      old_organization_list.push(organization.organization_name);
+    }
   });
 }
 
 // 從 firestore 載入軟體資料 (下拉式選單用)
-export const load_software_version_for_dropdown = async (old_software_versions) => {
+export const load_software_version_for_dropdown = async (old_software_versions, masked_software_version_name=null) => {
   // 取得軟體版本列表
   const new_software_version = await getSoftwareVersionDatabase();
 
   // 移除軟體版本列表中不存在的軟體版本
   old_software_versions.forEach(version => {
-    if(!new_software_version.find(item => item.software_name === version)) {
+    if(!new_software_version.includes(version)) {
       old_software_versions.splice(old_software_versions.indexOf(version), 1);
     }
   });
 
   // 載入新軟體版本列表
+  if (masked_software_version_name) {
+    if (!old_software_versions.includes(masked_software_version_name)) {
+      old_software_versions.push(masked_software_version_name);
+    }
+  }
   new_software_version.forEach(version => {
     if(!old_software_versions.includes(version.software_name)) {
       old_software_versions.push(version.software_name);
@@ -310,5 +328,54 @@ export const addOrganizationDatabase = async (ORGAN_DATA) => {
     if (result.status === 'success') {
       logger.debug(`Update organization success, Organization ID: ${ORGAN_DATA.organization_id}`);
     }
+  });
+}
+
+// 取得 firestore 使用者資料
+export const getUsers_from_firestore = async (uid=null) => {
+  // 如果沒有指定使用者 id，則取得所有使用者資料
+  if (!uid) {
+    let user_array = [];
+    await getData(dataset_list.user_info)
+    .then((result) => {
+      if (result.status === 'success') {
+        if (result.data) {
+          result.data.forEach((user) => {
+            user_array.push(user);
+          });
+        }
+      } else {
+        logger.error(`Get users failed, Error: ${result.message}`);
+      }
+    })
+    .catch((error) => {
+      logger.error(`Get users failed, Error: ${error}`);
+    });
+    return user_array;
+  } else {
+    // 如果指定使用者 id，則取得指定使用者資料
+    let userData = null;
+    await getData(dataset_list.user_info, uid)
+    .then((result) => {
+      if (result.status === 'success') {
+        userData = result.data;
+      } else {
+        logger.error(`Get user data failed, ID: ${uid}, Error: ${result.message}`);
+      }
+    }).catch((error) => {
+      logger.error(`Get user data failed, ID: ${uid}, Error: ${error}`);
+    });
+    return userData;
+  }
+}
+
+// 更新使用者資料
+export const update_userData = async (new_user_data, user_id) => {
+  addData(dataset_list.user_info, new_user_data, user_id).then((result) => {
+    if (result.status === 'success') {
+      logger.debug(`Update user data success, ID: ${user_id}`);
+    }
+  }).catch((error) => {
+    logger.error(`Update user data failed, ID: ${user_id}, Error: ${error}`);
   });
 }

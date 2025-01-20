@@ -12,7 +12,7 @@
           <span class="text-subtitle1">此動作會刪除資料庫中的紀錄且無法復原！</span>
         </div>
         <div class="flex flex-center" style="gap: 20px; margin-block: 20px">
-          <q-btn glossy icon="gpp_maybe" color="red" label="確定" @click="warning_dialog = false" />
+          <q-btn glossy icon="gpp_maybe" color="red" label="確定" @click="delete_user" />
           <q-btn glossy icon="close" color="grey-9" label="取消" @click="warning_dialog = false" />
         </div>
       </q-card-section>
@@ -35,7 +35,12 @@
     <!-- 所屬組織 -->
     <q-item-section class="col-2">
       <q-item-label v-if="props.user_info.id === masked_user_id">{{ display_user_info.organization }}</q-item-label>
-      <DropDownList v-else :list_data="props.organization_list" />
+      <DropDownList v-else
+      name="organization_dropdown"
+      ref="organization_dropdown"
+      @update_selected_value="update_dropList_value"
+      :list_data="props.organization_list"
+      :selected_value="props.user_info.organization" />
     </q-item-section>
 
     <!-- 帳號開通 -->
@@ -48,6 +53,7 @@
           rounded
           glossy
           dense
+          @click="update_account_active"
           :toggle-color="account_active_btn_option === 'active' ? 'green' : 'red-7'"
           color="grey-9"
           :options="[
@@ -75,8 +81,11 @@
     <q-item-section class="col-2">
       <q-item-label v-if="props.user_info.id === masked_user_id">{{ display_user_info.role }}</q-item-label>
       <DropDownList v-else
+        name="account_role_dropdown"
+        ref="account_role_dropdown"
         :list_data="account_role_option.map(option => option.label)"
         :selected_value="current_account_role.label"
+        @update_selected_value="update_dropList_value"
       />
     </q-item-section>
 
@@ -116,35 +125,84 @@ const props = defineProps({
     type: Array,
     required: true,
   },
+  account_role_option_list: {
+    type: Array,
+    required: true,
+  },
 });
+
+// Emit
+const emit = defineEmits(['update_user_info', 'delete_user']);
 
 // constants
 const masked_user_id = "header_id";
 
 // refs
 const display_user_info = ref(props.user_info);
+const organization_dropdown = ref(null);
+const account_role_dropdown = ref(null);
 
 // 警告視窗
 const warning_dialog = ref(false);
 
 // 帳號開通按鈕
-const account_active_btn_option = ref('inactive');
+const account_active_btn_option = ref(display_user_info.value.account_active ? 'active' : 'inactive');
 
 // 帳號身份選單
-const account_role_option = ref([
-  {role: 'user', label: '使用者'},
-  {role: 'admin', label: '管理員'},
-  {role: 'supervisor', label: '單位主管'},
-]);
+const account_role_option = ref(props.account_role_option_list);
 
 // 當前選擇的帳號身份
 const current_account_role = ref(account_role_option.value.find(option => option.role === props.user_info.role));
 
 /* functions */
 
-// 刪除使用者資料
+// 更新帳號開通
+function update_account_active() {
+  const emit_data = {
+    id: display_user_info.value.id,
+    account_active: account_active_btn_option.value === 'active' ? true : false,
+    check_account_active: true
+  };
+  emit('update_user_info', emit_data);
+}
+
+// 更新組織
+function update_organization(data) {
+  const emit_data = {
+    id: display_user_info.value.id,
+    organization: data.new_value,
+  };
+  emit('update_user_info', emit_data);
+}
+
+// 更新帳號身份
+function update_account_role(data) {
+  const emit_data = {
+    id: display_user_info.value.id,
+    role: account_role_option.value.find(option => option.label === data.new_value).role,
+  };
+  emit('update_user_info', emit_data);
+}
+
+// 警告視窗
 function pop_up_warning_dialog() {
   warning_dialog.value = true;
+}
+
+// 確定刪除
+function delete_user() {
+  emit('delete_user', display_user_info.value.id);
+  warning_dialog.value = false;
+}
+
+// 接收下拉選單更新
+function update_dropList_value(toEmit) {
+  if(toEmit.name === "organization_dropdown"){
+    update_organization(toEmit);
+  }
+  if(toEmit.name === "account_role_dropdown"){
+    update_account_role(toEmit);
+  }
 }
 
 </script>

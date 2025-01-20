@@ -22,11 +22,12 @@
 <script setup>
 
 /* Import modules */
+import logger from '@/utility/logger';
 import { ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { useQuasar } from 'quasar';
-import { useStore } from 'vuex';
 import { getData, dataset_list } from '@/firebase';
+import { updateGetUserInfo } from '@/composables/accessStoreUserInfo.js';
 
 /* refs */
 
@@ -36,11 +37,11 @@ const $q = useQuasar();
 // Router
 const router = useRouter();
 
-// Store
-const store = useStore();
-
 // State to control visibility
 const display_page_content = ref(true);
+
+// 取得登入狀態
+const { login_status } = updateGetUserInfo();
 
 defineOptions({
   name: 'IndexPage'
@@ -50,11 +51,11 @@ defineOptions({
 const main = async () => {
 
   // 取得登入狀態
-  const is_login = store.getters['login_status/getLoginStatus'];
+  const is_login = login_status.value.is_login;
 
   // 檢查使用者是否存在
-  const user_info = store.getters['login_status/getUserInfo'];
-  const user_email = user_info.email;
+  const user_email = login_status.value.user_info.email;
+  const user_account_active = login_status.value.user_info.account_approved;
   const user_exist = await check_user_exist(user_email).then((result) => {
     return result;
   });
@@ -67,9 +68,13 @@ const main = async () => {
       position: 'top',
       timeout: 500
     });
-    // 跳轉至 page-import page
+    // 跳轉至 page-import, 若未開通則到 not-active
     setTimeout(() => {
-      router.push('/page-import');
+      if(user_account_active){
+        router.push('/page-import');
+      } else {
+        router.push('/page-not-active');
+      }
     }, 500);
   } else {
     // 顯示登入提示
@@ -105,10 +110,13 @@ const check_user_exist = async (user_email) => {
   .then((result) => {
     if (result.status === 'success' && result.data) {
       user_exist = true;
+    } else {
+      user_exist = false;
+      logger.error('使用者不存在');
     }
   })
   .catch((error) => {
-    console.log('error', error);
+    logger.error(error);
   });
   return user_exist;
 }

@@ -24,29 +24,32 @@ import {
 import logger from "@/utility/logger";
 
 // 登入 admin
-async function login_admin() {
-
-  // 取得 admin 的 帳戶資料
-  const env_admin_email = process.env.VUE_APP_ADMIN_ACCOUNT;
-  const env_admin_password = process.env.VUE_APP_ADMIN_PASSWORD;
+async function create_fake_user(email, password, admin=false) {
 
   // 取得 admin 的 email
-  const admin_email = await getData("email_list", env_admin_email).then(Response => {
+  const is_email_exist = await getData("email_list", email).then(Response => {
     return Response.data;
   });
 
   // 如果 admin 的 email 不存在，則建立管理員帳號
-  if (!admin_email) {
-    await createUserWithEmailAndPassword(Auth, env_admin_email, env_admin_password)
+  if (!is_email_exist) {
+    await createUserWithEmailAndPassword(Auth, email, password)
     .then((result) => {
       // 將登入資訊加入到 database
       const id = result.user.uid;
-      const LoginInfo = USER_INFO(result.user.email, id, login_method.admin);
+      const LoginInfo = USER_INFO(result.user.email, login_method.admin, id);
 
       // 設定管理員權限
-      LoginInfo.account_active = true;
-      LoginInfo.auth_level = 999; // 設定 auth_level 為 999
-      LoginInfo.role = 'admin';
+      if (admin) {
+        LoginInfo.account_active = true;
+        LoginInfo.role = 'admin';
+        LoginInfo.organization = 'AdminOrg';
+      }
+      else {
+        LoginInfo.account_active = false;
+        LoginInfo.role = 'user';
+        LoginInfo.organization = 'not-set';
+      }
       addLoginInfoDatabase(LoginInfo, id);
 
       // 將 email 加入到 email_list
@@ -70,6 +73,7 @@ async function dev_add_software_version() {
   const softwares = await getSoftwareVersionDatabase();
   if (softwares.length === 0) {
     // 測試加入軟體資料
+    await addSoftwareVersionDatabase(SOFTWARE_DATA('AdminSoftware', 'N/A', '管理員用', 'Admin', false));
     await addSoftwareVersionDatabase(SOFTWARE_DATA('soft1', '1.0.0', '測試軟體備注 1', null, false));
     await addSoftwareVersionDatabase(SOFTWARE_DATA('soft2', '1.0.2', '測試軟體備注 2', null, false));
     await addSoftwareVersionDatabase(SOFTWARE_DATA('soft3', '1.0.3', '測試軟體備注 3', null, false));
@@ -82,6 +86,7 @@ async function dev_add_organization() {
   const organizations = await getOrganizationDatabase();
   if (organizations.length === 0) {
     // 測試加入組織資料
+    await addOrganizationDatabase(ORGAN_DATA('AdminOrg', 'AdminSoftware', '0', 'N/A', 'Admin', false));
     await addOrganizationDatabase(ORGAN_DATA('organ1', 'soft1', '0', '2077-02-30', null, false));
     await addOrganizationDatabase(ORGAN_DATA('organ2', 'soft2', '0', '2077-02-30', null, false));
     await addOrganizationDatabase(ORGAN_DATA('organ3', 'soft3', '0', '2077-02-30', null, false));
@@ -97,8 +102,15 @@ export default async function onDevelopment() {
   connectFunctionsEmulator(Functions, 'localhost', 5001); // 連接 functions emulator
   connectFirestoreEmulator(Database, 'localhost', 8085);  // 連接 firestore emulator
 
+  // 登入 fake users
+  await create_fake_user('subject1@test.com', 'f12345678', false);
+  await create_fake_user('subject2@test.com', 'f12345678', false);
+  await create_fake_user('subject3@test.com', 'f12345678', false);
+
   // 登入 admin
-  await login_admin();
+  const admin_email = process.env.VUE_APP_ADMIN_ACCOUNT;
+  const admin_password = process.env.VUE_APP_ADMIN_PASSWORD;
+  await create_fake_user(admin_email, admin_password, true);
 
   // 開發環境時，加入軟體資料
   await dev_add_software_version();

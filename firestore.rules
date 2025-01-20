@@ -3,9 +3,6 @@ rules_version = '2';
 // Allow read/write access on all documents to any user signed in to the application
 service cloud.firestore {
   match /databases/{database}/documents {
-    match /{document=**} {
-      allow read, write: if request.auth != null;
-    }
     match /email_list/{document} {
       allow read, write;
     }
@@ -14,6 +11,9 @@ service cloud.firestore {
     }
     match /organization_list/{document} {
       allow read, write;
+    }
+    match /user_info/{document} {
+      allow read, write : if request.auth != null;
     }
   }
 }

@@ -37,7 +37,8 @@
     <q-item-section>
       <q-item-label v-if="organization_name === masked_organization_name">{{ software_selection }}</q-item-label>
       <DropDownList
-        style="min-width: 100px"
+        name="software_dropdown"
+        style="min-width: 120px"
         v-else
         ref="software_dropdown_list"
         :disableEdit="disable_edit"

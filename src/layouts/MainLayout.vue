@@ -40,10 +40,12 @@
 
     </q-header>
 
+    <!-- 左邊選單 -->
     <q-drawer v-model="leftDrawerOpen" side="left" overlay behavior="desktop" bordered>
       <LeftDrawer />
     </q-drawer>
 
+    <!-- 右邊選單 -->
     <q-drawer v-model="rightDrawerOpen" side="right" overlay behavior="mobile" bordered>
       <RightDrawer
         ref="rightDrawer"
@@ -59,6 +61,7 @@
     </q-page-container>
 
   </q-layout>
+
 </template>
 
 <script setup>
@@ -66,9 +69,9 @@
 /* Import modules */
 import { ref, onMounted, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router';
-import { useStore } from 'vuex';
 import RightDrawer from '@/components/RightDrawer.vue';
 import LeftDrawer from '@/components/LeftDrawer.vue';
+import { useStore } from 'vuex';
 
 // 取得 router, route, store
 const router = useRouter();
@@ -80,7 +83,7 @@ const store = useStore();
 // rightDrawer
 const rightDrawer = ref(null);
 
-// Store 相關
+// 登入狀態
 const is_login = ref(false);
 const user_info = ref(null);
 
@@ -145,9 +148,6 @@ const updateLoginStatus = () => {
 // 更新UI
 const updateUI = () => {
 
-  // 若未登入, 則不更新UI
-  if (!is_login.value) {return;}
-
   // 設定顯示帳號
   account_display_name.value = user_info.value.email;
   account_organization.value = user_info.value.organization;
@@ -157,12 +157,12 @@ const updateUI = () => {
   // 設定顯示帳號 role
   if (user_info.value.role === 'admin') {
     // 設定標題列顏色和身份標籤
-    account_display_name.value = account_display_name.value + '(Admin)';
+    account_display_name.value = account_display_name.value != null ? account_display_name.value + '(Admin)' : 'show account';
     mode_display_name.value = 'Developper';
     header_color.value = 'bg-teal-2';
     account_icon_display_name.value = 'manage_accounts';
   } else {
-    account_display_name.value = account_display_name.value.replace('(Admin)', '');
+    account_display_name.value = account_display_name.value != null ? account_display_name.value.replace('(Admin)', '') : 'show account';
     mode_display_name.value = 'Web Service';
     header_color.value = 'bg-indigo-2';
     account_icon_display_name.value = 'group';
@@ -172,9 +172,8 @@ const updateUI = () => {
   rightDrawer.value.update_display_account_name();
 }
 
-/* onMounted */
-onMounted(() => {
-
+// 刷新 MainLayout
+function reloadMainLayout() {
   // 取得登入狀態
   updateLoginStatus();
 
@@ -183,19 +182,18 @@ onMounted(() => {
 
   // 更新UI
   updateUI();
+}
+
+/* onMounted */
+onMounted(() => {
+  // 刷新 MainLayout
+  reloadMainLayout();
 });
 
 /* watch */
 watch(route, () => {
-
-  // 取得登入狀態
-  updateLoginStatus();
-
-  // 決定是否要開啟標題列
-  toggle_header();
-
-  // 更新UI
-  updateUI();
+  // 刷新 MainLayout
+  reloadMainLayout();
 });
 
 </script>

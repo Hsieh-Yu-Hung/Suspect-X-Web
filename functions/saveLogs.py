@@ -19,11 +19,11 @@ if not os.path.exists("logs"):
 # 取得運行環境, 設定日誌級別
 current_env = os.getenv("VUE_APP_FILE_ENV")
 if current_env == "development":
-    logging.basicConfig(level=logging.DEBUG, filename=log_file, format='%(levelname)s - %(message)s')
+    logging.basicConfig(level=logging.DEBUG, filename=log_file, format='%(asctime)s - %(levelname)s - %(message)s')
 elif current_env == "production":
-    logging.basicConfig(level=logging.INFO, filename=log_file, format='%(levelname)s - %(message)s')
+    logging.basicConfig(level=logging.INFO, filename=log_file, format='%(asctime)s - %(levelname)s - %(message)s')
 else:
-    logging.basicConfig(level=logging.DEBUG, filename=log_file, format='%(levelname)s - %(message)s')
+    logging.basicConfig(level=logging.DEBUG, filename=log_file, format='%(asctime)s - %(levelname)s - %(message)s')
 
 # 上傳日誌檔案到 Storage Emulator logs/
 def upload_logs(bucket, log_dir: str = "logs/"):

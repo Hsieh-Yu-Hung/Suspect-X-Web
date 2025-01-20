@@ -3,11 +3,13 @@ const routes = [
     path: '/',
     component: () => import('layouts/MainLayout.vue'),
     children: [
-      { path: '', component: () => import('pages/AdminPage.vue') },                 // 開發中 Admin page
-      { path: 'index', component: () => import('pages/IndexPage.vue') },            // Index page
-      { path: 'login', component: () => import('pages/LoginPage.vue') },            // Login page
-      { path: 'page-import', component: () => import('pages/tmpImportView.vue') },  // tmpImportView
-      { path: 'page-admin', component: () => import('pages/AdminPage.vue') }        // Admin page
+      { path: '', component: () => import('pages/IndexPage.vue') },                     // Index page
+      { path: 'login', component: () => import('pages/LoginPage.vue') },                // Login page
+      { path: 'page-not-active', component: () => import('pages/NotActivePage.vue') },  // Not active page
+      { path: 'page-import', component: () => import('pages/MainPageImport.vue') },     // Import
+      { path: 'page-analysis', component: () => import('pages/MainPageAnalysis.vue') }, // Analysis
+      { path: 'page-export', component: () => import('pages/MainPageExport.vue') },     // Export
+      { path: 'page-admin', component: () => import('pages/AdminPage.vue') }            // Admin page
     ]
   },
 
