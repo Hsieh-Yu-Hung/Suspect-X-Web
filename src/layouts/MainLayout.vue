@@ -1,106 +1,199 @@
 <template>
-  <q-layout view="lHh Lpr lFf">
-    <q-header elevated>
-      <q-toolbar>
-        <q-btn
-          flat
-          dense
-          round
-          icon="menu"
-          aria-label="Menu"
-          @click="toggleLeftDrawer"
-        />
+  <q-layout view="hHh lpR lFr">
 
+    <!-- Layout Header -->
+    <q-header v-model="show_header" reveal elevated class="text-white" :class="header_color" height-hint="98">
+
+      <!-- 標題列 -->
+      <q-toolbar>
+
+        <!-- 左邊選單按鈕 -->
+        <q-btn flat round icon="menu" @click="toggleLeftDrawer" />
+
+        <!-- 標題 -->
         <q-toolbar-title>
-          Quasar App
+          <div style="width: fit-content; display: flex; flex-direction: row; align-items: center; cursor: pointer;" @click="to_index">
+            <!-- logo -->
+            <div class="logo" style="height: 35px; margin-inline: 10px;">
+              <img src="/icon.png" style="height: 100%;">
+            </div>
+            <!-- 標題文字 -->
+            <div style="height: 40px; margin-inline: 10px; display: flex; flex-direction: row; align-items: center;">
+              <span style="font-size: 1.4em; font-weight: bold; color: black;">ACCUiNspection
+                <span style="font-size: 0.4em; font-weight: bold; color: slategray; margin-inline: 5px;">{{ mode_display_name }}</span>
+              </span>
+            </div>
+          </div>
         </q-toolbar-title>
 
-        <div>Quasar v{{ $q.version }}</div>
+        <!-- 右邊選單按鈕 -->
+        <q-btn no-caps dense flat :icon="account_icon_display_name" :label="account_display_name" @click="toggleRightDrawer" color="black"/>
       </q-toolbar>
+
+      <!-- 頁籤按鈕 -->
+      <q-tabs align="right" class="text-blue-grey-8">
+        <q-route-tab to="/page-admin" label="Admin" v-if="account_role === 'admin'" />
+        <q-route-tab to="/page-import" label="Import" />
+        <q-route-tab to="/page-analysis" label="Analysis" />
+        <q-route-tab to="/page-export" label="Export" />
+      </q-tabs>
+
     </q-header>
 
-    <q-drawer
-      v-model="leftDrawerOpen"
-      show-if-above
-      bordered
-    >
-      <q-list>
-        <q-item-label
-          header
-        >
-          Essential Links
-        </q-item-label>
+    <!-- 左邊選單 -->
+    <q-drawer v-model="leftDrawerOpen" side="left" overlay behavior="desktop" bordered>
+      <LeftDrawer />
+    </q-drawer>
 
-        <EssentialLink
-          v-for="link in linksList"
-          :key="link.title"
-          v-bind="link"
-        />
-      </q-list>
+    <!-- 右邊選單 -->
+    <q-drawer v-model="rightDrawerOpen" side="right" overlay behavior="mobile" bordered>
+      <RightDrawer
+        ref="rightDrawer"
+        :account_name="account_display_name"
+        :account_role="account_role"
+        :account_organization="account_organization"
+        :account_status="display_account_status"
+      />
     </q-drawer>
 
     <q-page-container>
       <router-view />
     </q-page-container>
+
   </q-layout>
+
 </template>
 
 <script setup>
-import { ref } from 'vue'
-import EssentialLink from 'components/EssentialLink.vue'
 
-defineOptions({
-  name: 'MainLayout'
-})
+/* Import modules */
+import { ref, onMounted, watch } from 'vue'
+import { useRouter, useRoute } from 'vue-router';
+import RightDrawer from '@/components/RightDrawer.vue';
+import LeftDrawer from '@/components/LeftDrawer.vue';
+import { useStore } from 'vuex';
 
-const linksList = [
-  {
-    title: 'Docs',
-    caption: 'quasar.dev',
-    icon: 'school',
-    link: 'https://quasar.dev'
-  },
-  {
-    title: 'Github',
-    caption: 'github.com/quasarframework',
-    icon: 'code',
-    link: 'https://github.com/quasarframework'
-  },
-  {
-    title: 'Discord Chat Channel',
-    caption: 'chat.quasar.dev',
-    icon: 'chat',
-    link: 'https://chat.quasar.dev'
-  },
-  {
-    title: 'Forum',
-    caption: 'forum.quasar.dev',
-    icon: 'record_voice_over',
-    link: 'https://forum.quasar.dev'
-  },
-  {
-    title: 'Twitter',
-    caption: '@quasarframework',
-    icon: 'rss_feed',
-    link: 'https://twitter.quasar.dev'
-  },
-  {
-    title: 'Facebook',
-    caption: '@QuasarFramework',
-    icon: 'public',
-    link: 'https://facebook.quasar.dev'
-  },
-  {
-    title: 'Quasar Awesome',
-    caption: 'Community Quasar projects',
-    icon: 'favorite',
-    link: 'https://awesome.quasar.dev'
-  }
-]
+// 取得 router, route, store
+const router = useRouter();
+const route = useRoute();
+const store = useStore();
 
+/* refs */
+
+// rightDrawer
+const rightDrawer = ref(null);
+
+// 登入狀態
+const is_login = ref(false);
+const user_info = ref(null);
+
+// Drawers 開關
 const leftDrawerOpen = ref(false)
+const rightDrawerOpen = ref(false)
 
-function toggleLeftDrawer () {
+// 標題列顯示
+const show_header = ref(true);
+const header_color = ref('bg-indigo-2');
+
+// 顯示帳號
+const display_account_status = ref(false);
+const account_display_name = ref('show account');
+const account_organization = ref('NULL');
+const account_role = ref('NULL');
+const mode_display_name = ref('Web Service');
+const account_icon_display_name = ref('group');
+
+/* functions */
+
+// 開關左邊選單
+const toggleLeftDrawer = () => {
   leftDrawerOpen.value = !leftDrawerOpen.value
 }
+
+// 開關右邊選單
+const toggleRightDrawer = () => {
+  rightDrawerOpen.value = !rightDrawerOpen.value
+}
+
+// 開關標題列
+const closeHeader = () => {
+  show_header.value = false;
+}
+
+// 開啟標題列
+const openHeader = () => {
+  show_header.value = true;
+}
+
+// 跳轉到首頁
+const to_index = () => {
+  router.push('/');
+}
+
+// 開關標題列
+const toggle_header = () => {
+  if (route.path === '/login') {
+    closeHeader();
+  } else {
+    openHeader();
+  }
+}
+
+// 取得登入狀態
+const updateLoginStatus = () => {
+  is_login.value = store.getters['login_status/getLoginStatus'];
+  user_info.value = store.getters['login_status/getUserInfo'];
+}
+
+// 更新UI
+const updateUI = () => {
+
+  // 設定顯示帳號
+  account_display_name.value = user_info.value.email;
+  account_organization.value = user_info.value.organization;
+  account_role.value = user_info.value.role;
+  display_account_status.value = user_info.value.account_approved;
+
+  // 設定顯示帳號 role
+  if (user_info.value.role === 'admin') {
+    // 設定標題列顏色和身份標籤
+    account_display_name.value = account_display_name.value != null ? account_display_name.value + '(Admin)' : 'show account';
+    mode_display_name.value = 'Developper';
+    header_color.value = 'bg-teal-2';
+    account_icon_display_name.value = 'manage_accounts';
+  } else {
+    account_display_name.value = account_display_name.value != null ? account_display_name.value.replace('(Admin)', '') : 'show account';
+    mode_display_name.value = 'Web Service';
+    header_color.value = 'bg-indigo-2';
+    account_icon_display_name.value = 'group';
+  }
+
+  // 更新右邊選單
+  rightDrawer.value.update_display_account_name();
+}
+
+// 刷新 MainLayout
+function reloadMainLayout() {
+  // 取得登入狀態
+  updateLoginStatus();
+
+  // 決定是否要開啟標題列
+  toggle_header();
+
+  // 更新UI
+  updateUI();
+}
+
+/* onMounted */
+onMounted(() => {
+  // 刷新 MainLayout
+  reloadMainLayout();
+});
+
+/* watch */
+watch(route, () => {
+  // 刷新 MainLayout
+  reloadMainLayout();
+});
+
 </script>

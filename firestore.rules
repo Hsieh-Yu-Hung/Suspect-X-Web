@@ -1,0 +1,19 @@
+rules_version = '2';
+
+// Allow read/write access on all documents to any user signed in to the application
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /email_list/{document} {
+      allow read, write;
+    }
+    match /software_version_list/{document} {
+      allow read, write;
+    }
+    match /organization_list/{document} {
+      allow read, write;
+    }
+    match /user_info/{document} {
+      allow read, write : if request.auth != null;
+    }
+  }
+}
