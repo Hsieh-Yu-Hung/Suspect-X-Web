@@ -8,6 +8,7 @@ import logger from '@/utility/logger';
 const CATEGORY_LIST = {
   tmp: 'tmp',
   apoe_import: 'apoe_import',
+  mthfr_import: 'mthfr_import',
 }
 
 export { CATEGORY_LIST };
@@ -16,7 +17,7 @@ export { CATEGORY_LIST };
 export async function upload_files_to_storage(file, user_id=null, category=CATEGORY_LIST.tmp, analysis_uuid=null, sub_dir=null) {
 
   // 紀錄狀態
-  let execute_result = {status: 'pending', message: 'Waiting for upload', file: file.name, storage_path: '', analysis_uuid: analysis_uuid};
+  let execute_result = {status: 'pending', message: 'Waiting for upload', file: '', storage_path: '', analysis_uuid: analysis_uuid};
 
   // 上傳檔案到 storage
   if (file) {
@@ -46,8 +47,13 @@ export async function upload_files_to_storage(file, user_id=null, category=CATEG
     execute_result.status = 'error';
     execute_result.message = `No file selected`;
   }
+
+  // 取得檔案名稱
+  const fileName = file ? file.name : '';
+
+  // 印出 log
   logger.debug(`
-    ${file.name} attempt to upload,
+    ${fileName} attempt to upload,
     status: ${execute_result.status},
     message: ${execute_result.message},
     storage_path: ${execute_result.storage_path}

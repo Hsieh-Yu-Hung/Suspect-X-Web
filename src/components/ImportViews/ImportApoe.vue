@@ -119,7 +119,7 @@ const user_info = ref(null);
 // 當前的分析 ID
 const currentAnalysisID = ref(null);
 
-//
+// 保存上傳紀錄供檢查不同
 const sampleUploaded = ref(null);
 
 // 掛載時
@@ -129,7 +129,7 @@ onMounted(() => {
   is_login.value = login_status.value.is_login;
   user_info.value = login_status.value.user_info;
 
-  // 先嘗試取得當前的分析 ID
+  // 先嘗試取得當前的分析 ID, 如果沒有則建立新的分析 ID
   currentAnalysisID.value = store.getters['analysis_setting/getCurrentAnalysisID'];
   if (currentAnalysisID.value.analysis_uuid == null) {
     const new_id = `analysis_${uuidv4()}`;
@@ -153,7 +153,7 @@ async function onSubmit() {
     messageColor: "white",
   });
 
-  // 取得所有檔案
+  // 設定輸入
   const sampleFileAll = sampleFile.value.reduce((acc, val) => acc.concat(val), []);
   const checkList = [...control1File.value, ...control2File.value, ...sampleFileAll];
   const parsedSampleNameList = sampleFile.value.map((fileList) => { return filenameParser(fileList[0].name); });
@@ -274,35 +274,8 @@ async function uploadFile(file_list, analysisID, subDir) {
   $q.loading.hide();
 }
 
-// 新增 sample file input
-function addSampleFileInput(idx) {
-  sampleFile.value.splice(idx + 1, 0, []);
-}
-
-// 移除 sample file input
-function removeSampleFileInput(idx) {
-  sampleFile.value.splice(idx, 1);
-}
-
-// 監聽 Control1File 的變化上傳檔案
-watch(control1File, async (newVal, oldVal) => {
-  // 比較 newVal 和 oldVal 是否相同, 找出新增的檔案
-  const added_file = oldVal ? newVal.filter((file) => !oldVal.includes(file)) : newVal;
-  // 上傳新增的檔案
-  await uploadFile(added_file, currentAnalysisID.value.analysis_uuid, "control1");
-});
-
-// 監聽 Control2File 的變化上傳檔案
-watch(control2File, async (newVal, oldVal) => {
-  // 比較 newVal 和 oldVal 是否相同, 找出新增的檔案
-  const added_file = oldVal ? newVal.filter((file) => !oldVal.includes(file)) : newVal;
-  // 上傳新增的檔案
-  await uploadFile(added_file, currentAnalysisID.value.analysis_uuid, "control2");
-});
-
-// 監聽 SampleFile 的變化上傳檔案
-watch(sampleFile, async (newVal) => {
-
+// 處理 sample file upload
+async function handleSampleFileUpload(newVal) {
   // 初始化 file_to_upload
   let file_to_upload = null;
 
@@ -343,7 +316,37 @@ watch(sampleFile, async (newVal) => {
 
   // 更新 sampleUploaded
   sampleUploaded.value = JSON.parse(JSON.stringify(newVal));
+}
 
+// 新增 sample file input
+function addSampleFileInput(idx) {
+  sampleFile.value.splice(idx + 1, 0, []);
+}
+
+// 移除 sample file input
+function removeSampleFileInput(idx) {
+  sampleFile.value.splice(idx, 1);
+}
+
+// 監聽 Control1File 的變化上傳檔案
+watch(control1File, async (newVal, oldVal) => {
+  // 比較 newVal 和 oldVal 是否相同, 找出新增的檔案
+  const added_file = oldVal ? newVal.filter((file) => !oldVal.includes(file)) : newVal;
+  // 上傳新增的檔案
+  await uploadFile(added_file, currentAnalysisID.value.analysis_uuid, "control1");
+});
+
+// 監聽 Control2File 的變化上傳檔案
+watch(control2File, async (newVal, oldVal) => {
+  // 比較 newVal 和 oldVal 是否相同, 找出新增的檔案
+  const added_file = oldVal ? newVal.filter((file) => !oldVal.includes(file)) : newVal;
+  // 上傳新增的檔案
+  await uploadFile(added_file, currentAnalysisID.value.analysis_uuid, "control2");
+});
+
+// 監聽 SampleFile 的變化上傳檔案
+watch(sampleFile, async (newVal) => {
+  await handleSampleFileUpload(newVal);
 }, {deep: true});
 
 </script>

@@ -6,9 +6,13 @@ import logger from '@/utility/logger';
 import { RunAnalysis } from '@/firebase/firebaseFunction';
 
 // 由 AnalysisName 決定 check_type
-function getCheckType(AnalysisName) {
-  if (AnalysisName === 'APOE') return 'qsep100';
-  else return null;
+function getCheckType(AnalysisName, currentSettingProps) {
+  const Matrix = {
+    'APOE': 'qsep100',
+    'MTHFR': currentSettingProps.instrument
+  }
+  const check_type = AnalysisName in Matrix ? Matrix[AnalysisName] : null;
+  return check_type;
 }
 
 // 檢查檔案格式
@@ -68,7 +72,7 @@ export async function submitWorkflow(FileCheckList, AnalysisName, InputData, use
   let execute_status = {status:"pending", message: "Waiting for start...", result:null}
 
   /* 1. Check file type */
-  const checkType = getCheckType(AnalysisName);
+  const checkType = getCheckType(AnalysisName, currentSettingProps);
   if (!checkType){
     execute_status = {status:"error", message: "未知的分析名稱", result:null}
     return execute_status;

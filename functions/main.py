@@ -133,9 +133,14 @@ def RunAnalysis(req: https_fn.Request):
         analysis_name = input_data["analysis_name"]
         analysis_input_data = input_data["analysis_input_data"]
 
+        # 初始化 result
+        result = None
+
         # 跑分析
         if analysis_name == "APOE":
             result = core.runApoe(analysis_input_data)
+        elif analysis_name == "MTHFR":
+            result = core.runMthfr(analysis_input_data)
 
         # 回傳 response
         response_data = {"data": {"status": "success", "message": "Analysis finished", "result": result}}

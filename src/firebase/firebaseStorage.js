@@ -18,6 +18,14 @@ export const uploadFileToStorage = async (file, upload_path) => {
   const storage_path = `${PATH_OF_DATA}/${upload_path}`;
   execute_result.storage_path = storage_path; // 設定 storage_path回傳
 
+  // 檢查檔案是否存在
+  const file_exist = await checkFileExistInStorage(upload_path);
+  if (file_exist) {
+    execute_result.status = 'skipped';
+    execute_result.message = `File already exists skip upload.`;
+    return execute_result;
+  }
+
   // 取得 storageRef
   const storageRef = ref(storage, storage_path);
 
@@ -52,7 +60,7 @@ export const checkFileExistInStorage = async (target_path) => {
 
 // 檢查 Storage 特定資料夾是否存在,但資料夾不為空才會回傳 true
 export const checkFolderExistInStorage = async (folder_path) => {
-  const folderRef = ref(storage, folder_path);
+  const folderRef = ref(storage, `${PATH_OF_DATA}/${folder_path}`);
   try {
     const result = await listAll(folderRef);
     return result.items.length > 0 || result.prefixes.length > 0;
@@ -62,6 +70,13 @@ export const checkFolderExistInStorage = async (folder_path) => {
     }
     throw error;
   }
+}
+
+// 取得資料夾內的檔案列表
+export const listAllFilesInFolder = async (folder_path) => {
+  const folderRef = ref(storage, `${PATH_OF_DATA}/${folder_path}`);
+  const result = await listAll(folderRef);
+  return result.items;
 }
 
 // 導出 storage
