@@ -25,7 +25,7 @@
                 Product:
               </div>
               <div class="q-ml-lg text-subtitle1 text-bold text-deep-orange-6">
-                Product_Label
+                {{ currentSelectProduct.label }}
               </div>
             </div>
           </template>
@@ -66,11 +66,12 @@
         <!-- 下拉式選單：儀器選擇 -->
         <q-select
           class="col q-mr-lg"
-          v-model="instrument"
-          :options="instrumentArray"
+          v-model="currentSelectInstrument.label"
+          :options="instrumentArray(currentSelectProduct.val)"
           color="deep-orange-6"
           stack-label
           label="Instrument"
+          @update:model-value="handleInstrumentChange"
         >
           <template v-slot:before>
             <q-icon name="construction" />
@@ -80,11 +81,12 @@
         <!-- 下拉式選單：試劑選擇 -->
         <q-select
           class="col"
-          v-model="reagent"
-          :options="reagentArray"
+          v-model="currentSelectReagent.label"
+          :options="reagentArray(currentSelectProduct.val, currentSelectInstrument.val)"
           color="deep-orange-6"
           stack-label
           label="Reagent"
+          @update:model-value="handleReagentChange"
         >
           <template v-slot:before>
             <q-icon name="mdi-beaker-outline" />
@@ -98,6 +100,33 @@
 </template>
 
 <script setup>
+// 導入模組
+import { ref, onMounted } from 'vue';
+import { useStore } from 'vuex';
+
+// 使用 Vuex Store
+const store = useStore();
+
+// 取得預設設定
+const defaultSettingProps = ref(store.getters["analysis_setting/getDefaultSettingProps"]);
+
+// 取得目前選擇的產品
+const currentSelectProduct = ref({
+  label: defaultSettingProps.value.productLabel,
+  val: defaultSettingProps.value.product
+});
+
+// 取得目前選擇的儀器
+const currentSelectInstrument = ref({
+  label: defaultSettingProps.value.instrumentLabel,
+  val: defaultSettingProps.value.instrument
+});
+
+// 取得目前選擇的試劑
+const currentSelectReagent = ref({
+  label: defaultSettingProps.value.reagentLabel,
+  val: defaultSettingProps.value.reagent
+});
 
 /* 顯示 import 檔案的選項 */
 const importArray = [
@@ -126,29 +155,100 @@ const inputArray = [
   { label: "NOTCH3", val: "notch3" },
 ];
 
-// 處理下拉式選單的選擇, 改變產品時觸發
-const handleProductChange = (n) => {
+/* 更新目前顯示的下拉式選單 */
+const updateCurrentSelects = () => {
+  // 取得新的設定
+  const newSettingProps = ref(store.getters["analysis_setting/getSettingProps"]);
 
-  // 取得預設的儀器和試劑
-  const defaultInstrument = instrumentArray(n.val)[0];
-  const defaultReagent = reagentArray(n.val, defaultInstrument.val)[0];
+  // 更新目前選擇的儀器和試劑
+  currentSelectProduct.value = {
+    label: newSettingProps.value.productLabel,
+    val: newSettingProps.value.product
+  };
+  currentSelectInstrument.value = {
+    label: newSettingProps.value.instrumentLabel,
+    val: newSettingProps.value.instrument
+  };
+  currentSelectReagent.value = {
+    label: newSettingProps.value.reagentLabel,
+    val: newSettingProps.value.reagent
+  };
+}
+
+// 更新 settingProps
+const updateSettingProps = (update_target_list, new_settings) => {
+
+  // 取得新的設定 (預設為當前)
+  let new_product = currentSelectProduct.value;
+  let new_instrument = currentSelectInstrument.value;
+  let new_reagent = currentSelectReagent.value;
+
+  // 更新新的設定
+  if (update_target_list.includes('product')) {
+    new_product = new_settings.product;
+  }
+  if (update_target_list.includes('instrument')) {
+    new_instrument = new_settings.instrument;
+  }
+  if (update_target_list.includes('reagent')) {
+    new_reagent = new_settings.reagent;
+  }
 
   // 將選擇的產品、儀器、試劑更新到 store 中
-  $store.commit("data/updateSettingProps", {
-    product: n.val,
-    instrument: defaultInstrument.val,
-    reagent: defaultReagent.val,
-    instrumentLabel: defaultInstrument.label,
-    productLabel: n.label,
-    reagentLabel: defaultReagent.label,
+  store.commit("analysis_setting/updateSettingProps", {
+    product: new_product.val,
+    instrument: new_instrument.val,
+    reagent: new_reagent.val,
+    instrumentLabel: new_instrument.label,
+    productLabel: new_product.label,
+    reagentLabel: new_reagent.label,
   });
 
-  // initiate data layer when change to input results
-  const inputValArray = inputArray.map(i => i.val);
-  if (inputValArray.includes(n.val)) {
-    $store.commit("data/initDataLayer");
-  }
+  // 更新目前顯示的下拉式選單
+  updateCurrentSelects();
+}
+
+/* 處理下拉式選單的選擇, 改變產品時觸發 */
+const handleProductChange = (new_product) => {
+
+  // 取得新的儀器
+  const new_instrument = instrumentArray(new_product.val)[0];
+
+  // 取得新的試劑
+  const new_reagent = reagentArray(new_product.val, new_instrument.val)[0];
+
+  // 更新 settingProps
+  const update_targets = ['product', 'instrument', 'reagent'];
+  const new_settings = {
+    product: new_product,
+    instrument: new_instrument,
+    reagent: new_reagent,
+  };
+  updateSettingProps(update_targets, new_settings);
 };
+
+/* 處理儀器選擇的選項 */
+const handleInstrumentChange = (new_instrument) => {
+
+  // Get new reagent
+  const new_reagent = reagentArray(currentSelectProduct.value.val, new_instrument.val)[0];
+
+  // update target
+  const update_targets = ['instrument', 'reagent'];
+  const new_settings = {
+    instrument: new_instrument,
+    reagent: new_reagent,
+  };
+  updateSettingProps(update_targets, new_settings);
+};
+
+/* 處理試劑選擇的選項 */
+const handleReagentChange = (new_reagent) => {
+  // update target
+  const update_targets = ['reagent'];
+  const new_settings = { reagent: new_reagent };
+  updateSettingProps(update_targets, new_settings);
+}
 
 /* 顯示儀器選擇的選項 */
 const instrumentArray = (product) => {
@@ -241,5 +341,11 @@ const reagentArray = (product, instrument) => {
     ]
   }
 };
+
+/* 掛載時 */
+onMounted(() => {
+  // 更新目前顯示的下拉式選單
+  updateCurrentSelects();
+});
 
 </script>

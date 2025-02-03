@@ -108,7 +108,7 @@ const disable_edit = ref(!props.organization_info.editable);
 const warning_dialog = ref(false);
 
 // 發送事件
-const emit = defineEmits(['delete_organization']);
+const emit = defineEmits(['delete_organization', 'update_firestore_organization']);
 
 // 修改組織名稱
 function edit_organization() {

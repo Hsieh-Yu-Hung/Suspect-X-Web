@@ -1,4 +1,4 @@
-# 引入 config_admin 設定好的 storage bucket
+# 引入模組
 from datetime import datetime
 import logging
 import os

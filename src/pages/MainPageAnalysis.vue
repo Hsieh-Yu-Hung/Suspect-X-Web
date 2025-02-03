@@ -1,19 +1,32 @@
 <template>
   <q-page>
+
+    <!-- 設定面板 -->
     <div class="row justify-between q-mt-lg q-mx-xl">
       <div class="col">
         <AnalysisSettings></AnalysisSettings>
       </div>
     </div>
+
+    <!-- 輸入面板 -->
+    <div class="row justify-between q-mt-lg q-mx-xl">
+      <div class="col " v-if="currentProduct() == 'apoe-import'">
+        <ImportApoe class="q-ma-none" />
+      </div>
+    </div>
+
   </q-page>
 </template>
 
 <script setup>
 /* Import modules */
-import { onMounted } from 'vue';
+import { ref, onMounted } from 'vue';
 import { useQuasar } from 'quasar';
 import { useRouter } from 'vue-router';
 import { useStore } from 'vuex';
+
+//
+import ImportApoe from '@/components/ImportViews/ImportApoe.vue';
 
 // 導入模組 composable
 import { useValidateAccountStatus } from '@/composables/accessStoreUserInfo.js';
@@ -25,6 +38,11 @@ import AnalysisSettings from '@/components/AnalysisSettings.vue';
 const $q = useQuasar();
 const router = useRouter();
 const store = useStore();
+
+// 取得 settingProps
+const currentProduct = () => {
+  return store.getters["analysis_setting/getSettingProps"].product;
+};
 
 // 掛載時
 onMounted(() => {
