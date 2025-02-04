@@ -85,6 +85,7 @@
 import { ref, watch, onMounted } from "vue";
 import { useQuasar, QSpinnerFacebook } from 'quasar';
 import { useStore } from 'vuex';
+import { useRouter } from 'vue-router';
 import { v4 as uuidv4 } from 'uuid';
 
 // 元件
@@ -95,6 +96,7 @@ import { upload_files_to_storage } from '@/utility/storageManager';
 import { updateGetUserInfo } from '@/composables/accessStoreUserInfo';
 import { submitWorkflow } from '@/composables/submitWorkflow';
 import { CATEGORY_LIST } from '@/utility/storageManager';
+import { setAnalysisID } from '@/composables/checkAnalysisStatus';
 
 // logger
 import logger from '@/utility/logger';
@@ -102,6 +104,7 @@ import logger from '@/utility/logger';
 // consts
 const $q = useQuasar();
 const store = useStore();
+const router = useRouter();
 
 // 控制警告視窗
 const dialog_error_message = ref("");
@@ -121,24 +124,6 @@ const currentAnalysisID = ref(null);
 
 // 保存上傳紀錄供檢查不同
 const sampleUploaded = ref(null);
-
-// 掛載時
-onMounted(() => {
-  // 取得使用者身份
-  const { login_status } = updateGetUserInfo();
-  is_login.value = login_status.value.is_login;
-  user_info.value = login_status.value.user_info;
-
-  // 先嘗試取得當前的分析 ID, 如果沒有則建立新的分析 ID
-  currentAnalysisID.value = store.getters['analysis_setting/getCurrentAnalysisID'];
-  if (currentAnalysisID.value.analysis_uuid == null) {
-    const new_id = `analysis_${uuidv4()}`;
-    store.commit('analysis_setting/updateCurrentAnalysisID', {
-      analysis_name: "APOE",
-      analysis_uuid: new_id,
-    });
-  }
-});
 
 /* functions */
 
@@ -181,6 +166,22 @@ async function onSubmit() {
 
     // 印出 analysisResult, 從這裡繼續
     console.log("analysisResult",analysisResult.result);
+
+    // 更新 currentAnalysisID
+    const new_id = `analysis_${uuidv4()}`;
+    store.commit('analysis_setting/updateCurrentAnalysisID', {
+      analysis_name: "APOE",
+      analysis_uuid: new_id,
+    });
+    currentAnalysisID.value = store.getters['analysis_setting/getCurrentAnalysisID'];
+
+    // *. 隱藏 loading 視窗
+    $q.loading.hide();
+
+    // 跳轉到分析結果頁面
+    router.push({
+      path: '/page-preview',
+    });
   }
   else if (analysisResult.status == 'error'){
     // 通知
@@ -194,18 +195,10 @@ async function onSubmit() {
     // 跳出警告視窗
     dialog_error_message.value = analysisResult.message;
     warning_dialog.value.open_warning_dialog();
+
+    // *. 隱藏 loading 視窗
+    $q.loading.hide();
   }
-
-  // 更新 currentAnalysisID
-  const new_id = `analysis_${uuidv4()}`;
-  store.commit('analysis_setting/updateCurrentAnalysisID', {
-    analysis_name: "APOE",
-    analysis_uuid: new_id,
-  });
-  currentAnalysisID.value = store.getters['analysis_setting/getCurrentAnalysisID'];
-
-  // *. 隱藏 loading 視窗
-  $q.loading.hide();
 }
 
 // Get type information from filename
@@ -327,6 +320,18 @@ function addSampleFileInput(idx) {
 function removeSampleFileInput(idx) {
   sampleFile.value.splice(idx, 1);
 }
+
+// 掛載時
+onMounted(() => {
+  // 取得使用者身份
+  const { login_status } = updateGetUserInfo();
+  is_login.value = login_status.value.is_login;
+  user_info.value = login_status.value.user_info;
+
+  // 先嘗試取得當前的分析 ID, 如果沒有則建立新的分析 ID
+  currentAnalysisID.value = store.getters['analysis_setting/getCurrentAnalysisID'];
+  setAnalysisID(store, 'APOE');
+});
 
 // 監聽 Control1File 的變化上傳檔案
 watch(control1File, async (newVal, oldVal) => {

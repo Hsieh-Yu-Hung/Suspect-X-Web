@@ -9,6 +9,9 @@ const CATEGORY_LIST = {
   tmp: 'tmp',
   apoe_import: 'apoe_import',
   mthfr_import: 'mthfr_import',
+  nudt15_import: 'nudt15_import',
+  fx_import: 'fx_import',
+  htd_import: 'htd_import',
 }
 
 export { CATEGORY_LIST };
@@ -42,6 +45,7 @@ export async function upload_files_to_storage(file, user_id=null, category=CATEG
       execute_result.status = response.status;
       execute_result.storage_path = response.storage_path;
       execute_result.message = response.message;
+      execute_result.file = file.name;
     });
   } else {
     execute_result.status = 'error';

@@ -24,9 +24,10 @@ export async function useCheckFileFormat(file_path, file_type) {
   if (res.status === 'success' && res.check_result !== undefined) {
     response.status = 'success';
     response.message = res.message;
-    response.data = {check_result: res.check_result, check_status: res.check_status, file_path: file_path};
+    response.data = {check_result: res.check_result, check_status: res.check_status, file_path: file_path, check_type: res.check_type};
     logger.debug(`
       ${file_path} check file format,
+      check_type: ${res.check_type},
       status: ${response.status},
       message: ${response.message},
       check_result: ${response.data.check_result},
@@ -37,6 +38,7 @@ export async function useCheckFileFormat(file_path, file_type) {
     response.message = res.message;
     logger.error(`
       ${file_path} check file format,
+      check_type: ${res.check_type},
       status: ${response.status},
       message: ${response.message}
       `);

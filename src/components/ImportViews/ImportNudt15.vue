@@ -15,7 +15,7 @@ import { setAnalysisID } from '@/composables/checkAnalysisStatus';
 import ImportQPCRTmpl from '@/components/ImportqPCRViews/ImportQPCRTmpl.vue';
 
 // consts
-const analysis_name = 'MTHFR';
+const analysis_name = 'NUDT15';
 const ref_import_qpcr_tmpl = ref(null);
 
 // store
@@ -37,7 +37,7 @@ onMounted(() => {
 
   // 先嘗試取得當前的分析 ID, 如果沒有則建立新的分析 ID
   currentAnalysisID.value = store.getters['analysis_setting/getCurrentAnalysisID'];
-  setAnalysisID(store, 'MTHFR');
+  setAnalysisID(store, 'NUDT15');
 });
 
 </script>

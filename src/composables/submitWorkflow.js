@@ -9,7 +9,10 @@ import { RunAnalysis } from '@/firebase/firebaseFunction';
 function getCheckType(AnalysisName, currentSettingProps) {
   const Matrix = {
     'APOE': 'qsep100',
-    'MTHFR': currentSettingProps.instrument
+    'MTHFR': currentSettingProps.instrument,
+    'NUDT15': currentSettingProps.instrument,
+    'FXS': 'qsep100',
+    'HTD': 'qsep100'
   }
   const check_type = AnalysisName in Matrix ? Matrix[AnalysisName] : null;
   return check_type;

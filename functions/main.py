@@ -105,15 +105,15 @@ def check_file_format(req: https_fn.Request):
             message = "Check file format success"
 
         # 回傳 response
-        response_data = {"data": {"status": "success", "check_result": check_result, "message": message, "check_status": check_status}}
+        response_data = {"data": {"status": "success", "check_type": file_format, "check_result": check_result, "message": message, "check_status": check_status}}
 
     except Exception as e:
-        response_data = {"data": {"status": "error", "message": str(e)}}
+        response_data = {"data": {"status": "error", "check_type": file_format, "message": str(e)}}
 
     # 回傳 response
     return https_fn.Response(json.dumps(response_data), content_type="application/json")
 
-# 測試
+# 執行 Nucleus 分析
 @https_fn.on_request(region="asia-east1", cors=options.CorsOptions(cors_origins="*", cors_methods=["get", "post"]))
 def RunAnalysis(req: https_fn.Request):
 
@@ -141,6 +141,12 @@ def RunAnalysis(req: https_fn.Request):
             result = core.runApoe(analysis_input_data)
         elif analysis_name == "MTHFR":
             result = core.runMthfr(analysis_input_data)
+        elif analysis_name == "NUDT15":
+            result = core.runNudt15(analysis_input_data)
+        elif analysis_name == "FXS":
+            result = core.runFxs(analysis_input_data)
+        elif analysis_name == "HTD":
+            result = core.runHtd(analysis_input_data)
 
         # 回傳 response
         response_data = {"data": {"status": "success", "message": "Analysis finished", "result": result}}
