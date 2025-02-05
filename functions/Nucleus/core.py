@@ -4,6 +4,7 @@ from .mthfr import MTHFR
 from .nudt15 import NUDT15
 from .fxs import FXS
 from .htd import HTD
+from .sma import SMA
 
 # Nucleus 控制核心
 class Core:
@@ -24,3 +25,6 @@ class Core:
 
     def runHtd(self, input_data):
         return HTD(input_data)
+
+    def runSma(self, input_data):
+        return SMA(input_data)

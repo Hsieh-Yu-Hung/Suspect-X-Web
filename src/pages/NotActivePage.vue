@@ -43,7 +43,7 @@ onMounted(() => {
   } else {
     // 如果已登入且已開通則跳轉到 import page
     if (login_status.value.user_info.account_approved === true) {
-      router.push('/page-preview');
+      router.push('/page-analysis');
     }
   }
 });

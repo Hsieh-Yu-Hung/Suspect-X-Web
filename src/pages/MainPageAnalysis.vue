@@ -36,6 +36,11 @@
         <ImportHTD class="q-ma-none" />
       </div>
 
+      <!-- SMA -->
+      <div class="col " v-else-if="currentProduct() == 'sma'">
+        <ImportSMA class="q-ma-none" />
+      </div>
+
     </div>
 
   </q-page>
@@ -43,7 +48,7 @@
 
 <script setup>
 /* Import modules */
-import { ref, onMounted, watch } from 'vue';
+import { onMounted, watch } from 'vue';
 import { useQuasar } from 'quasar';
 import { useRouter } from 'vue-router';
 import { useStore } from 'vuex';
@@ -55,6 +60,7 @@ import ImportMthfr from '@/components/ImportViews/ImportMthfr.vue';
 import ImportNudt15 from '@/components/ImportViews/ImportNudt15.vue';
 import ImportFXS from '@/components/ImportViews/ImportFXS.vue';
 import ImportHTD from '@/components/ImportViews/ImportHTD.vue';
+import ImportSMA from '@/components/ImportViews/ImportSMA.vue';
 
 // 導入模組 composable
 import { useValidateAccountStatus } from '@/composables/accessStoreUserInfo.js';
@@ -72,20 +78,10 @@ const currentProduct = () => {
   return store.getters["analysis_setting/getSettingProps"].product;
 };
 
-// 取得 settingProps, 當前試劑
-const currentReagent = () => {
-  return store.getters["analysis_setting/getSettingProps"].reagent;
-};
-
-// 取得 settingProps: instrument
-const currentInstrument = () => {
-  return store.getters["analysis_setting/getSettingProps"].instrument;
-};
-
 // 掛載時
 onMounted(() => {
   // 檢查帳號狀態, 若未開通則跳轉到 not-active
-  // useValidateAccountStatus($q, router, store);
+  useValidateAccountStatus($q, router, store);
 });
 
 // 監聽 Product

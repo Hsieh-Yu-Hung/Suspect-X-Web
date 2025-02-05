@@ -82,6 +82,7 @@ import { setAnalysisID } from '@/composables/checkAnalysisStatus';
 
 // 元件
 import WarningDialog from '@/components/WarningDialog.vue';
+import logger from '@/utility/logger';
 
 // 導入 store, Quasar
 const store = useStore();

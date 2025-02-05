@@ -23,6 +23,7 @@
 
         <!-- qPCRImportSection -->
         <qPCRImportSection
+          :std_control_number="2"
           @update_dialog_error_message="updateDialogErrorMessage"
           @update_result_files="updateFiles"
           @update_wells="updateWells"
@@ -42,10 +43,10 @@
 <script setup>
 // 導入模組
 import { ref, onMounted, watch } from 'vue';
-import { useRouter } from 'vue-router';
 import { useQuasar, QSpinnerFacebook } from 'quasar';
-import { v4 as uuidv4 } from 'uuid';
 import { useStore } from 'vuex';
+import { useRouter } from 'vue-router';
+import { v4 as uuidv4 } from 'uuid';
 
 // 導入 composable
 import { setAnalysisID } from '@/composables/checkAnalysisStatus';
@@ -56,18 +57,18 @@ import { submitWorkflow } from '@/composables/submitWorkflow';
 import WarningDialog from '@/components/WarningDialog.vue';
 import qPCRImportSection from '@/components/ImportqPCRViews/qPCRImportSection.vue';
 
-// 取得 Quasar 和 store
+// 取得 quasar, store, router
 const $q = useQuasar();
 const store = useStore();
 const router = useRouter();
 
-// 使用者身份
-const is_login = ref(false);
-const user_info = ref(null);
-
 // 控制警告視窗
 const dialog_error_message = ref("");
 const warning_dialog = ref(null);
+
+// 使用者身份
+const is_login = ref(false);
+const user_info = ref(null);
 
 // 當前的分析 ID
 const currentAnalysisID = ref(null);
@@ -79,32 +80,11 @@ const ref_qPCRImportSection = ref(null);
 const resultFile = ref(null);
 const famFile = ref(null);
 const vicFile = ref(null);
+const cy5File = ref(null);
 const Ctrlwell = ref(null);
 const NTCwell = ref(null);
 
-// props
-const props = defineProps({
-  analysis_name: {
-    type: String,
-    required: true,
-  },
-});
-
-// 取得 instrument 和 reagent
-const getCurrentInstrument = () => {
-  return store.getters["analysis_setting/getSettingProps"].instrument;
-}
-
 // Functions
-
-// 初始化 inputss
-function initInputs() {
-  resultFile.value = null;
-  famFile.value = null;
-  vicFile.value = null;
-  Ctrlwell.value = null;
-  NTCwell.value = null;
-}
 
 // 送出按鈕
 async function onSubmit() {
@@ -122,6 +102,7 @@ async function onSubmit() {
   if (resultFile.value) checkList.push(resultFile.value);
   if (famFile.value) checkList.push(famFile.value);
   if (vicFile.value) checkList.push(vicFile.value);
+  if (cy5File.value) checkList.push(cy5File.value);
 
   // 取得 inputData
   const InputData = {
@@ -130,13 +111,14 @@ async function onSubmit() {
     ntc_well: NTCwell.value,
     FAM_file_path: famFile.value ? famFile.value.path : null,
     VIC_file_path: vicFile.value ? vicFile.value.path : null,
+    CY5_file_path: cy5File.value ? cy5File.value.path : null,
   }
 
   // 取得 settingProps
   const currentSettingProps = store.getters["analysis_setting/getSettingProps"];
 
   // 執行 submitWorkflow
-  const analysisResult = await submitWorkflow(checkList, props.analysis_name, InputData, user_info.value, currentSettingProps);
+  const analysisResult = await submitWorkflow(checkList, 'SMA', InputData, user_info.value, currentSettingProps);
 
   // 檢查有沒有出錯
   if (analysisResult.status == 'success'){
@@ -148,7 +130,7 @@ async function onSubmit() {
     // 更新 currentAnalysisID
     const new_id = `analysis_${uuidv4()}`;
     store.commit('analysis_setting/updateCurrentAnalysisID', {
-      analysis_name: props.analysis_name,
+      analysis_name: 'SMA',
       analysis_uuid: new_id,
     });
     currentAnalysisID.value = store.getters['analysis_setting/getCurrentAnalysisID'];
@@ -196,6 +178,9 @@ function updateFiles(file_type) {
   else if (file_type == 'vicFile') {
     vicFile.value = ref_qPCRImportSection.value.vicFile;
   }
+  else if (file_type == 'cy5File') {
+    cy5File.value = ref_qPCRImportSection.value.cy5File;
+  }
 }
 
 // 更新 wells
@@ -208,6 +193,16 @@ function updateWells(well_type) {
   }
 }
 
+// 初始化 inputss
+function initInputs() {
+  resultFile.value = null;
+  famFile.value = null;
+  vicFile.value = null;
+  cy5File.value = null;
+  Ctrlwell.value = null;
+  NTCwell.value = null;
+}
+
 // 掛載時
 onMounted(() => {
   // 取得使用者身份
@@ -217,15 +212,9 @@ onMounted(() => {
 
   // 先嘗試取得當前的分析 ID, 如果沒有則建立新的分析 ID
   currentAnalysisID.value = store.getters['analysis_setting/getCurrentAnalysisID'];
-  setAnalysisID(store, props.analysis_name);
+  setAnalysisID(store, 'SMA');
 
   // 初始化 inputss
-  initInputs();
-});
-
-// 監聽 instrument
-watch(getCurrentInstrument, () => {
-  // 當 instrument 改變時, 初始化 inputss
   initInputs();
 });
 

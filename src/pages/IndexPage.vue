@@ -68,10 +68,10 @@ const main = async () => {
       position: 'top',
       timeout: 500
     });
-    // 跳轉至 page-preview, 若未開通則到 not-active
+    // 跳轉至 page-analysis, 若未開通則到 not-active
     setTimeout(() => {
       if(user_account_active){
-        router.push('/page-preview');
+        router.push('/page-analysis');
       } else {
         router.push('/page-not-active');
       }
@@ -124,10 +124,7 @@ const check_user_exist = async (user_email) => {
 /* onMounted */
 onMounted(() => {
   // 執行主函式
-  // main();
-
-  // Debug
-  router.push('/page-analysis');
+  main();
 });
 
 </script>

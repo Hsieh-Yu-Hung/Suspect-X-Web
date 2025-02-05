@@ -29,10 +29,10 @@ else:
 def upload_logs(bucket, log_dir: str = "logs/"):
     logs = os.listdir(log_dir)
     for log in logs:
-        local = os.path.join(log_dir, log)
-        remote = os.path.join("logs/", log)
-        blob = bucket.blob(remote)
-        blob.upload_from_filename(local)
+      local = os.path.join(log_dir, log)
+      remote = os.path.join("logs/", log)
+      blob = bucket.blob(remote)
+      blob.upload_from_filename(local)
 
 class Logger:
     def __init__(self, bucket):
@@ -40,16 +40,15 @@ class Logger:
 
     def info(self, message):
         logging.info(message)
-        upload_logs(self.bucket)
 
     def debug(self, message):
         logging.debug(message)
-        upload_logs(self.bucket)
 
     def error(self, message):
         logging.error(message)
-        upload_logs(self.bucket)
 
     def warn(self, message):
         logging.warn(message)
+
+    def upload_logs_to_storage(self):
         upload_logs(self.bucket)

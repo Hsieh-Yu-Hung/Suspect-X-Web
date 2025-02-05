@@ -5,7 +5,7 @@
 #     return https_fn.Response(json.dumps(response_data), content_type="application/json")
 
 # 引入 Firebase 函數庫
-from firebase_functions import https_fn, options
+from firebase_functions import https_fn, options, scheduler_fn
 
 # 引入 config_admin
 from config_admin import bucket
@@ -59,12 +59,58 @@ def saveLogs(req: https_fn.Request):
     # 回傳 response
     return https_fn.Response(json.dumps(response_data), content_type="application/json")
 
+# 上傳日誌：呼叫觸發
+@https_fn.on_request(region="asia-east1", cors=options.CorsOptions(cors_origins="*", cors_methods=["get", "post"]))
+def uploadLogs(req: https_fn.Request):
+
+    # 回傳 message
+    response_data = {"data": {"status": "pending", "message": "Waiting to upload logs..."}}
+
+    try:
+
+      # 實體化 Logger
+      logger = Logger(bucket)
+
+      # 上傳日誌
+      logger.upload_logs_to_storage()
+
+      # 回傳 message
+      response_data = {"data": {"status": "success", "message": "Successfully upload logs!"}}
+
+    except Exception as e:
+        response_data = {"data": {"status": "error", "message": str(e)}}
+
+    # 回傳 response
+    return https_fn.Response(json.dumps(response_data), content_type="application/json")
+
+# 上傳日誌：定時觸發
+@scheduler_fn.on_schedule(region="asia-east1", schedule="every day 00:00", timezone="Asia/Taipei")
+def ScheduleUploadLogs(event: scheduler_fn.ScheduledEvent) -> None:
+    try:
+
+      # 實體化 Logger
+      logger = Logger(bucket)
+
+      logger.debug("Schedule upload logs on schedule!")
+
+      # 上傳日誌
+      logger.upload_logs_to_storage()
+
+      # 回傳 message
+      print("Successfully upload logs on schedule!")
+
+    except Exception as e:
+        print("Failed to upload logs on schedule: " + str(e))
+
 # 檢查 input 檔案格式
 @https_fn.on_request(region="asia-east1", cors=options.CorsOptions(cors_origins="*", cors_methods=["get", "post"]))
 def check_file_format(req: https_fn.Request):
 
     # 回傳 message
     response_data = {"data": {"status": "pending", "message": "Waiting to check file format..."}}
+
+    # 初始化 file_format
+    file_format = ''
 
     try:
         # 實體化 FileFormatChecker
@@ -147,6 +193,8 @@ def RunAnalysis(req: https_fn.Request):
             result = core.runFxs(analysis_input_data)
         elif analysis_name == "HTD":
             result = core.runHtd(analysis_input_data)
+        elif analysis_name == "SMA":
+            result = core.runSma(analysis_input_data)
 
         # 回傳 response
         response_data = {"data": {"status": "success", "message": "Analysis finished", "result": result}}
@@ -155,3 +203,4 @@ def RunAnalysis(req: https_fn.Request):
         response_data = {"data": {"status": "error", "message": str(e)}}
 
     return https_fn.Response(json.dumps(response_data), content_type="application/json")
+

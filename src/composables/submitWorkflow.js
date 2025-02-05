@@ -12,7 +12,8 @@ function getCheckType(AnalysisName, currentSettingProps) {
     'MTHFR': currentSettingProps.instrument,
     'NUDT15': currentSettingProps.instrument,
     'FXS': 'qsep100',
-    'HTD': 'qsep100'
+    'HTD': 'qsep100',
+    'SMA': currentSettingProps.instrument
   }
   const check_type = AnalysisName in Matrix ? Matrix[AnalysisName] : null;
   return check_type;

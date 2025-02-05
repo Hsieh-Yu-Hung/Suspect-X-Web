@@ -36,6 +36,24 @@
     </q-file>
   </div>
 
+  <!-- CY5 file -->
+  <div class="q-gutter-sm" v-if="getCurrentInstrument() == 'z480' && getCurrentReagent() == 'accuinSma3'">
+    <q-file
+      v-model="cy5File"
+      use-chips
+      color="deep-orange-6"
+      stack-label
+      label="CY5 (610-670) result .txt file"
+      :rules="[(val) => val || `Please select CY5 result txt file`]"
+      accept=".txt"
+      lazy-rules
+    >
+      <template v-slot:before>
+        <q-icon name="mdi-text-box-outline" />
+      </template>
+    </q-file>
+  </div>
+
   <!-- 上傳檔案 -->
   <div class="q-gutter-sm" v-if="getCurrentInstrument() != 'z480'">
     <q-file
@@ -69,17 +87,18 @@
   </div>
 
   <!-- 96-well plate positions Select: Control -->
-  <div class="row">
+  <div class="row" v-for="(ctrlwell, index) in Ctrlwells" :key="index">
     <div class="col">
       <q-select
-        v-model="Ctrlwell.X"
+        v-model="ctrlwell.X"
         :options="wellXArray"
         color="deep-orange-6"
         options-dense
         stack-label
-        label="Control"
-        :rules="[(val) => WELL(val, Ctrlwell.Y) || `Please select row of Control`]"
+        :label="props.std_control_number > 1 ? `Standard ${index + 1}` : 'Control'"
+        :rules="[(val) => WELL(val, ctrlwell.Y) || `Please select row of Control`]"
         reactive-rules
+        @update:modelValue="updateCtrlwells(ctrlwell.X, index, 'X')"
       >
         <template v-slot:before>
           <q-icon name="" />
@@ -88,13 +107,14 @@
     </div>
     <div class="col">
       <q-select
-        v-model="Ctrlwell.Y"
+        v-model="ctrlwell.Y"
         :options="wellYArray"
         color="deep-orange-6"
         options-dense
         label=""
-        :rules="[(val) => WELL(Ctrlwell.X, val) || `Please select column of Control`]"
+        :rules="[(val) => WELL(ctrlwell.X, val) || `Please select column of Control`]"
         reactive-rules
+        @update:modelValue="updateCtrlwells(ctrlwell.Y, index, 'Y')"
       >
       </q-select>
     </div>
@@ -151,6 +171,15 @@ const WELL = (setX = null, setY = null) => {
   return { X: setX, Y: setY };
 }
 
+// Props
+const props = defineProps({
+  std_control_number: {
+    type: Number,
+    required: false,
+    default: 1,
+  },
+});
+
 // Emit
 const emit = defineEmits(['update_dialog_error_message', 'update_result_files', 'update_wells']);
 
@@ -158,7 +187,8 @@ const emit = defineEmits(['update_dialog_error_message', 'update_result_files', 
 const resultFile = ref(null);
 const famFile = ref(null);
 const vicFile = ref(null);
-const Ctrlwell = ref(WELL());
+const cy5File = ref(null);
+const Ctrlwells = ref([]);
 const NTCwell = ref(WELL());
 
 // 使用者身份
@@ -173,6 +203,7 @@ const wellYArray = ref(['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11',
 const categoryMatrix = {
   'MTHFR': CATEGORY_LIST.mthfr_import,
   'NUDT15': CATEGORY_LIST.nudt15_import,
+  'SMA': CATEGORY_LIST.sma_import,
 }
 
 // Expose
@@ -180,7 +211,8 @@ defineExpose({
   resultFile: resultFile,
   famFile: famFile,
   vicFile: vicFile,
-  Ctrlwell: Ctrlwell,
+  cy5File: cy5File,
+  Ctrlwells: Ctrlwells,
   NTCwell: NTCwell,
 });
 
@@ -189,6 +221,16 @@ defineExpose({
 // 取得 settingProps: instrument
 function getCurrentInstrument() {
   return store.getters["analysis_setting/getSettingProps"].instrument;
+}
+
+// 取得 settingProps: instrument
+function getCurrentReagent() {
+  return store.getters["analysis_setting/getSettingProps"].reagent;
+}
+
+// 初始化 Ctrlwells
+function initCtrlwells() {
+  Ctrlwells.value = Array.from({ length: props.std_control_number }, () => ({ X: null, Y: null }));
 }
 
 // 選擇後上傳檔案
@@ -226,14 +268,27 @@ async function uploadFile(file) {
   $q.loading.hide();
 }
 
+// 更新 Ctrlwells
+function updateCtrlwells(newVal, index, type) {
+  if (type === 'X'){
+    Ctrlwells.value[index].X = newVal;
+  }
+  else if (type === 'Y'){
+    Ctrlwells.value[index].Y = newVal;
+  }
+  emit('update_wells', 'Ctrlwells');
+}
+
 // 監聽 instrument
 watch(getCurrentInstrument, () => {
   // 如果儀器改變, 則清空 resultFile
   resultFile.value = null;
   famFile.value = null;
   vicFile.value = null;
-  Ctrlwell.value.X = null;
-  Ctrlwell.value.Y = null;
+  Ctrlwells.value.forEach(well => {
+    well.X = null;
+    well.Y = null;
+  });
   NTCwell.value.X = null;
   NTCwell.value.Y = null;
 });
@@ -262,10 +317,13 @@ watch(vicFile, async(newVal, oldVal) => {
   }
 });
 
-// 監聽 Ctrlwell
-watch(Ctrlwell.value, async() => {
-  emit('update_wells', 'Ctrlwell');
-}, {deep: true});
+// 監聽 cy5File
+watch(cy5File, async(newVal, oldVal) => {
+  if (newVal !== oldVal){
+    await uploadFile(cy5File.value);
+    emit('update_result_files', 'cy5File');
+  }
+});
 
 // 監聽 NTCwell
 watch(NTCwell.value, async() => {
@@ -278,6 +336,9 @@ onMounted(() => {
   const { login_status } = updateGetUserInfo();
   is_login.value = login_status.value.is_login;
   user_info.value = login_status.value.user_info;
+
+  // 初始化 Ctrlwells
+  initCtrlwells();
 });
 
 </script>

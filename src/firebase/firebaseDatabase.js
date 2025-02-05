@@ -19,6 +19,7 @@ export const dataset_list = {
   email_list: 'email_list',
   software_version_list: 'software_version_list',
   organization_list: 'organization_list',
+  user_analysis: 'user_analysis',
 };
 
 // 定義 USER_INFO
@@ -377,5 +378,18 @@ export const update_userData = async (new_user_data, user_id) => {
     }
   }).catch((error) => {
     logger.error(`Update user data failed, ID: ${user_id}, Error: ${error}`);
+  });
+}
+
+// 更新使用者分析資料
+export const update_userAnalysisData = async (user_id, subDir, data, name) => {
+  const dataset = dataset_list.user_analysis;
+  const docRef = doc(collection(database, `${dataset}/${user_id}/${subDir}`), name);
+  await setDoc(docRef, data)
+  .then(() => {
+    logger.debug(`Update user analysis data success, ID: ${user_id}/${subDir}`);
+  })
+  .catch((error) => {
+    logger.error(`Update user analysis data failed, ID: ${user_id}/${subDir}, Error: ${error}`);
   });
 }

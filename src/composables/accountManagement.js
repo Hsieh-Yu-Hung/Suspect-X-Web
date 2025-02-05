@@ -77,7 +77,7 @@ function redirect_page(store, router, $q) {
   $q.loading.show({message: 'Redirecting...'});
   setTimeout(() => {
     if(user_account_active){
-      router.push('/page-preview');
+      router.push('/page-analysis');
     } else {
       router.push('/page-not-active');
     }

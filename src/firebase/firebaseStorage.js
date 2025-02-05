@@ -6,7 +6,7 @@ import { getStorage, ref, uploadBytesResumable, getDownloadURL, listAll } from "
 const storage = getStorage(app);
 
 // 分析 Data 存放區
-const PATH_OF_DATA = 'data';
+const PATH_OF_DATA = 'analysis_data';
 
 // 上傳檔案到 Storage (接受 input 檔案, 放到使用者的 firebase storage 中)
 export const uploadFileToStorage = async (file, upload_path) => {

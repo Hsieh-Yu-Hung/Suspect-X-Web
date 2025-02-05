@@ -12,6 +12,7 @@ const CATEGORY_LIST = {
   nudt15_import: 'nudt15_import',
   fx_import: 'fx_import',
   htd_import: 'htd_import',
+  sma_import: 'sma_import',
 }
 
 export { CATEGORY_LIST };

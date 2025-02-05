@@ -10,6 +10,9 @@ export const Functions = functions;
 // 呼叫 saveLoggers
 const saveLoggers = httpsCallable(functions, 'saveLogs');
 
+// 呼叫 uploadLogs
+const uploadLogs = httpsCallable(functions, 'uploadLogs');
+
 // 呼叫 checkFileFormat
 const checkFileFormat = httpsCallable(functions, 'check_file_format');
 
@@ -21,5 +24,6 @@ export {
   saveLoggers,
   checkFileFormat,
   RunAnalysis,
+  uploadLogs,
 };
 
