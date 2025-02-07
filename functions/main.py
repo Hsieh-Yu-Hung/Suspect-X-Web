@@ -7,10 +7,8 @@
 # 引入 Firebase 函數庫
 from firebase_functions import https_fn, options, scheduler_fn
 
-# 引入 config_admin
+# 引入自製模組
 from config_admin import bucket
-
-# 引入 saveLogs
 from saveLogs import Logger
 
 # 引入 check_file_format

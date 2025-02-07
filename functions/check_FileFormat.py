@@ -1,6 +1,7 @@
 import pandas as pd
 from dataclasses import dataclass
 import os
+import warnings
 
 # Local 存放檔案位置
 LOCAL_DATA_PATH = "data/"
@@ -112,8 +113,10 @@ class FileFormatChecker:
       if not excel_file_ok:
           return False
       else:
-          # 檢查內容
-          df = pd.read_excel(downloaded_file_path, sheet_name=target_sheet)
+          # 檢查內容, 抑制 openpyxl's default warning
+          with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            df = pd.read_excel(downloaded_file_path, sheet_name=target_sheet)
 
           # Keyword to check
           keywords = ['No', 'bp', 'RFU']
@@ -213,8 +216,10 @@ class FileFormatChecker:
       if not excel_file_ok:
         return False
       else:
-        # 檢查內容
-        df = pd.read_excel(downloaded_file_path, sheet_name=target_sheet)
+        # 檢查內容, 抑制 openpyxl's default warning
+        with warnings.catch_warnings():
+          warnings.simplefilter("ignore")
+          df = pd.read_excel(downloaded_file_path, sheet_name=target_sheet)
 
         # Keyword to check
         keywords = ['Well Position', 'Sample Name', 'Reporter', 'Ct']

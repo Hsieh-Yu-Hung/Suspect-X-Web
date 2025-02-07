@@ -1,15 +1,17 @@
 <template>
   <!-- 警告視窗 -->
   <q-dialog v-model="show_warning_dialog" persistent>
-    <q-card>
+    <q-card style="width: 1000px;">
       <q-card-section>
-        <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 15px;">
-          <div class="flex flex-row items-center justify-center gap-2">
+        <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 15px; width: 100%;">
+          <div class="flex flex-row items-center justify-center gap-2" style="width: 100%;">
             <q-icon name="warning" color="red" size="lg" />
             <span class="text-h6">發生錯誤</span>
           </div>
-          <p class="text-body1">{{ props.error_message }}</p>
-          <q-btn label="關閉" color="primary" @click="show_warning_dialog = false" />
+          <div style="width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 15px;">
+            <p class="text-body1" style="word-break: break-word; width: 100%;">{{ props.error_message }}</p>
+            <q-btn label="關閉" color="primary" @click="show_warning_dialog = false" />
+          </div>
         </div>
       </q-card-section>
     </q-card>

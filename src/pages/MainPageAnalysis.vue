@@ -11,6 +11,8 @@
     <!-- 輸入面板 -->
     <div class="row justify-between q-mt-lg q-mx-xl">
 
+      <!-- =========================== Imports =========================== -->
+
       <!-- APOE -->
       <div class="col " v-if="currentProduct() == 'apoe-import'">
         <ImportApoe class="q-ma-none" />
@@ -39,6 +41,13 @@
       <!-- SMA -->
       <div class="col " v-else-if="currentProduct() == 'sma'">
         <ImportSMA class="q-ma-none" />
+      </div>
+
+      <!-- =========================== Inputs =========================== -->
+
+      <!-- Thal -->
+      <div class="col " v-else-if="currentProduct() == 'thal'">
+        <span class="text-h6 text-bold">A/B THAL</span>
       </div>
 
     </div>
