@@ -40,13 +40,13 @@ class Range:
 @dataclass
 class RFUObj:
   peak_group: str
-  rfu_value: float
+  rfu_value_ratio: float
   rfu_cutoff: float
   pass_cutoff: bool = True
 
-  # 如果 RFU 小於 cutoff, 則將 peak_group 設為 "Cutoff"
+  # 如果 rfu_value_ratio 小於 cutoff, 則將 peak_group 設為 "Cutoff"
   def CutRFU(self):
-    if self.rfu_value < self.rfu_cutoff:
+    if self.rfu_value_ratio < self.rfu_cutoff:
       self.pass_cutoff = False
 
 # 定義 APOE peak Object
@@ -390,13 +390,13 @@ def RFUAssessment(e2_norm_rfu, e3_norm_rfu, e4_norm_rfu):
 
   # 建立 RFU 列表
   rfuList = [
-    RFUObj(peak_group="E2", rfu_value=e2_norm_rfu, rfu_cutoff=E2_RFU_CUTOFF),
-    RFUObj(peak_group="E3", rfu_value=e3_norm_rfu, rfu_cutoff=E3_RFU_CUTOFF),
-    RFUObj(peak_group="E4", rfu_value=e4_norm_rfu, rfu_cutoff=E4_RFU_CUTOFF)
+    RFUObj(peak_group="E2", rfu_value_ratio=e2_norm_rfu, rfu_cutoff=E2_RFU_CUTOFF),
+    RFUObj(peak_group="E3", rfu_value_ratio=e3_norm_rfu, rfu_cutoff=E3_RFU_CUTOFF),
+    RFUObj(peak_group="E4", rfu_value_ratio=e4_norm_rfu, rfu_cutoff=E4_RFU_CUTOFF)
   ]
 
-  # 依照 RFUObj.rfu_value 由大到小排序
-  rfuList.sort(key=lambda x: x.rfu_value, reverse=True)
+  # 依照 RFUObj.rfu_value_ratio 由大到小排序
+  rfuList.sort(key=lambda x: x.rfu_value_ratio, reverse=True)
 
   # 把第二個 RFUObj 做 RFU Cutoff, 如果沒有通過 Cutoff, 則標記為 False
   rfuList[1].CutRFU()

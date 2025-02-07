@@ -2,6 +2,10 @@
 
 This is web service version of Suspect-X project
 
+### Nucleus (Python)
+
+--> [連結](https://github.com/Hsieh-Yu-Hung/Suspect-X-Web/tree/dev/functions/Nucleus) <--
+
 ### 開發者工具
 
 1. [使用 utility/logger.js 輸出和儲存 logs 檔案](https://github.com/Hsieh-Yu-Hung/Suspect-X-Web/wiki/%E9%81%8B%E8%A1%8C%E4%B8%AD-Log-%E7%94%9F%E6%88%90)
