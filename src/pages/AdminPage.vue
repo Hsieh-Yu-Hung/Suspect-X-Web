@@ -1,6 +1,18 @@
 <template>
   <q-page v-if="displayAdmin" class="flex flex-center">
 
+    <!-- 其他 -->
+    <div style="width: 100%;">
+      <q-card>
+        <q-card-section>
+          <div style="display: flex; flex-direction: row; align-items: center; justify-content: space-between;">
+            <span class="text-h6">其他控制項</span>
+            <q-btn color="primary" label="上傳日誌" @click="callUploadLogs" />
+          </div>
+        </q-card-section>
+      </q-card>
+    </div>
+
     <!-- 組織管理 -->
     <div class="section-container">
       <OrganizationSection ref="organization_section" @organization_List_is_updated="update_organization_List" />
@@ -40,6 +52,7 @@ import { useRouter } from 'vue-router';
 import { getEmailList } from '@/firebase/firebaseDatabase.js';
 import logger from '@/utility/logger';
 import { updateGetUserInfo } from '@/composables/accessStoreUserInfo.js';
+import { uploadLogs } from '@/firebase/firebaseFunction.js';
 
 // 導入元件
 import OrganizationSection from '@/components/OrganizationSection/OrganizationSection.vue';
@@ -150,6 +163,34 @@ const verify_admin_permission = async () => {
       Account Approved: ${login_status.value.user_info.account_approved}
     `);
   }
+}
+
+// 上傳日誌
+const callUploadLogs = async () => {
+  $q.loading.show();
+  const response = await uploadLogs().then(res => {
+    return res.data;
+  });
+  if (response.status === "success") {
+    $q.notify({
+      message: response.message,
+      progress: true,
+      color: 'green',
+      icon: 'check',
+      position: 'top',
+      timeout: 1000
+    });
+  }
+  else {
+    $q.notify({
+      message: response.message,
+      color: 'red',
+      icon: 'warning',
+      position: 'top',
+      timeout: 3000
+    });
+  }
+  $q.loading.hide();
 }
 
 // 掛載時

@@ -1,8 +1,7 @@
 <template>
   <div class="drawer-content">
-    <q-btn glossy label="Debug" @click="debug_test">
-      <q-icon name="bug_report" />
-    </q-btn>
+    <q-btn glossy label="USER" @click="print_user_info" icon="mdi-login" />
+    <q-btn glossy label="Debug" @click="debug" icon="bug_report" />
   </div>
 </template>
 
@@ -10,12 +9,28 @@
 
 // Import modules
 import { ref } from 'vue';
+import { useStore } from 'vuex';
+
+// 導入 composable
+import { updateGetUserInfo } from '@/composables/accessStoreUserInfo';
+
+// 取得 login_status
+const { login_status } = updateGetUserInfo();
+
+// 取得 store
+const store = useStore();
 
 /* functions */
 
-// Debug test
-async function debug_test() {
-  console.log('debug_test');
+// Test check file format
+async function debug() {
+  console.log("currentAnalysisID: ", store.getters['analysis_setting/getCurrentAnalysisID']);
+}
+
+// 印出 user_info
+function print_user_info() {
+  console.log("is_login: ", login_status.value.is_login);
+  console.log("user_info: ", login_status.value.user_info);
 }
 
 </script>
@@ -27,5 +42,6 @@ async function debug_test() {
   align-items: center;
   justify-content: center;
   height: 100%;
+  gap: 20px;
 }
 </style>

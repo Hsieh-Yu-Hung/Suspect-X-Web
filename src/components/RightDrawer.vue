@@ -73,19 +73,19 @@ const store = useStore();
 const props = defineProps({
   account_name: {
     type: String,
-    required: true
+    required: false
   },
   account_role: {
     type: String,
-    required: true
+    required: false
   },
   account_organization: {
     type: String,
-    required: true
+    required: false
   },
   account_status: {
     type: Boolean,
-    required: true
+    required: false
   }
 });
 
@@ -105,10 +105,27 @@ async function on_logout() {
 
 // 更新 display_account_name
 function update_display_account_name() {
-  display_account_name.value = props.account_name.split('@')[0];
-  display_account_role.value = props.account_role;
-  display_account_organization.value = props.account_organization;
-  display_account_status.value = props.account_status;
+  if (props.account_name) {
+    display_account_name.value = props.account_name.split('@')[0];
+  }
+  else {
+    display_account_name.value = '未登入';
+  }
+  if (props.account_role) {
+    display_account_role.value = props.account_role;
+  }
+  else {
+    display_account_role.value = '未登入';
+  }
+  if (props.account_organization) {
+    display_account_organization.value = props.account_organization;
+  }
+  else {
+    display_account_organization.value = '未登入';
+  }
+  if (props.account_status) {
+    display_account_status.value = props.account_status;
+  }
 }
 
 /* onMounted */

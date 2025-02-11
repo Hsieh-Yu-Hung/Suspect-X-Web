@@ -9,13 +9,15 @@
     "lint": "eslint --ext .js,.vue ./",
     "format": "prettier --write \"**/*.{js,vue,scss,html,md,json}\" --ignore-path .gitignore",
     "test": "echo \"No test specified\" && exit 0",
-    "dev": "export ENV_PATH=.env.development && quasar dev",
+    "dev": "export ENV_PATH=.env.development && concurrently \"quasar dev\" \"firebase emulators:start\"",
     "build": "quasar build",
     "deploy": "export ENV_PATH=.env.production && quasar build && firebase deploy",
     "emulate:prod": "export ENV_PATH=.env.production && quasar build && firebase emulators:start",
     "emulate:dev": "export ENV_PATH=.env.development && quasar build --debug && firebase emulators:start"
   },
   "dependencies": {
+    "@jamescoyle/vue-icon": "^0.1.2",
+    "@mdi/js": "^7.4.47",
     "@quasar/extras": "^1.16.4",
     "core-js": "^3.31.1",
     "cors": "^2.8.5",

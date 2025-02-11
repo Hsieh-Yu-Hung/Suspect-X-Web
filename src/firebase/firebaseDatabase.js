@@ -1,10 +1,10 @@
 // 導入會用到的功能
 import { getFirestore } from "firebase/firestore";
-import { collection, addDoc, setDoc, doc, Timestamp, getDocs, getDoc, deleteDoc } from "firebase/firestore";
+import { collection, addDoc, setDoc, doc, getDocs, getDoc, deleteDoc } from "firebase/firestore";
 import { v4 as uuidv4 } from 'uuid';
 import logger from "@/utility/logger";
 import app from "./firebaseApp";
-
+import moment from "moment";
 
 // 定義登入方法
 export const login_method = {
@@ -19,6 +19,7 @@ export const dataset_list = {
   email_list: 'email_list',
   software_version_list: 'software_version_list',
   organization_list: 'organization_list',
+  user_analysis: 'user_analysis',
 };
 
 // 定義 USER_INFO
@@ -68,6 +69,20 @@ export const ORGAN_DATA = (name, software_select, member, date, id = null, edita
     organization_id: organization_id,
     editable: editable
   }
+}
+
+// 定義分析結果資料結構
+export const ANALYSIS_RESULT = (analysis_name, analysis_id, config, qc_status, resultObj) => {
+  const current_time = moment().format('YYYY-MM-DD HH:mm:ss');
+  const analysisRes = {
+    analysis_name: analysis_name,
+    analysis_id: analysis_id,
+    config: config,
+    qc_status: qc_status,
+    resultObj: resultObj,
+    analysis_time: current_time
+  }
+  return analysisRes;
 }
 
 // 取得 firestore
@@ -377,5 +392,18 @@ export const update_userData = async (new_user_data, user_id) => {
     }
   }).catch((error) => {
     logger.error(`Update user data failed, ID: ${user_id}, Error: ${error}`);
+  });
+}
+
+// 更新使用者分析資料
+export const update_userAnalysisData = async (user_id, subDir, data, name) => {
+  const dataset = dataset_list.user_analysis;
+  const docRef = doc(collection(database, `${dataset}/${user_id}/${subDir}`), name);
+  await setDoc(docRef, data)
+  .then(() => {
+    logger.debug(`Update user analysis data success, ID: ${user_id}/${subDir}`);
+  })
+  .catch((error) => {
+    logger.error(`Update user analysis data failed, ID: ${user_id}/${subDir}, Error: ${error}`);
   });
 }

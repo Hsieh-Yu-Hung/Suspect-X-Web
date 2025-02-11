@@ -33,8 +33,8 @@
       <!-- 頁籤按鈕 -->
       <q-tabs align="right" class="text-blue-grey-8">
         <q-route-tab to="/page-admin" label="Admin" v-if="account_role === 'admin'" />
-        <q-route-tab to="/page-import" label="Import" />
         <q-route-tab to="/page-analysis" label="Analysis" />
+        <q-route-tab to="/page-preview" label="Preview" />
         <q-route-tab to="/page-export" label="Export" />
       </q-tabs>
 

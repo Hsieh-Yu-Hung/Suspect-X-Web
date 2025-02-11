@@ -68,10 +68,10 @@ const main = async () => {
       position: 'top',
       timeout: 500
     });
-    // 跳轉至 page-import, 若未開通則到 not-active
+    // 跳轉至 page-analysis, 若未開通則到 not-active
     setTimeout(() => {
       if(user_account_active){
-        router.push('/page-import');
+        router.push('/page-analysis');
       } else {
         router.push('/page-not-active');
       }
