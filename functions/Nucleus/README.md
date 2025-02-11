@@ -131,13 +131,13 @@ python apoe.py -i <輸入設定檔> -o <輸出 JSON檔>
             "rfu_status": [
                 {
                     "peak_group": "E2",
-                    "rfu_value_ratio": 1.94,
+                    "rfu_value": 1.94,
                     "rfu_cutoff": 0.7,
                     "pass_cutoff": true
                 },
                 {
                     "peak_group": "E3",
-                    "rfu_value_ratio": 0.36,
+                    "rfu_value": 0.36,
                     "rfu_cutoff": 0.7,
                     "pass_cutoff": false
                 }

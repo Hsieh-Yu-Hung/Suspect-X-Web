@@ -142,8 +142,10 @@ async function onSubmit() {
   if (analysisResult.status == 'success'){
     dialog_error_message.value = "";
 
-    // 印出 analysisResult, 從這裡繼續
-    console.log("analysisResult",analysisResult.result);
+    // 將 result 轉換成 Object
+    const resultObj = JSON.parse(analysisResult.result);
+
+    console.log("resultObj", resultObj);
 
     // 更新 currentAnalysisID
     const new_id = `analysis_${uuidv4()}`;

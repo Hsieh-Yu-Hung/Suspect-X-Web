@@ -5,7 +5,13 @@ import json
 import itertools
 import pandas as pd
 import argparse
-from dataclasses import dataclass, asdict
+from dataclasses import dataclass
+
+# 導入 utils
+from utils.InputParser import UserInfo
+from utils.FileParser import FileParser
+from utils.ConstVaribles import QCStatus, AssessmentStatus, NucleusVersion
+from utils.DataObject import Range, RFUObj, Qsep100Peak, AnalysisOutput
 
 # 獲取當前腳本所在的目錄. 將上一層目錄添加到 sys.path
 current_dir = os.path.dirname(os.path.abspath(__file__))
@@ -13,49 +19,16 @@ parent_dir = os.path.abspath(os.path.join(current_dir, os.pardir))
 sys.path.append(parent_dir)
 sys.path.append(current_dir)
 
-# 導入 utils
-from utils.InputParser import UserInfo
-from utils.FileParser import FileParser
-from utils.ConstVaribles import QCStatus, AssessmentStatus, NucleusVersion, custom_serializer
-
 # 引入 saveLogs
 from config_admin import bucket
 from saveLogs import Logger
 logger = Logger(bucket)
 
-# 定義 Range (用於 peak 篩選)
-@dataclass
-class Range:
-  MIN: int
-  MAX: int
-
-  # 判斷是否在範圍內, 且 RFU 大於 RFU CutOff
-  def inRange(self, bp, rfu=None):
-    if rfu is not None:
-      return self.MIN <= int(bp) <= self.MAX and float(rfu) >= ACT_RFU_CUTOFF
-    else:
-      return self.MIN <= int(bp) <= self.MAX
-
-# 定義 RFU Object
-@dataclass
-class RFUObj:
-  peak_group: str
-  rfu_value_ratio: float
-  rfu_cutoff: float
-  pass_cutoff: bool = True
-
-  # 如果 rfu_value_ratio 小於 cutoff, 則將 peak_group 設為 "Cutoff"
-  def CutRFU(self):
-    if self.rfu_value_ratio < self.rfu_cutoff:
-      self.pass_cutoff = False
-
 # 定義 APOE peak Object
 @dataclass
-class APOEPeak:
+class APOEPeak(Qsep100Peak):
   peak_group: str
   peak_type: str
-  peak_size: int
-  peak_rfu: float
 
 # 定義 APOE data Object
 @dataclass
@@ -79,18 +52,11 @@ class APOEAssessment:
 
 # 定義 APOE 輸出結果
 @dataclass
-class APOEOutput:
-  config: dict
-  qc_status: str = QCStatus.NOT_ANALYZED.value
+class APOEOutput(AnalysisOutput):
   control1: list = None
   control2: list = None
   samples: dict = None
   result: dict = None
-
-  def toJson(self):
-    APOE_output_dict = asdict(self)
-    APOE_output_json = json.dumps(APOE_output_dict, default=custom_serializer, indent=4, ensure_ascii=False)
-    return APOE_output_json
 
 # Peak size 理論數值範圍
 EXPECTED_TARGET_RANGE_BP      = Range(MIN=160, MAX=195)
@@ -151,6 +117,20 @@ def APOE(control1_list, control2_list, samples_list, user_info):
     logger.warn(f" Control1: {ctrl1_qc_status.value}, RFU status: {ctrl1_rfuList}")
     logger.warn(f" Control2: {ctrl2_qc_status.value}, RFU status: {ctrl2_rfuList}")
     APOE_output.qc_status = QCStatus.FAILED.value
+
+    # 製作 inconclusive 的 result
+    inconclusive_result = APOEAssessment(
+      qc_status=QCStatus.FAILED.value,
+      assessment=AssessmentStatus.INCONCLUSIVE.value,
+      rfu_status=[]
+    )
+
+    # 將 inconclusive 的 result 加入到 APOE_output.result
+    APOE_output.result = {}
+    for sample_name in sample_apoeData_list:
+      APOE_output.result[sample_name] = inconclusive_result
+
+    # 回傳 APOE_output
     return APOE_output.toJson()
 
   # 5. Sample Assessment
@@ -166,7 +146,11 @@ def APOE(control1_list, control2_list, samples_list, user_info):
   logger.info(f" Control1 QC status: {ctrl1_qc_status.value}, RFU status: {ctrl1_rfuList}")
   logger.info(f" Control2 QC status: {ctrl2_qc_status.value}, RFU status: {ctrl2_rfuList}")
   for sample_name in sample_assessment_list:
-    logger.info(f" Sample: {sample_name}, QC status: {sample_assessment_list[sample_name].qc_status.value}, Assessment: {sample_assessment_list[sample_name].assessment.value}, RFU status: {sample_assessment_list[sample_name].rfu_status}")
+    logger.info(f" \n\
+      Sample: {sample_name}, \n\
+      QC status: {sample_assessment_list[sample_name].qc_status.value}, \n\
+      Assessment: {sample_assessment_list[sample_name].assessment.value}, \n\
+      RFU status: {sample_assessment_list[sample_name].rfu_status}")
 
   # 7. 判斷有沒有任何一個 Failed QC assessment
   checkQCList = [ctrl1_qc_status, ctrl2_qc_status] + [q.qc_status for q in sample_assessment_list.values()]
@@ -245,9 +229,9 @@ def readControlPeaks(data_df):
   filtered_df = data_df[data_df["bp"].str.isdigit()]
 
   # 取得 E2, E3, E4 的 peak
-  is_E2_peak = list(filtered_df.apply(lambda row: EXPECTED_INTERNAL_E2_RANGE_BP.inRange(row["bp"], row["RFU"]), axis=1))
-  is_E3_peak = list(filtered_df.apply(lambda row: EXPECTED_INTERNAL_E3_RANGE_BP.inRange(row["bp"], row["RFU"]), axis=1))
-  is_E4_peak = list(filtered_df.apply(lambda row: EXPECTED_INTERNAL_E4_RANGE_BP.inRange(row["bp"], row["RFU"]), axis=1))
+  is_E2_peak = list(filtered_df.apply(lambda row: EXPECTED_INTERNAL_E2_RANGE_BP.inRange(row["bp"], ACT_RFU_CUTOFF, row["RFU"]), axis=1))
+  is_E3_peak = list(filtered_df.apply(lambda row: EXPECTED_INTERNAL_E3_RANGE_BP.inRange(row["bp"], ACT_RFU_CUTOFF, row["RFU"]), axis=1))
+  is_E4_peak = list(filtered_df.apply(lambda row: EXPECTED_INTERNAL_E4_RANGE_BP.inRange(row["bp"], ACT_RFU_CUTOFF, row["RFU"]), axis=1))
 
   # 取得 E2, E3, E4 的 peak 數量
   number_of_E2_peak = sum(is_E2_peak)
@@ -308,7 +292,7 @@ def readTargetPeaks(data_df):
   filtered_df = data_df[data_df["bp"].str.isdigit()]
 
   # 取得 Target peak
-  is_Target_peak = list(filtered_df.apply(lambda row: EXPECTED_TARGET_RANGE_BP.inRange(row["bp"]), axis=1));
+  is_Target_peak = list(filtered_df.apply(lambda row: EXPECTED_TARGET_RANGE_BP.inRange(row["bp"], ACT_RFU_CUTOFF), axis=1));
 
   # 如果 Target peak 存在, 則取得最大的 RFU 的 peak
   if len(is_Target_peak) > 0:
@@ -390,13 +374,13 @@ def RFUAssessment(e2_norm_rfu, e3_norm_rfu, e4_norm_rfu):
 
   # 建立 RFU 列表
   rfuList = [
-    RFUObj(peak_group="E2", rfu_value_ratio=e2_norm_rfu, rfu_cutoff=E2_RFU_CUTOFF),
-    RFUObj(peak_group="E3", rfu_value_ratio=e3_norm_rfu, rfu_cutoff=E3_RFU_CUTOFF),
-    RFUObj(peak_group="E4", rfu_value_ratio=e4_norm_rfu, rfu_cutoff=E4_RFU_CUTOFF)
+    RFUObj(peak_group="E2", rfu_value=e2_norm_rfu, rfu_cutoff=E2_RFU_CUTOFF),
+    RFUObj(peak_group="E3", rfu_value=e3_norm_rfu, rfu_cutoff=E3_RFU_CUTOFF),
+    RFUObj(peak_group="E4", rfu_value=e4_norm_rfu, rfu_cutoff=E4_RFU_CUTOFF)
   ]
 
-  # 依照 RFUObj.rfu_value_ratio 由大到小排序
-  rfuList.sort(key=lambda x: x.rfu_value_ratio, reverse=True)
+  # 依照 RFUObj.rfu_value 由大到小排序
+  rfuList.sort(key=lambda x: x.rfu_value, reverse=True)
 
   # 把第二個 RFUObj 做 RFU Cutoff, 如果沒有通過 Cutoff, 則標記為 False
   rfuList[1].CutRFU()
@@ -550,6 +534,13 @@ if __name__ == "__main__":
 
   # 接收參數, 取得檔案路徑
   args = parseParams()
+
+  # 如果參數解析失敗, 則回報並結束程式
+  if not args:
+    print("參數解析失敗, Exit")
+    exit(1)
+
+  # 解析設定檔案, 取得各個參數
   ctrl1, ctrl2, samples, user_info = parseConfig(args.config)
 
   # 運行 APOE 分析

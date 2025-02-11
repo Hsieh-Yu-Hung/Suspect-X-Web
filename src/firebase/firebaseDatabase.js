@@ -4,7 +4,7 @@ import { collection, addDoc, setDoc, doc, getDocs, getDoc, deleteDoc } from "fir
 import { v4 as uuidv4 } from 'uuid';
 import logger from "@/utility/logger";
 import app from "./firebaseApp";
-
+import moment from "moment";
 
 // 定義登入方法
 export const login_method = {
@@ -69,6 +69,20 @@ export const ORGAN_DATA = (name, software_select, member, date, id = null, edita
     organization_id: organization_id,
     editable: editable
   }
+}
+
+// 定義分析結果資料結構
+export const ANALYSIS_RESULT = (analysis_name, analysis_id, config, qc_status, resultObj) => {
+  const current_time = moment().format('YYYY-MM-DD HH:mm:ss');
+  const analysisRes = {
+    analysis_name: analysis_name,
+    analysis_id: analysis_id,
+    config: config,
+    qc_status: qc_status,
+    resultObj: resultObj,
+    analysis_time: current_time
+  }
+  return analysisRes;
 }
 
 // 取得 firestore

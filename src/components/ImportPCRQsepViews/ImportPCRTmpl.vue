@@ -79,10 +79,30 @@ import { submitWorkflow } from '@/composables/submitWorkflow';
 import { updateGetUserInfo } from '@/composables/accessStoreUserInfo';
 import { CATEGORY_LIST, upload_files_to_storage } from '@/utility/storageManager';
 import { setAnalysisID } from '@/composables/checkAnalysisStatus';
+import { ANALYSIS_RESULT, update_userAnalysisData } from '@/firebase/firebaseDatabase';
 
 // 元件
 import WarningDialog from '@/components/WarningDialog.vue';
 import logger from '@/utility/logger';
+
+// 定義 FXS 的 result 格式
+const FXS_RESULT = (control_data, sample_data, control_qc, result) => {
+  return {
+    control_data: control_data,
+    sample_data: sample_data,
+    control_qc: control_qc,
+    result: result,
+  }
+}
+
+// 定義 HTD_RESULT 的格式
+const HTD_RESULT = (standard_control_data, result_and_data, errMsg) => {
+  return {
+    standard_control_data: standard_control_data,
+    result_and_data: result_and_data,
+    errMsg: errMsg,
+  }
+}
 
 // 導入 store, Quasar
 const store = useStore();
@@ -117,6 +137,10 @@ const currentAnalysisID = ref(null);
 // 控制警告視窗
 const dialog_error_message = ref("");
 const warning_dialog = ref(null);
+
+// Database Path
+const dbFXSResultPath = "fxs_result";
+const dbHTDResultPath = "htd_result";
 
 /* Functions */
 
@@ -155,10 +179,55 @@ async function onSubmit() {
 
   // 檢查有沒有出錯
   if (analysisResult.status == 'success'){
+
+    // 初始化 error message
     dialog_error_message.value = "";
 
-    // 印出 analysisResult, 從這裡繼續
-    console.log("analysisResult",analysisResult.result);
+    // 將 result 轉換成 Object
+    const resultObj = JSON.parse(analysisResult.result);
+
+    // 如果分析名稱是 FXS, 則使用 FXS_RESULT
+    if (props.analysis_name === 'FXS') {
+
+      // 製作 FXS_RESULT
+      const FXS_Result = FXS_RESULT(
+        resultObj.control_data,
+        resultObj.sample_data,
+        resultObj.control_qc,
+        resultObj.result);
+
+      // 製作 ANALYSIS_RESULT
+      const AnalysisResult = ANALYSIS_RESULT(
+        currentAnalysisID.value.analysis_name,
+        currentAnalysisID.value.analysis_uuid,
+        resultObj.config,
+        resultObj.qc_status,
+        FXS_Result
+      );
+
+      // 將結果存到 firestore
+      update_userAnalysisData(user_info.value.uid, dbFXSResultPath, AnalysisResult, currentAnalysisID.value.analysis_uuid);
+    }
+    else if (props.analysis_name === 'HTD') {
+      // 製作 HTD_RESULT
+      const HTD_Result = HTD_RESULT(
+        resultObj.standard_control_data,
+        resultObj.result,
+        resultObj.errMsg
+      );
+
+      // 製作 ANALYSIS_RESULT
+      const AnalysisResult = ANALYSIS_RESULT(
+        currentAnalysisID.value.analysis_name,
+        currentAnalysisID.value.analysis_uuid,
+        resultObj.config,
+        resultObj.qc_status,
+        HTD_Result
+      );
+
+      // 將結果存到 firestore
+      update_userAnalysisData(user_info.value.uid, dbHTDResultPath, AnalysisResult, currentAnalysisID.value.analysis_uuid);
+    }
 
     // 更新 currentAnalysisID
     const new_id = `analysis_${uuidv4()}`;

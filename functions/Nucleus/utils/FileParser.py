@@ -4,6 +4,15 @@ import os
 import warnings
 from dataclasses import dataclass
 
+# 定義非法字符列表
+ILLEGAL_CHARS = ['/', '\\', '?', '%', '*', ':', '|', '"', '<', '>', '.', ',']
+
+# 移除非法字符
+def removeIllegalChars(string):
+  for char in ILLEGAL_CHARS:
+    string = string.replace(char, '-')
+  return string
+
 # 定義 Excel Cell 位置
 @dataclass
 class Cell:
@@ -37,21 +46,27 @@ class FileParser:
     sample_id_cell = Cell(x=9, y=6)
 
     # Keyword of column header
-    header_keywords = "No"
+    header_keywords = ["No", "bp"]
 
     # 讀取 Excel 檔案, 抑制 openpyxl's default warning
     with warnings.catch_warnings():
       warnings.simplefilter("ignore")
       df = pd.read_excel(file_path, engine='openpyxl')
 
+    # 檔名, 不包含副檔名
+    file_name = removeIllegalChars(os.path.splitext(os.path.basename(file_path))[0])
+
     # 得到 SampleID
     sample_id = df.iloc[sample_id_cell.x, sample_id_cell.y]
 
-    # 檔名, 不包含副檔名
-    file_name = os.path.splitext(os.path.basename(file_path))[0]
+    # 如果 SampleID 為空, 則使用檔名作為 SampleID
+    if pd.isna(sample_id):
+      sample_id = file_name
+    else:
+      sample_id = removeIllegalChars(sample_id)
 
     # 找出 header_keywords 所在的列位置
-    header_row = df[df.apply(lambda x: x.astype(str).str.contains(header_keywords, case=False).any(), axis=1)].index[0]
+    header_row = df[df.apply(lambda x: any(keyword in x.astype(str).values for keyword in header_keywords), axis=1)].index[0]
 
     # 重新設定 header
     df.columns = df.iloc[header_row]

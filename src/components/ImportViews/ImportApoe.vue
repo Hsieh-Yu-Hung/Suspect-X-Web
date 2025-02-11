@@ -97,6 +97,8 @@ import { updateGetUserInfo } from '@/composables/accessStoreUserInfo';
 import { submitWorkflow } from '@/composables/submitWorkflow';
 import { CATEGORY_LIST } from '@/utility/storageManager';
 import { setAnalysisID } from '@/composables/checkAnalysisStatus';
+import { ANALYSIS_RESULT } from '@/firebase/firebaseDatabase';
+import { update_userAnalysisData } from '@/firebase/firebaseDatabase';
 
 // logger
 import logger from '@/utility/logger';
@@ -125,7 +127,20 @@ const currentAnalysisID = ref(null);
 // 保存上傳紀錄供檢查不同
 const sampleUploaded = ref(null);
 
+// APOE result 資料庫路徑
+const dbAPOEResultPath = 'apoe_result';
+
 /* functions */
+
+// 定義 APOE result
+const APOE_RESULT = (control1List, control2List, sampleObjList, resultObj) => {
+  return {
+    control1List: control1List,
+    control2List: control2List,
+    sampleObjList: sampleObjList,
+    assessmentResult: resultObj
+  }
+}
 
 // 送出表單
 async function onSubmit() {
@@ -164,8 +179,28 @@ async function onSubmit() {
   if (analysisResult.status == 'success'){
     dialog_error_message.value = "";
 
-    // 印出 analysisResult, 從這裡繼續
-    console.log("analysisResult",analysisResult.result);
+    // 將 result 轉換成 Object
+    const resultObj = JSON.parse(analysisResult.result);
+
+    // APOE result
+    const APOE_Result = APOE_RESULT(
+      resultObj.control1,
+      resultObj.control2,
+      resultObj.samples,
+      resultObj.result
+    );
+
+    // 製作 ANALYSIS_RESULT
+    const AnalysisResult = ANALYSIS_RESULT(
+      currentAnalysisID.value.analysis_name,
+      currentAnalysisID.value.analysis_uuid,
+      resultObj.config,
+      resultObj.qc_status,
+      APOE_Result
+    );
+
+    // 將結果存到 firestore
+    update_userAnalysisData(user_info.value.uid, dbAPOEResultPath, AnalysisResult, currentAnalysisID.value.analysis_uuid);
 
     // 更新 currentAnalysisID
     const new_id = `analysis_${uuidv4()}`;

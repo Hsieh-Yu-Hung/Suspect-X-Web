@@ -30,6 +30,18 @@ class APOEInputData:
   control2: list
   samples: dict
 
+# 定義 FXS input 資料格式
+@dataclass
+class FXSInputData:
+  control_file_path: str
+  samples_file_list: list
+
+# 定義 HTD input 資料格式
+@dataclass
+class HTDInputData:
+  control_file_path: str
+  samples_file_list: list
+
 # InputParser
 class InputParser:
 
@@ -129,11 +141,33 @@ class InputParser:
 
   # 解析 FXS input 資料
   def parseFXSInputData(self, fxs_input_data):
-    return []
+    # Control, 加上 PATH_OF_DATA
+    control_file_path = fxs_input_data['controlPath']
+    control_file_path = os.path.join(PATH_OF_DATA, control_file_path)
+
+    # Samples, 加上 PATH_OF_DATA
+    samples_file_list = fxs_input_data['samplePathList']
+    samples_file_list = [os.path.join(PATH_OF_DATA, sample) for sample in samples_file_list]
+
+    return FXSInputData(
+      control_file_path = control_file_path,
+      samples_file_list = samples_file_list
+    )
 
   # 解析 HTD input 資料
   def parseHTDInputData(self, htd_input_data):
-    return []
+    # Control, 加上 PATH_OF_DATA
+    control_file_path = htd_input_data['controlPath']
+    control_file_path = os.path.join(PATH_OF_DATA, control_file_path)
+
+    # Samples, 加上 PATH_OF_DATA
+    samples_file_list = htd_input_data['samplePathList']
+    samples_file_list = [os.path.join(PATH_OF_DATA, sample) for sample in samples_file_list]
+
+    return HTDInputData(
+      control_file_path = control_file_path,
+      samples_file_list = samples_file_list
+    )
 
   # 解析 SMA input 資料
   def parseSMAInputData(self, sma_input_data):
