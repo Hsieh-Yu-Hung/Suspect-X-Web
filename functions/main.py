@@ -21,17 +21,17 @@ from Nucleus import Core
 # 其他
 import json
 
+# 實體化 Logger
+logger = Logger(bucket)
+
 # 保存日誌
-@https_fn.on_request(region="asia-east1", cors=options.CorsOptions(cors_origins="*", cors_methods=["get", "post"]))
+@https_fn.on_request(region="asia-east1", cors=options.CorsOptions(cors_origins="*", cors_methods=["get", "post"]), memory=512)
 def saveLogs(req: https_fn.Request):
 
     # 回傳 message
     response_data = {"data": {"status": "pending", "message": "Waiting to save logs..."}}
 
     try:
-
-      # 實體化 Logger
-      logger = Logger(bucket)
 
       # 取得 input data
       input_data = json.loads(req.data.decode("utf-8"))["data"]
@@ -58,16 +58,13 @@ def saveLogs(req: https_fn.Request):
     return https_fn.Response(json.dumps(response_data), content_type="application/json")
 
 # 上傳日誌：呼叫觸發
-@https_fn.on_request(region="asia-east1", cors=options.CorsOptions(cors_origins="*", cors_methods=["get", "post"]))
+@https_fn.on_request(region="asia-east1", cors=options.CorsOptions(cors_origins="*", cors_methods=["get", "post"]), memory=512)
 def uploadLogs(req: https_fn.Request):
 
     # 回傳 message
     response_data = {"data": {"status": "pending", "message": "Waiting to upload logs..."}}
 
     try:
-
-      # 實體化 Logger
-      logger = Logger(bucket)
 
       # 上傳日誌
       logger.upload_logs_to_storage()
@@ -82,14 +79,9 @@ def uploadLogs(req: https_fn.Request):
     return https_fn.Response(json.dumps(response_data), content_type="application/json")
 
 # 上傳日誌：定時觸發
-@scheduler_fn.on_schedule(region="asia-east1", schedule="every day 00:00", timezone="Asia/Taipei")
+@scheduler_fn.on_schedule(region="asia-east1", schedule="every day 00:00", timezone="Asia/Taipei", memory=512)
 def ScheduleUploadLogs(event: scheduler_fn.ScheduledEvent) -> None:
     try:
-
-      # 實體化 Logger
-      logger = Logger(bucket)
-
-      logger.debug("Schedule upload logs on schedule!")
 
       # 上傳日誌
       logger.upload_logs_to_storage()
@@ -101,7 +93,7 @@ def ScheduleUploadLogs(event: scheduler_fn.ScheduledEvent) -> None:
         print("Failed to upload logs on schedule: " + str(e))
 
 # 檢查 input 檔案格式
-@https_fn.on_request(region="asia-east1", cors=options.CorsOptions(cors_origins="*", cors_methods=["get", "post"]))
+@https_fn.on_request(region="asia-east1", cors=options.CorsOptions(cors_origins="*", cors_methods=["get", "post"]), memory=1024)
 def check_file_format(req: https_fn.Request):
 
     # 回傳 message
@@ -158,7 +150,7 @@ def check_file_format(req: https_fn.Request):
     return https_fn.Response(json.dumps(response_data), content_type="application/json")
 
 # 執行 Nucleus 分析
-@https_fn.on_request(region="asia-east1", cors=options.CorsOptions(cors_origins="*", cors_methods=["get", "post"]))
+@https_fn.on_request(region="asia-east1", cors=options.CorsOptions(cors_origins="*", cors_methods=["get", "post"]), memory=1024)
 def RunAnalysis(req: https_fn.Request):
 
     # 回傳 message
@@ -168,7 +160,7 @@ def RunAnalysis(req: https_fn.Request):
     try:
 
         # 實體化 Nucleus
-        core = Core()
+        core = Core(bucket)
 
         # 取得 input data
         input_data = json.loads(req.data.decode("utf-8"))["data"]

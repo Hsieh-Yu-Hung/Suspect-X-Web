@@ -129,7 +129,7 @@ async function onSubmit() {
 
     // 登入成功
     status = 'success';
-    logger.info(`[Frontend] Login success, Email: ${result.user.email}, UID: ${result.user.uid}`);
+    logger.info(`Login success, Email: ${result.user.email}, UID: ${result.user.uid}`);
   })
   .catch((error) => {
     // 登入失敗
@@ -137,15 +137,15 @@ async function onSubmit() {
     if (error.code === 'auth/invalid-email') {
       email_error.value = true;
       email_input_hint.value = "請輸入有效格式的電子郵件";
-      logger.warn(`[Frontend] Invalid email, Email: ${email_input.value}`);
+      logger.warn(`Invalid email, Email: ${email_input.value}`);
     } else if (error.code === 'auth/user-not-found') {
       email_error.value = true;
       email_input_hint.value = "找不到此帳號, 請先註冊";
-      logger.warn(`[Frontend] User not found, Email: ${email_input.value}`);
+      logger.warn(`User not found, Email: ${email_input.value}`);
     } else if (error.code === 'auth/wrong-password') {
       password_error.value = true;
       password_input_hint.value = "密碼錯誤, 請重新輸入";
-      logger.warn(`[Frontend] Wrong password, Email: ${email_input.value}`);
+      logger.warn(`Wrong password, Email: ${email_input.value}`);
     } else {
       $q.notify({
         message: '[未知原因] 登入失敗, 請聯絡管理員',
@@ -153,7 +153,7 @@ async function onSubmit() {
         icon: 'error',
         position: 'top'
       });
-      logger.error(`[Frontend] Login failed, Error Code: ${error.code}`);
+      logger.error(`Login failed, Error Code: ${error.code}`);
     }
   }).finally(() => {
     // 隱藏 loading

@@ -51,10 +51,14 @@ import { useStore } from 'vuex';
 import { setAnalysisID } from '@/composables/checkAnalysisStatus';
 import { updateGetUserInfo } from '@/composables/accessStoreUserInfo';
 import { submitWorkflow } from '@/composables/submitWorkflow';
+import { ANALYSIS_RESULT, update_userAnalysisData } from '@/firebase/firebaseDatabase';
 
 // 元件
 import WarningDialog from '@/components/WarningDialog.vue';
 import qPCRImportSection from '@/components/ImportqPCRViews/qPCRImportSection.vue';
+
+// Database Path
+const dbMTHFRResultPath = "mthfr_result";
 
 // 取得 Quasar 和 store
 const $q = useQuasar();
@@ -93,6 +97,17 @@ const props = defineProps({
 // 取得 instrument 和 reagent
 const getCurrentInstrument = () => {
   return store.getters["analysis_setting/getSettingProps"].instrument;
+}
+
+// 定義 MTHFR_RESULT 的格式
+const MTHFR_RESULT = (controlData, NTCData, SampleDataList, resultList, errMsg) => {
+  return {
+    controlData: controlData,
+    NTCData: NTCData,
+    SampleDataList: SampleDataList,
+    resultList: resultList,
+    errMsg: errMsg,
+  }
 }
 
 // Functions
@@ -145,7 +160,31 @@ async function onSubmit() {
     // 將 result 轉換成 Object
     const resultObj = JSON.parse(analysisResult.result);
 
-    console.log("resultObj", resultObj);
+    if (props.analysis_name === "MTHFR") {
+      // 製作 MTHFR_RESULT
+      const MTHFR_Result = MTHFR_RESULT(
+        resultObj.controlData,
+        resultObj.ntcData,
+        resultObj.sampleDataList,
+        resultObj.resultList,
+        resultObj.errMsg
+      );
+
+      // 製作 ANALYSIS_RESULT
+      const AnalysisResult = ANALYSIS_RESULT(
+        currentAnalysisID.value.analysis_name,
+        currentAnalysisID.value.analysis_uuid,
+        resultObj.config,
+        resultObj.qc_status,
+        MTHFR_Result
+      );
+
+      // 將結果存到 firestore
+      update_userAnalysisData(user_info.value.uid, dbMTHFRResultPath, AnalysisResult, currentAnalysisID.value.analysis_uuid);
+    }
+    else if (props.analysis_name === "NUDT15") {
+      console.log("NUDT15");
+    }
 
     // 更新 currentAnalysisID
     const new_id = `analysis_${uuidv4()}`;

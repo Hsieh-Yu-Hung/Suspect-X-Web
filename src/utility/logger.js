@@ -38,19 +38,19 @@ async function call_saveLogs(logMsg, logType) {
 const prefix = "[RUNNING MESSAGE] - ";
 const frontendLogger = {
   info: async (message) => {
-    log.info(formatMessage(`[Info] ${message}`));
+    log.info(formatMessage(`[Info] ${message}`));        // 顯示前端 log
     await call_saveLogs(`${prefix} ${message}`, "info"); // log 存入 firebase
   },
   warn: async (message) => {
-    log.warn(formatMessage(`[Warn] ${message}`));
+    log.warn(formatMessage(`[Warn] ${message}`));         // 顯示前端 log
     await call_saveLogs(`${prefix} ${message}`, "warn"); // log 存入 firebase
   },
   error: async (message) => {
-    log.error(formatMessage(`[Error] ${message}`));
+    log.error(formatMessage(`[Error] ${message}`));       // 顯示前端 log
     await call_saveLogs(`${prefix} ${message}`, "error"); // log 存入 firebase
   },
   debug: async (message) => {
-    log.debug(formatMessage(`[Debug] ${message}`));
+    log.debug(formatMessage(`[Debug] ${message}`));       // 顯示前端 log
     await call_saveLogs(`${prefix} ${message}`, "debug"); // log 存入 firebase
   },
 };

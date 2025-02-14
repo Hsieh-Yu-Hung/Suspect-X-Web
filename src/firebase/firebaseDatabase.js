@@ -165,11 +165,11 @@ export const getEmailList = async () => {
         });
       }
     } else {
-      logger.error(`[Frontend] Get email list failed, Error: ${result.message}`);
+      logger.error(` Get email list failed, Error: ${result.message}`);
     }
   })
   .catch((error) => {
-    logger.error(`[Frontend] Get email list failed, Error: ${error}`);
+    logger.error(` Get email list failed, Error: ${error}`);
   });
   return email_array;
 }

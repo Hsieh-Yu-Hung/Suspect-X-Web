@@ -47,3 +47,4 @@ class NucleusVersion(Enum):
   APOE = 'v3.4.3'
   FXS = 'v3.4.3'
   HTD = 'v3.4.3'
+  MTHFR = 'v3.4.3'

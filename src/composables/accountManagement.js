@@ -55,7 +55,7 @@ export async function useGoogleLogin(store, router, $q) {
     }
   })
   .catch((error) => {
-    logger.warn(`[Frontend] Google login failed, error: ${error}`);
+    logger.warn(` Google login failed, error: ${error}`);
     // change status
     status = 'error';
   }).finally(() => {
@@ -133,14 +133,14 @@ async function storeUserInfo(store, router, $q) {
         redirect_page(store, router, $q);
 
       } else {
-        logger.error(`[Frontend] Get user info failed, Error: No user info found!`);
+        logger.error(` Get user info failed, Error: No user info found!`);
       }
     } else {
-      logger.error(`[Frontend] Get user info failed, Error: ${result.message}`);
+      logger.error(` Get user info failed, Error: ${result.message}`);
     }
   })
   .catch((error) => {
-      logger.error(`[Frontend] Get user info failed, Error: ${error}`);
+      logger.error(` Get user info failed, Error: ${error}`);
     });
 }
 
