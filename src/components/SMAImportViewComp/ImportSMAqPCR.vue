@@ -42,7 +42,7 @@
 
 <script setup>
 // 導入模組
-import { ref, onMounted, watch } from 'vue';
+import { ref, onMounted } from 'vue';
 import { useQuasar, QSpinnerFacebook } from 'quasar';
 import { useStore } from 'vuex';
 import { useRouter } from 'vue-router';
@@ -52,10 +52,14 @@ import { v4 as uuidv4 } from 'uuid';
 import { setAnalysisID } from '@/composables/checkAnalysisStatus';
 import { updateGetUserInfo } from '@/composables/accessStoreUserInfo';
 import { submitWorkflow } from '@/composables/submitWorkflow';
+import { ANALYSIS_RESULT, update_userAnalysisData } from '@/firebase/firebaseDatabase';
 
 // 元件
 import WarningDialog from '@/components/WarningDialog.vue';
 import qPCRImportSection from '@/components/ImportqPCRViews/qPCRImportSection.vue';
+
+// Database Path
+const dbSMAResultPath = "sma_result";
 
 // 取得 quasar, store, router
 const $q = useQuasar();
@@ -83,6 +87,19 @@ const vicFile = ref(null);
 const cy5File = ref(null);
 const Ctrlwell = ref(null);
 const NTCwell = ref(null);
+
+// 定義 SMA_RESULT
+const SMA_RESULT = (analyzerVersion,SC1_Data, SC2_Data, NTC_Data, sampleDataList, SMA_parameters, resultList) => {
+  return {
+    analyzerVersion,
+    SC1_Data,
+    SC2_Data,
+    NTC_Data,
+    sampleDataList,
+    SMA_parameters,
+    resultList,
+  }
+}
 
 // Functions
 
@@ -124,8 +141,69 @@ async function onSubmit() {
   if (analysisResult.status == 'success'){
     dialog_error_message.value = "";
 
-    // 印出 analysisResult, 從這裡繼續
-    console.log("analysisResult",analysisResult.result);
+    // 將 result 轉換成 Object
+    const resultV1Obj = JSON.parse(analysisResult.result['v1']);
+    const resultV2Obj = JSON.parse(analysisResult.result['v2']);
+    const resultV3Obj = JSON.parse(analysisResult.result['v3']);
+
+    const SMA_ResultV1 = SMA_RESULT(
+      'v1',
+      resultV1Obj.SC1Data,
+      resultV1Obj.SC2Data,
+      resultV1Obj.NTCData,
+      resultV1Obj.sampleDataList,
+      resultV1Obj.SMAparameters,
+      resultV1Obj.resultList,
+    )
+
+    const SMA_ResultV2 = SMA_RESULT(
+      'v2',
+      resultV2Obj.SC1Data,
+      resultV2Obj.SC2Data,
+      resultV2Obj.NTCData,
+      resultV2Obj.sampleDataList,
+      resultV2Obj.SMAparameters,
+      resultV2Obj.resultList,
+    )
+
+    const SMA_ResultV3 = SMA_RESULT(
+      'v3',
+      resultV3Obj.SC1Data,
+      resultV3Obj.SC2Data,
+      resultV3Obj.NTCData,
+      resultV3Obj.sampleDataList,
+      resultV3Obj.SMAparameters,
+      resultV3Obj.resultList,
+    )
+
+    // 製作 ANALYSIS_RESULT
+    const AnalysisResult = ANALYSIS_RESULT(
+        currentAnalysisID.value.analysis_name,
+        currentAnalysisID.value.analysis_uuid,
+        {
+          V1: resultV1Obj.config,
+          V2: resultV2Obj.config,
+          V3: resultV3Obj.config,
+        },
+        {
+          V1: resultV1Obj.qc_status,
+          V2: resultV2Obj.qc_status,
+          V3: resultV3Obj.qc_status,
+        },
+        {
+          V1: resultV1Obj.errMsg,
+          V2: resultV2Obj.errMsg,
+          V3: resultV3Obj.errMsg,
+        },
+        {
+          V1: SMA_ResultV1,
+          V2: SMA_ResultV2,
+          V3: SMA_ResultV3,
+        }
+      );
+
+    // 將結果存到 firestore
+    update_userAnalysisData(user_info.value.uid, dbSMAResultPath, AnalysisResult, currentAnalysisID.value.analysis_uuid);
 
     // 更新 currentAnalysisID
     const new_id = `analysis_${uuidv4()}`;

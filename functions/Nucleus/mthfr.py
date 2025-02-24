@@ -6,10 +6,10 @@ from dataclasses import dataclass
 from enum import Enum
 
 # 自定義模組
+from utils.ConstVaribles import QCStatus, AssessmentStatus, NucleusVersion
 from utils.DataObject import WELL, QPCRRecord, AnalysisOutput
 from utils.InputParser import UserInfo
-from utils.FileParser import FileParser
-from utils.ConstVaribles import QCStatus, AssessmentStatus, NucleusVersion
+from utils.FileParser import readQPCRData
 
 # 獲取當前腳本所在的目錄. 將上一層目錄添加到 sys.path
 current_dir = os.path.dirname(os.path.abspath(__file__))
@@ -85,8 +85,18 @@ def MTHFR(input_file_path, FAM_file_path, VIC_file_path, control_well, ntc_well,
   # 初始化 MTHFROutput
   mthfr_output = MTHFROutput(config=config)
 
+  # 決定 CT_Threshold
+  if user_info.instrument == "tower":
+    ct_threshold = CT_Threshold.TOWER.value
+  elif user_info.instrument == "z480":
+    ct_threshold = CT_Threshold.Z480.value
+  elif user_info.instrument == "qs3":
+    ct_threshold = CT_Threshold.QS3.value
+  else:
+    raise ValueError(f"不支援的儀器: {user_info.instrument}")
+
   # 1. 讀取 Qpcr data 並轉換為 QPCRRecord 列表
-  qpcr_record_list = readQPCRData(input_file_path, FAM_file_path, VIC_file_path, user_info.instrument)
+  qpcr_record_list = readQPCRData(input_file_path, FAM_file_path, VIC_file_path, user_info.instrument, ct_threshold)
 
   # 紀錄 QPCRRecord 列表
   logger.info(f"[{user_info.instrument}] QPCR Raw data:")
@@ -148,88 +158,6 @@ def MTHFR(input_file_path, FAM_file_path, VIC_file_path, control_well, ntc_well,
   logger.info(f"* MTHFR Analysis Completed *")
 
   return mthfr_output.toJson()
-
-# 讀取 Qpcr data 並轉換為 QPCRRecord 列表
-def readQPCRData(input_file_path, FAM_file_path, VIC_file_path, instrument):
-
-    # 實體化 FileParser
-  file_parser = FileParser()
-
-  # 初始化 qpcr_data
-  qpcr_data = None
-  qpcr_record_list = []
-
-  # 以 instrument 決定要讀哪一種檔案
-  if instrument == "qs3":
-
-    # 解析 qs3 檔案
-    qpcr_data = file_parser.parseQs3File(input_file_path)
-
-    if not qpcr_data:
-      logger.error(f"QPCR 資料解析失敗, 無法解析 qs3 檔案, 請檢查原始檔案")
-      logger.error(f"input_file_path: {input_file_path}")
-      raise ValueError("QPCR 資料解析失敗, 無法解析 qs3 檔案, 請檢查原始檔案")
-
-    # 轉換 dataframe 為 QPCRRecord 列表
-    for index, row in qpcr_data.data.iterrows():
-      qpcr_record_list.append(QPCRRecord(
-        well_position=WELL(row["Well Position"]),
-        sample_name=row["Sample Name"],
-        ct_value=row["CT"],
-        ct_cutoff=CT_Threshold.QS3.value,
-        reporter=row["Reporter"]
-      ))
-
-  elif instrument == "tower":
-
-    # 解析 tower 檔案
-    qpcr_data = file_parser.parseTowerFile(input_file_path)
-
-    if not qpcr_data:
-      logger.error(f"QPCR 資料解析失敗, 無法解析 tower 檔案, 請檢查原始檔案")
-      logger.error(f"input_file_path: {input_file_path}")
-      raise ValueError("QPCR 資料解析失敗, 無法解析 tower 檔案, 請檢查原始檔案")
-
-    # 轉換 dataframe 為 QPCRRecord 列表
-    for index, row in qpcr_data.data.iterrows():
-      qpcr_record_list.append(QPCRRecord(
-        well_position=WELL(row["Well"]),
-        sample_name=row["Sample name"],
-        ct_value=row["Ct"],
-        ct_cutoff=CT_Threshold.TOWER.value,
-        reporter=row["Dye"]
-      ))
-
-  elif instrument == "z480":
-
-    # 解析 z480 檔案
-    qpcr_data = file_parser.parseZ480File(FAM_file_path, VIC_file_path)
-
-    if not qpcr_data:
-      logger.error(f"QPCR 資料解析失敗, 無法解析 z480 檔案, 請檢查原始檔案")
-      logger.error(f"FAM_file_path: {FAM_file_path}")
-      logger.error(f"VIC_file_path: {VIC_file_path}")
-      raise ValueError("QPCR 資料解析失敗, 無法解析 z480 檔案, 請檢查原始檔案")
-
-    # 轉換 dataframe 為 QPCRRecord 列表
-    for index, row in qpcr_data.data.iterrows():
-      qpcr_record_list.append(QPCRRecord(
-        well_position=WELL(row["Pos"]),
-        sample_name=row["Name"],
-        ct_value=row["Cp"],
-        ct_cutoff=CT_Threshold.Z480.value,
-        reporter=row["Reporter"]
-      ))
-
-  # 檢查 qpcr_data 是否為 None
-  if len(qpcr_record_list) == 0:
-    logger.error(f"QPCR 資料解析失敗沒有任何資料, 請檢查原始檔案")
-    logger.error(f"input_file_path: {input_file_path}")
-    logger.error(f"FAM_file_path: {FAM_file_path}")
-    logger.error(f"VIC_file_path: {VIC_file_path}")
-    raise ValueError("QPCR 資料解析失敗, 請檢查原始檔案")
-
-  return qpcr_record_list
 
 # 處理 MTHFRData 列表
 def parseMTHFRData(qpcr_record_list, controlWell, ntcWell):
@@ -309,12 +237,12 @@ def QC(dataMatrix, reagent):
     # QC 條件1: Control 的 c677_wt 和 c677_mut 都通過 cutoff (CT < CT_Threshold)
     condition1 = controlData.c677_wt.pass_cutoff and controlData.c677_mut.pass_cutoff
     if not condition1:
-      logger.warning(f"Control 的 c677_wt 或 c677_mut '沒有通過' cutoff")
+      logger.warn(f"Control 的 c677_wt 或 c677_mut '沒有通過' cutoff")
 
     # QC 條件2: NTC 的 c677_wt 和 c677_mut 都"不"通過 cutoff (CT > CT_Threshold 或 沒有數值)
     condition2 = not NTCData.c677_wt.pass_cutoff and not NTCData.c677_mut.pass_cutoff
     if not condition2:
-      logger.warning(f"NTCData 的 c677_wt 或 c677_mut '通過' cutoff")
+      logger.warn(f"NTCData 的 c677_wt 或 c677_mut '通過' cutoff")
 
     if condition1 and condition2:
       qc_status = QCStatus.PASSED
@@ -342,17 +270,17 @@ def QC(dataMatrix, reagent):
     # QC 條件1: Control 的 c1298_wt 和 c1298_mut 都通過 cutoff (CT < CT_Threshold)
     condition1 = controlData.c1298_wt.pass_cutoff and controlData.c1298_mut.pass_cutoff
     if not condition1:
-      logger.warning(f"Control 的 c1298_wt 或 c1298_mut '沒有通過' cutoff")
+      logger.warn(f"Control 的 c1298_wt 或 c1298_mut '沒有通過' cutoff")
 
     # QC 條件2: Control 的 c677_wt 和 c677_mut 都通過 cutoff (CT < CT_Threshold)
     condition2 = controlData.c677_wt.pass_cutoff and controlData.c677_mut.pass_cutoff
     if not condition2:
-      logger.warning(f"Control 的 c677_wt 或 c677_mut '沒有通過' cutoff")
+      logger.warn(f"Control 的 c677_wt 或 c677_mut '沒有通過' cutoff")
 
     # QC 條件3: NTC 的 c677_wt 和 c677_mut 都"不"通過 cutoff (CT > CT_Threshold 或 沒有數值)
     condition3 = not NTCData.c677_wt.pass_cutoff and not NTCData.c677_mut.pass_cutoff
     if not condition3:
-      logger.warning(f"NTCData 的 c677_wt 或 c677_mut '通過' cutoff")
+      logger.warn(f"NTCData 的 c677_wt 或 c677_mut '通過' cutoff")
 
     if condition1 and condition2 and condition3:
       qc_status = QCStatus.PASSED
@@ -380,17 +308,17 @@ def QC(dataMatrix, reagent):
     # QC 條件1: Control 的 c677_wt 和 c677_mut 都通過 cutoff (CT > 0)
     condition1 = controlData.c677_wt.pass_cutoff and controlData.c677_mut.pass_cutoff
     if not condition1:
-      logger.warning(f"Control 的 c677_wt 或 c677_mut '沒有通過' cutoff")
+      logger.warn(f"Control 的 c677_wt 或 c677_mut '沒有通過' cutoff")
 
     # QC 條件2: NTC 的 c677_wt 和 c677_mut 都"不"通過 cutoff (CT > 0)
     condition2 = not NTCData.c677_wt.pass_cutoff and not NTCData.c677_mut.pass_cutoff
     if not condition2:
-      logger.warning(f"NTCData 的 c677_wt 或 c677_mut '通過' cutoff")
+      logger.warn(f"NTCData 的 c677_wt 或 c677_mut '通過' cutoff")
 
     # QC 條件3: Control 的 c677_wt 和 c677_mut 的 CT 值差值必須小於 4
     condition3 = abs(controlData.c677_wt.ct_value - controlData.c677_mut.ct_value) < CT_Threshold.DELTA_CT_THRESHOLD_V3.value
     if not condition3:
-      logger.warning(f"Control 的 c677_wt 和 c677_mut 的 CT 值差值必須小於 {CT_Threshold.DELTA_CT_THRESHOLD_V3.value}")
+      logger.warn(f"Control 的 c677_wt 和 c677_mut 的 CT 值差值必須小於 {CT_Threshold.DELTA_CT_THRESHOLD_V3.value}")
 
     # 如果所有條件都通過, 則 QC 狀態為 PASSED
     if condition1 and condition2 and condition3:
@@ -606,8 +534,8 @@ def parseParams():
   parser.add_argument("--VICfile", "-v", required=False, type=str, help="VIC 檔案路徑 (Text), 若儀器為 z480 必填")
   parser.add_argument("--controlwell", "-c", required=True, type=str, help="控制 well 位置")
   parser.add_argument("--ntcwell", "-n", required=True, type=str, help="NTC well 位置")
-  parser.add_argument("--reagent", required=True, type=str, help="試劑類型, 目前有 ['accuinMTHFR1', 'accuinMTHFR2', 'accuinMTHFR3'] (必填)")
-  parser.add_argument("--instrument", required=True, type=str, help="儀器類型, 目前有 ['qs3', 'tower', 'z480'] (必填)")
+  parser.add_argument("--reagent", required=True, type=str, choices=["accuinMTHFR1", "accuinMTHFR2", "accuinMTHFR3"], help="試劑類型, 目前有 ['accuinMTHFR1', 'accuinMTHFR2', 'accuinMTHFR3'] (必填)")
+  parser.add_argument("--instrument", required=True, type=str, choices=["qs3", "tower", "z480"], help="儀器類型, 目前有 ['qs3', 'tower', 'z480'] (必填)")
   parser.add_argument("--organization", "-g", required=False, default="defaultOrg", type=str, help="組織所屬, MTHFR 不會用到可以不用設定")
   parser.add_argument("--output", "-o", required=False, type=str, help="輸出結果的 JSON 檔案路徑, 若不給定, 則輸出到 console")
   args = parser.parse_args()
@@ -628,6 +556,10 @@ def parseParams():
     # 初步檢查副檔名
     if not (args.inputfile.endswith(".xlsx") or args.inputfile.endswith(".xls")) and not args.inputfile.endswith(".csv"):
       raise ValueError("inputfile 副檔名錯誤, 請提供 .xlsx 或 .xls 或 .csv 檔案")
+
+    # 如果是 qs3 或 tower, reagent 必須為 accuinMTHFR1 或 accuinMTHFR2
+    if args.reagent != "accuinMTHFR1" and args.reagent != "accuinMTHFR2":
+      raise ValueError("儀器為 qs3 或 tower 時, reagent 必須為 accuinMTHFR1 或 accuinMTHFR2")
 
   # 2. 驗證儀器類型, 若儀器為 z480 必填 FAMfile 和 VICfile 參數
   elif args.instrument == "z480":
@@ -651,7 +583,7 @@ def parseParams():
       raise ValueError("VICfile 副檔名錯誤, 請提供 .txt 檔案")
 
     # 如果是 z480, reagent 必須為 accuinMTHFR3
-    if args.instrument == "z480" and args.reagent != "accuinMTHFR3":
+    if args.reagent != "accuinMTHFR3":
       raise ValueError("儀器為 z480 時, reagent 必須為 accuinMTHFR3")
 
   return args

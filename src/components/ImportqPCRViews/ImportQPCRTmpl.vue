@@ -59,7 +59,7 @@ import qPCRImportSection from '@/components/ImportqPCRViews/qPCRImportSection.vu
 
 // Database Path
 const dbMTHFRResultPath = "mthfr_result";
-
+const dbNUDT15ResultPath = "nudt15_result";
 // 取得 Quasar 和 store
 const $q = useQuasar();
 const store = useStore();
@@ -100,13 +100,22 @@ const getCurrentInstrument = () => {
 }
 
 // 定義 MTHFR_RESULT 的格式
-const MTHFR_RESULT = (controlData, NTCData, SampleDataList, resultList, errMsg) => {
+const MTHFR_RESULT = (controlData, NTCData, SampleDataList, resultList) => {
   return {
     controlData: controlData,
     NTCData: NTCData,
     SampleDataList: SampleDataList,
     resultList: resultList,
-    errMsg: errMsg,
+  }
+}
+
+// 定義 NUDT15_RESULT 的格式
+const NUDT15_RESULT = (controlData, NTCData, SampleDataList, resultList) => {
+  return {
+    controlData: controlData,
+    NTCData: NTCData,
+    SampleDataList: SampleDataList,
+    resultList: resultList,
   }
 }
 
@@ -167,7 +176,6 @@ async function onSubmit() {
         resultObj.ntcData,
         resultObj.sampleDataList,
         resultObj.resultList,
-        resultObj.errMsg
       );
 
       // 製作 ANALYSIS_RESULT
@@ -176,6 +184,7 @@ async function onSubmit() {
         currentAnalysisID.value.analysis_uuid,
         resultObj.config,
         resultObj.qc_status,
+        resultObj.errMsg,
         MTHFR_Result
       );
 
@@ -183,7 +192,26 @@ async function onSubmit() {
       update_userAnalysisData(user_info.value.uid, dbMTHFRResultPath, AnalysisResult, currentAnalysisID.value.analysis_uuid);
     }
     else if (props.analysis_name === "NUDT15") {
-      console.log("NUDT15");
+      // 製作 NUDT15_RESULT
+      const NUDT15_Result = NUDT15_RESULT(
+        resultObj.controlData,
+        resultObj.ntcData,
+        resultObj.sampleDataList,
+        resultObj.resultList,
+      );
+
+      // 製作 ANALYSIS_RESULT
+      const AnalysisResult = ANALYSIS_RESULT(
+        currentAnalysisID.value.analysis_name,
+        currentAnalysisID.value.analysis_uuid,
+        resultObj.config,
+        resultObj.qc_status,
+        resultObj.errMsg,
+        NUDT15_Result
+      );
+
+      // 將結果存到 firestore
+      update_userAnalysisData(user_info.value.uid, dbNUDT15ResultPath, AnalysisResult, currentAnalysisID.value.analysis_uuid);
     }
 
     // 更新 currentAnalysisID

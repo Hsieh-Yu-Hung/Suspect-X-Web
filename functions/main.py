@@ -21,9 +21,12 @@ from Nucleus import Core
 # 其他
 import json
 
+# 載入環境變數
+from config_env import load_env
+load_env()
+
 # 實體化 Logger
 logger = Logger(bucket)
-
 # 保存日誌
 @https_fn.on_request(region="asia-east1", cors=options.CorsOptions(cors_origins="*", cors_methods=["get", "post"]), memory=512)
 def saveLogs(req: https_fn.Request):
@@ -193,4 +196,3 @@ def RunAnalysis(req: https_fn.Request):
         response_data = {"data": {"status": "error", "message": str(e)}}
 
     return https_fn.Response(json.dumps(response_data), content_type="application/json")
-

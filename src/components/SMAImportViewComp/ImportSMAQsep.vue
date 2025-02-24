@@ -201,13 +201,16 @@ import { updateGetUserInfo } from '@/composables/accessStoreUserInfo';
 import { setAnalysisID } from '@/composables/checkAnalysisStatus';
 import { upload_files_to_storage } from '@/utility/storageManager';
 import { CATEGORY_LIST } from '@/utility/storageManager';
-import { update_userAnalysisData, getData, dataset_list } from '@/firebase/firebaseDatabase';
+import { update_userAnalysisData, getData, dataset_list, ANALYSIS_RESULT } from '@/firebase/firebaseDatabase';
 import { deleteData } from '@/firebase/firebaseDatabase';
 import { submitWorkflow } from '@/composables/submitWorkflow';
 
 // import component
 import peakSetting from './peakSetting.vue';
 import WarningDialog from '@/components/WarningDialog.vue';
+
+// 定義 Database 路徑
+const dbSMAv4ResultPath = 'sma_v4_result';
 
 // 使用者身份
 const is_login = ref(false);
@@ -633,6 +636,17 @@ const parseSMAv4Input = (file_list) => {
   return smav4InputFilesObj;
 }
 
+// 定義 SMA v4 的 result object
+const SMAv4_RESULT = (STD_DATA, SAMPLE_DATA, COPY_NUMBER_RANGES, RESULT_LIST, PARAMETERS) => {
+  return {
+    STD_DATA,
+    SAMPLE_DATA,
+    COPY_NUMBER_RANGES,
+    RESULT_LIST,
+    PARAMETERS
+  }
+}
+
 /* 主程式 */
 async function onSubmit() {
 
@@ -675,8 +689,31 @@ async function onSubmit() {
   if (analysisResult.status == 'success'){
     dialog_error_message.value = "";
 
-    // 印出 analysisResult, 從這裡繼續
-    console.log("analysisResult",analysisResult.result);
+    // 將 result 中 Infinity 轉換成 null
+    const resultStr = analysisResult.result.replace(/Infinity/g, 'null');
+    const resultObj = JSON.parse(resultStr);
+
+    // 製作 SMAv4_RESULT
+    const SMAv4_Result = SMAv4_RESULT(
+      resultObj.STD_DATA,
+      resultObj.SAMPLE_DATA,
+      resultObj.COPY_NUMBER_RANGES,
+      resultObj.RESULT_LIST,
+      resultObj.PARAMETERS
+    );
+
+    // 製作 ANALYSIS_RESULT
+    const AnalysisResult = ANALYSIS_RESULT(
+      currentAnalysisID.value.analysis_name,
+      currentAnalysisID.value.analysis_uuid,
+      resultObj.config,
+      resultObj.qc_status,
+      resultObj.errMsg,
+      SMAv4_Result
+    );
+
+    // 將結果存到 firestore
+    update_userAnalysisData(user_info.value.uid, dbSMAv4ResultPath, AnalysisResult, currentAnalysisID.value.analysis_uuid);
 
     // 更新 currentAnalysisID
     const new_id = `analysis_${uuidv4()}`;

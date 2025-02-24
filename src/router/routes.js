@@ -9,7 +9,7 @@ const routes = [
       { path: 'page-preview', component: () => import('pages/MainPagePreview.vue') },   // Preview
       { path: 'page-analysis', component: () => import('pages/MainPageAnalysis.vue') }, // Analysis
       { path: 'page-export', component: () => import('pages/MainPageExport.vue') },     // Export
-      { path: 'page-admin', component: () => import('pages/AdminPage.vue') }            // Admin page
+      { path: 'page-admin', component: () => import('pages/AdminPage.vue') },           // Admin page
     ]
   },
 

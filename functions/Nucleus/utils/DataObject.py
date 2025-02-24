@@ -6,8 +6,8 @@ import pandas as pd
 # 定義 Range (用於 peak 篩選)
 @dataclass
 class Range:
-  MIN: int
-  MAX: int
+  MIN: float
+  MAX: float
 
   # 定義乘法運算符
   def __mul__(self, other):
@@ -21,9 +21,9 @@ class Range:
   # 判斷是否在範圍內, 且 RFU 大於 RFU CutOff
   def inRange(self, bp, rfu_cutoff=0, rfu=None):
     if rfu is not None:
-      return self.MIN <= int(bp) <= self.MAX and float(rfu) >= rfu_cutoff
+      return self.MIN <= float(bp) <= self.MAX and float(rfu) >= rfu_cutoff
     else:
-      return self.MIN <= int(bp) <= self.MAX
+      return self.MIN <= float(bp) <= self.MAX
 
   # 回傳可迭代對象中數值在 MIN 和 MAX 之間的索引值
   def withinRange(self, iterable, indices=False):
@@ -70,7 +70,7 @@ class RFUObj:
   rfu_cutoff: float
   pass_cutoff: bool = True
 
-  # 如果 rfu_value 小於 cutoff, 則將 peak_group 設為 "Cutoff"
+  # 如果 rfu_value 小於 cutoff, 則將 pass_cutoff 設為 False
   def CutRFU(self):
     if self.rfu_value < self.rfu_cutoff:
       self.pass_cutoff = False

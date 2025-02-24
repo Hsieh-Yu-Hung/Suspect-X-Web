@@ -10,7 +10,7 @@ from scipy.stats import linregress
 from utils.InputParser import UserInfo
 from utils.FileParser import FileParser
 from utils.DataObject import Range, Qsep100Peak, AnalysisOutput, CallPeak
-from utils.ConstVaribles import QCStatus, Gender, AssessmentStatus, NucleusVersion
+from utils.ConstVaribles import QCStatus, AssessmentStatus, NucleusVersion
 
 # 獲取當前腳本所在的目錄. 將上一層目錄添加到 sys.path
 current_dir = os.path.dirname(os.path.abspath(__file__))
@@ -35,6 +35,12 @@ XY_PEAK_RFU_CUTOFF = 1.5
 TARGET_PEAK_RFU_CUTOFF = 1
 X_PEAK_RANGE = Range(MIN=X_PEAK_SIZE-XY_PEAK_SIZE_DIV, MAX=X_PEAK_SIZE+XY_PEAK_SIZE_DIV)
 Y_PEAK_RANGE = Range(MIN=Y_PEAK_SIZE-XY_PEAK_SIZE_DIV, MAX=Y_PEAK_SIZE+XY_PEAK_SIZE_DIV)
+
+# 性別字串
+class Gender(Enum):
+  MALE = 'male'
+  FEMALE = 'female'
+  NOT_SET = 'not-set'
 
 # Standard Control
 @dataclass
@@ -433,7 +439,7 @@ def filter_sample_peaks(samplePeaks, sample_id):
     \n Target-Peaks: [\n\t{"\n\t".join([str(each_peak) for each_peak in samplePeaks['target_peaks']])}\n]")
 
   # 初始化性別, 選擇的 FX peak 列表
-  gender = Gender.NOT_SET
+  gender = Gender.NOT_SET.value
   selected_fx_peaks = []
 
   # 篩選 pass_cutoff 為 True 的 Peak
@@ -448,9 +454,9 @@ def filter_sample_peaks(samplePeaks, sample_id):
 
   # 用有沒有 Y 決定性別
   if len(pass_y_peaks) > 0:
-    gender = Gender.MALE
+    gender = Gender.MALE.value
   else:
-    gender = Gender.FEMALE
+    gender = Gender.FEMALE.value
 
   # 如果沒有 TargetPeak, 則回傳 Invalide
   if len(pass_target_peaks) == 0:
@@ -461,7 +467,7 @@ def filter_sample_peaks(samplePeaks, sample_id):
   highest_rfu_peak = max(pass_target_peaks, key=lambda x: x.peak_rfu)
 
   # 女性
-  if gender == Gender.FEMALE:
+  if gender == Gender.FEMALE.value:
 
     # 前面步驟已經篩選過 250 < peak_size < 1000 和 RFU > 1, 這裡不再重複篩選
     # FX peak 選擇範圍： 250 ~ 最高 RFU 的 Peak 的 BP 數值 + FX_PEAK_SIZE_EXPAND
@@ -481,7 +487,7 @@ def filter_sample_peaks(samplePeaks, sample_id):
         selected_fx_peaks.append(passed_peaks)
 
   # 男性
-  elif gender == Gender.MALE:
+  elif gender == Gender.MALE.value:
 
     # 男性直接選擇最高 RFU 的 Peak 即可
     selected_fx_peaks.append(highest_rfu_peak)
@@ -502,7 +508,7 @@ def sample_assessment(selected_fx_peaks, gender, sample_id):
     qc_status=QCStatus.PASSED.value,
     assessment=AssessmentStatus.INVALID.value,
     interpretation=[],
-    gender=gender.value
+    gender=gender
   )
 
   # 取得選擇的 FX peak 數量
@@ -543,8 +549,8 @@ def parseParams():
   parser = argparse.ArgumentParser()
   parser.add_argument("--control", "-c", required=True, type=str, help="控制檔案路徑")
   parser.add_argument("--samples", "-s", required=True, type=str, help="樣本檔案路徑, 多個檔案使用逗號分隔")
-  parser.add_argument("--reagent", "-r", required=True, type=str, help="試劑類型, 目前有 ['accuinFx1', 'accuinFx2']")
-  parser.add_argument("--instrument", "-i", required=False, default="qsep100", type=str, help="儀器類型, 目前只有 qsep100 可以不用設定")
+  parser.add_argument("--reagent", "-r", required=True, type=str, choices=["accuinFx1", "accuinFx2"], help="試劑類型, 目前有 ['accuinFx1', 'accuinFx2']")
+  parser.add_argument("--instrument", "-i", required=False, default="qsep100", type=str, choices=["qsep100"], help="儀器類型, 目前只有 qsep100 可以不用設定")
   parser.add_argument("--organization", "-g", required=False, default="defaultOrg", type=str, help="組織所屬, FXS 不會用到可以不用設定")
   parser.add_argument("--output", "-o", required=False, type=str, help="輸出結果的 JSON 檔案路徑, 若不給定, 則輸出到 console")
   args = parser.parse_args()

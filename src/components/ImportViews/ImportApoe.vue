@@ -196,6 +196,7 @@ async function onSubmit() {
       currentAnalysisID.value.analysis_uuid,
       resultObj.config,
       resultObj.qc_status,
+      "",
       APOE_Result
     );
 

@@ -21,6 +21,7 @@
     "@quasar/extras": "^1.16.4",
     "core-js": "^3.31.1",
     "cors": "^2.8.5",
+    "crypto-js": "^4.2.0",
     "dotenv": "^16.4.7",
     "firebase": "^11.1.0",
     "firebase-admin": "^13.0.2",

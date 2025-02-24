@@ -202,6 +202,7 @@ async function onSubmit() {
         currentAnalysisID.value.analysis_uuid,
         resultObj.config,
         resultObj.qc_status,
+        "",
         FXS_Result
       );
 
@@ -222,6 +223,7 @@ async function onSubmit() {
         currentAnalysisID.value.analysis_uuid,
         resultObj.config,
         resultObj.qc_status,
+        "",
         HTD_Result
       );
 

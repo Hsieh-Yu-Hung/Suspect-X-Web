@@ -17,6 +17,22 @@ const CATEGORY_LIST = {
 
 export { CATEGORY_LIST };
 
+// 定義一個輔助函數來處理上傳的重試邏輯
+async function uploadWithRetry(file, upload_path, retries = 3, timeout = 5000) {
+  for (let attempt = 1; attempt <= retries; attempt++) {
+    try {
+      const response = await Promise.race([
+        uploadFileToStorage(file, upload_path),
+        new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), timeout))
+      ]);
+      return response;
+    } catch (error) {
+      if (attempt === retries) throw error;
+      logger.warn(`Upload attempt ${attempt} failed. Retrying...`);
+    }
+  }
+}
+
 // 上傳檔案到 storage
 export async function upload_files_to_storage(file, user_id=null, category=CATEGORY_LIST.tmp, analysis_uuid=null, sub_dir=null) {
 
@@ -41,13 +57,16 @@ export async function upload_files_to_storage(file, user_id=null, category=CATEG
         ? `${userLayer}/${categoryLayer}/${analysis_uuid}/${file.name}`
         : `${userLayer}/${categoryLayer}/${file.name}`;
 
-    // 上傳檔案
-    await uploadFileToStorage(file, upload_path).then((response) => {
+    try {
+      const response = await uploadWithRetry(file, upload_path);
       execute_result.status = response.status;
       execute_result.storage_path = response.storage_path;
       execute_result.message = response.message;
       execute_result.file = file.name;
-    });
+    } catch (error) {
+      execute_result.status = 'error';
+      execute_result.message = error.message;
+    }
   } else {
     execute_result.status = 'error';
     execute_result.message = `No file selected`;

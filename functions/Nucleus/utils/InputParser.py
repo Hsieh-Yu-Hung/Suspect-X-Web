@@ -16,6 +16,7 @@ class AnalysisName:
   FXS = 'FXS'
   HTD = 'HTD'
   SMA = 'SMA'
+  SMAv4 = 'SMAv4'
 
 # 定義使用者資訊
 @dataclass
@@ -46,14 +47,46 @@ class HTDInputData:
   control_file_path: str
   samples_file_list: list
 
-# 定義 MTHFR input 資料格式
+# 定義 QPCR Input Data 資料格式
 @dataclass
-class MTHFRInputData:
+class QPCRInputData:
   input_file_path: str
   FAM_file_path: str
   VIC_file_path: str
-  control_well: WELL
   ntc_well: WELL
+  control_well: WELL
+
+# 定義 MTHFR input 資料格式
+@dataclass
+class MTHFRInputData(QPCRInputData):
+  analysis_name: str = AnalysisName.MTHFR
+
+# 定義 NUDT15 input 資料格式
+@dataclass
+class NUDT15InputData(QPCRInputData):
+  analysis_name: str = AnalysisName.NUDT15
+
+# 定義 SMA input 資料格式
+@dataclass
+class SMAInputData(QPCRInputData):
+  CY5_file_path: str
+  sc1_well: WELL
+  sc2_well: WELL
+  analysis_name: str
+
+# 定義 SMAv4 input 資料格式
+@dataclass
+class SMAv4InputData():
+  smn1_std1: str
+  smn1_std2: str
+  smn1_std3: str
+  smn2_std1: str
+  smn2_std2: str
+  smn2_std3: str
+  smn1_samples: list[str]
+  smn2_samples: list[str]
+  peak_condition: dict
+  analysis_name: str
 
 # InputParser
 class InputParser:
@@ -137,6 +170,9 @@ class InputParser:
     elif analysisName == AnalysisName.SMA:
       sma_input_data = self.parseSMAInputData(self.input_data)
       return sma_input_data
+    elif analysisName == AnalysisName.SMAv4:
+      sma_input_data = self.parseSMAv4InputData(self.input_data)
+      return sma_input_data
 
   # 使用者資訊
   def getUserInfo(self):
@@ -202,7 +238,7 @@ class InputParser:
     control_well = WELL(mthfr_input_data['control_well'][0])
     ntc_well = WELL(mthfr_input_data['ntc_well'])
 
-    # 回傳 input 檔案路徑
+    # 回傳 MTHFRInputData
     return MTHFRInputData(
       input_file_path = input_file,
       FAM_file_path = FAM_file,
@@ -213,7 +249,36 @@ class InputParser:
 
   # 解析 NUDT15 input 資料
   def parseNUDT15InputData(self, nudt15_input_data):
-    return []
+    # 取得 input 檔案
+    input_file = nudt15_input_data['file_path']
+    FAM_file = nudt15_input_data['FAM_file_path']
+    VIC_file = nudt15_input_data['VIC_file_path']
+
+    # 下載 input 檔案
+    for file in [input_file, FAM_file, VIC_file]:
+      if file:
+        self.download_file_from_storage(file)
+
+    # 加上 PATH_OF_DATA
+    if input_file:
+      input_file = os.path.join(PATH_OF_DATA, input_file)
+    if FAM_file:
+      FAM_file = os.path.join(PATH_OF_DATA, FAM_file)
+    if VIC_file:
+      VIC_file = os.path.join(PATH_OF_DATA, VIC_file)
+
+    # 取得 well 位置
+    control_well = WELL(nudt15_input_data['control_well'][0])
+    ntc_well = WELL(nudt15_input_data['ntc_well'])
+
+    # 回傳 input 檔案路徑
+    return NUDT15InputData(
+      input_file_path = input_file,
+      FAM_file_path = FAM_file,
+      VIC_file_path = VIC_file,
+      control_well = control_well,
+      ntc_well = ntc_well
+    )
 
   # 解析 FXS input 資料
   def parseFXSInputData(self, fxs_input_data):
@@ -269,4 +334,96 @@ class InputParser:
 
   # 解析 SMA input 資料
   def parseSMAInputData(self, sma_input_data):
-    return []
+
+    # 取得 input 檔案
+    input_file = sma_input_data['file_path']
+    FAM_file = sma_input_data['FAM_file_path']
+    VIC_file = sma_input_data['VIC_file_path']
+    CY5_file = sma_input_data['CY5_file_path']
+
+    # 下載 input 檔案
+    for file in [input_file, FAM_file, VIC_file, CY5_file]:
+      if file:
+        self.download_file_from_storage(file)
+
+    # 加上 PATH_OF_DATA
+    if input_file:
+      input_file = os.path.join(PATH_OF_DATA, input_file)
+    if FAM_file:
+      FAM_file = os.path.join(PATH_OF_DATA, FAM_file)
+    if VIC_file:
+      VIC_file = os.path.join(PATH_OF_DATA, VIC_file)
+    if CY5_file:
+      CY5_file = os.path.join(PATH_OF_DATA, CY5_file)
+
+    # 取得 Control wells 位置
+    sc1_well = WELL(sma_input_data['control_well'][0])
+    sc2_well = WELL(sma_input_data['control_well'][1])
+    ntc_well = WELL(sma_input_data['ntc_well'])
+
+    # 回傳 SMAInputData
+    return SMAInputData(
+      input_file_path = input_file,
+      FAM_file_path = FAM_file,
+      VIC_file_path = VIC_file,
+      CY5_file_path = CY5_file,
+      control_well = None,
+      sc1_well = sc1_well,
+      sc2_well = sc2_well,
+      ntc_well = ntc_well,
+      analysis_name = AnalysisName.SMA
+    )
+
+  # 解析 SMAv4 input 資料
+  def parseSMAv4InputData(self, sma_input_data):
+
+    # 取得 input 檔案
+    smn1_std1 = sma_input_data['file_path']['smn1_std1']
+    smn1_std2 = sma_input_data['file_path']['smn1_std2']
+    smn1_std3 = sma_input_data['file_path']['smn1_std3']
+    smn2_std1 = sma_input_data['file_path']['smn2_std1']
+    smn2_std2 = sma_input_data['file_path']['smn2_std2']
+    smn2_std3 = sma_input_data['file_path']['smn2_std3']
+    smn1_samples = sma_input_data['file_path']['smn1_samples']
+    smn2_samples = sma_input_data['file_path']['smn2_samples']
+    peak_condition = sma_input_data['peak_condition']
+
+    # 下載 SC 標準品檔案
+    for file in [smn1_std1, smn1_std2, smn1_std3, smn2_std1, smn2_std2, smn2_std3]:
+      if file:
+        self.download_file_from_storage(file)
+
+    # 下載 samples 檔案
+    for sample in smn1_samples + smn2_samples:
+      if sample:
+        self.download_file_from_storage(sample)
+
+    # 加上 PATH_OF_DATA
+    if smn1_std1:
+      smn1_std1 = os.path.join(PATH_OF_DATA, smn1_std1)
+    if smn1_std2:
+      smn1_std2 = os.path.join(PATH_OF_DATA, smn1_std2)
+    if smn1_std3:
+      smn1_std3 = os.path.join(PATH_OF_DATA, smn1_std3)
+    if smn2_std1:
+      smn2_std1 = os.path.join(PATH_OF_DATA, smn2_std1)
+    if smn2_std2:
+      smn2_std2 = os.path.join(PATH_OF_DATA, smn2_std2)
+    if smn2_std3:
+      smn2_std3 = os.path.join(PATH_OF_DATA, smn2_std3)
+    smn1_samples = [os.path.join(PATH_OF_DATA, sample) for sample in smn1_samples if sample]
+    smn2_samples = [os.path.join(PATH_OF_DATA, sample) for sample in smn2_samples if sample]
+
+    # 回傳 SMAv4InputData
+    return SMAv4InputData(
+      smn1_std1 = smn1_std1,
+      smn1_std2 = smn1_std2,
+      smn1_std3 = smn1_std3,
+      smn2_std1 = smn2_std1,
+      smn2_std2 = smn2_std2,
+      smn2_std3 = smn2_std3,
+      smn1_samples = smn1_samples,
+      smn2_samples = smn2_samples,
+      peak_condition = peak_condition,
+      analysis_name = AnalysisName.SMAv4
+    )

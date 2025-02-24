@@ -1,8 +1,23 @@
 # import modules
 import pandas as pd
 import os
+import sys
 import warnings
 from dataclasses import dataclass
+from .DataObject import WELL, QPCRRecord
+
+# 獲取當前腳本所在的目錄. 將上一層目錄添加到 sys.path, 以及上上層目錄添加到 sys.path
+current_dir = os.path.dirname(os.path.abspath(__file__))
+parent_dir = os.path.abspath(os.path.join(current_dir, os.pardir))
+parent_dir_parent = os.path.abspath(os.path.join(parent_dir, os.pardir))
+sys.path.append(parent_dir_parent)
+sys.path.append(parent_dir)
+sys.path.append(current_dir)
+
+# 引入 saveLogs
+from config_admin import bucket
+from saveLogs import Logger
+logger = Logger(bucket)
 
 # 定義非法字符列表
 ILLEGAL_CHARS = ['/', '\\', '?', '%', '*', ':', '|', '"', '<', '>', '.', ',']
@@ -55,7 +70,6 @@ class FileParser:
     ]
 
     # Tower 預期欄位
-    self.TowerFileSkipRows = 19
     self.TowerExpectedColumns = [
       "Well", "Sample name", "Sample type", "Dye", "Ct",
     ]
@@ -65,6 +79,7 @@ class FileParser:
     self.FAM_RANGE_z480ii = 'FAM (465-510)'
     self.VIC_RANGE_z480 = '540-580 (540-580)'
     self.VIC_RANGE_z480ii = 'VIC / HEX / Yellow555 (533-580)'
+    self.CY5_RANGE_z480 = '610-670 (610-670)'
     self.Z480ExpectedColumns = ["Pos", "Name", "Cp"]
 
   # 解析 Qsep100 檔案
@@ -153,11 +168,32 @@ class FileParser:
   # 解析 tower 檔案
   def parseTowerFile(self, file_path):
 
+    # 讀取檔案, 找到包含所有 header_keywords 的行數
+    def findHeaderRow(file_path, header_keywords, encoding):
+        with open(file_path, "r", encoding=encoding) as file:
+          count = 0
+          for line in file:
+            if all(keyword in line for keyword in header_keywords):
+              return count
+            count += 1
+
     # Keyword of column header
     header_keywords = self.TowerExpectedColumns
 
+
+    # 讀取檔案, 找到包含所有 header_keywords 的行數
+    try:
+      header_row = findHeaderRow(file_path, header_keywords, "utf-8")
+    except UnicodeDecodeError as e:
+      logger.warn(f"Tower 檔以 utf-8 編碼讀取失敗, 嘗試使用 latin1 編碼")
+      header_row = findHeaderRow(file_path, header_keywords, "latin1")
+
     # 讀取 CSV 檔案
-    df = pd.read_csv(file_path,sep=",",skiprows=self.TowerFileSkipRows)
+    try:
+      df = pd.read_csv(file_path,sep=",",skiprows=header_row)
+    except UnicodeDecodeError as e:
+      logger.warn(f"Tower 檔以 utf-8 編碼讀取失敗, 嘗試使用 latin1 編碼")
+      df = pd.read_csv(file_path,sep=",",skiprows=header_row, encoding="latin1")
 
     # 檔名, 不包含副檔名
     file_name = removeIllegalChars(os.path.splitext(os.path.basename(file_path))[0])
@@ -176,7 +212,7 @@ class FileParser:
     return FileDataObject(data=df, sample_id=file_name, file_name=file_name)
 
   # 解析 z480 檔案
-  def parseZ480File(self, FAM_file_path, VIC_file_path):
+  def parseZ480File(self, FAM_file_path, VIC_file_path, CY5_file_path=None):
 
     def parser(file_path, reporter):
 
@@ -195,6 +231,8 @@ class FileParser:
         checkingRange = [self.FAM_RANGE_z480, self.FAM_RANGE_z480ii]
       elif reporter == "VIC":
         checkingRange = [self.VIC_RANGE_z480, self.VIC_RANGE_z480ii]
+      elif reporter == "CY5":
+        checkingRange = [self.CY5_RANGE_z480]
       else:
         raise ValueError(f"Z480 File Reporter 不符合預期: {reporter}")
 
@@ -223,15 +261,114 @@ class FileParser:
     # 讀取 VIC 檔案
     VIC_df, vic_exp_name = parser(VIC_file_path, "VIC")
 
+    # 讀取 CY5 檔案
+    if CY5_file_path:
+      CY5_df, cy5_exp_name = parser(CY5_file_path, "CY5")
+
     # 檢查 FAM 和 VIC 的 experiment_name 是否相同
     if fam_exp_name != vic_exp_name:
       raise ValueError("FAM 和 VIC 的 experiment_name 不同")
 
+    # 如果 CY5_file_path 存在, 則檢查 FAM 和 CY5 的 experiment_name 是否相同
+    if CY5_file_path:
+      if fam_exp_name != cy5_exp_name and vic_exp_name != cy5_exp_name:
+        raise ValueError("VIC, FAM 和 CY5 的 experiment_name 不同")
+
     # 合併 FAM 和 VIC 檔案
     df = pd.concat([FAM_df, VIC_df])
 
+    # 如果 CY5_file_path 存在, 則合併 FAM 和 CY5 檔案
+    if CY5_file_path:
+      df = pd.concat([df, CY5_df])
+
     # 檔名, 不包含副檔名
     file_name = ",".join([removeIllegalChars(os.path.splitext(os.path.basename(file_path))[0]) for file_path in [FAM_file_path, VIC_file_path]])
+    if CY5_file_path:
+      file_name += f",{removeIllegalChars(os.path.splitext(os.path.basename(CY5_file_path))[0])}"
     experiment_name = fam_exp_name
 
     return FileDataObject(data=df, sample_id=experiment_name, file_name=file_name)
+
+# 讀取 qPCR 檔案並轉換為 QPCRRecord 列表
+def readQPCRData(input_file_path, FAM_file_path, VIC_file_path, instrument, CT_Threshold, CY5_file_path=None):
+
+    # 實體化 FileParser
+  file_parser = FileParser()
+
+  # 初始化 qpcr_data
+  qpcr_data = None
+  qpcr_record_list = []
+
+  # 以 instrument 決定要讀哪一種檔案
+  if instrument == "qs3":
+
+    # 解析 qs3 檔案
+    qpcr_data = file_parser.parseQs3File(input_file_path)
+
+    if not qpcr_data:
+      logger.error(f"QPCR 資料解析失敗, 無法解析 qs3 檔案, 請檢查原始檔案")
+      logger.error(f"input_file_path: {input_file_path}")
+      raise ValueError("QPCR 資料解析失敗, 無法解析 qs3 檔案, 請檢查原始檔案")
+
+    # 轉換 dataframe 為 QPCRRecord 列表
+    for index, row in qpcr_data.data.iterrows():
+      qpcr_record_list.append(QPCRRecord(
+        well_position=WELL(row["Well Position"]),
+        sample_name=row["Sample Name"],
+        ct_value=row["CT"],
+        ct_cutoff=CT_Threshold,
+        reporter=row["Reporter"]
+      ))
+
+  elif instrument == "tower":
+
+    # 解析 tower 檔案
+    qpcr_data = file_parser.parseTowerFile(input_file_path)
+
+    if not qpcr_data:
+      logger.error(f"QPCR 資料解析失敗, 無法解析 tower 檔案, 請檢查原始檔案")
+      logger.error(f"input_file_path: {input_file_path}")
+      raise ValueError("QPCR 資料解析失敗, 無法解析 tower 檔案, 請檢查原始檔案")
+
+    # 轉換 dataframe 為 QPCRRecord 列表
+    for index, row in qpcr_data.data.iterrows():
+      qpcr_record_list.append(QPCRRecord(
+        well_position=WELL(row["Well"]),
+        sample_name=row["Sample name"],
+        ct_value=row["Ct"],
+        ct_cutoff=CT_Threshold,
+        reporter=row["Dye"]
+      ))
+
+  elif instrument == "z480":
+
+    # 解析 z480 檔案
+    qpcr_data = file_parser.parseZ480File(FAM_file_path, VIC_file_path, CY5_file_path)
+
+    if not qpcr_data:
+      logger.error(f"QPCR 資料解析失敗, 無法解析 z480 檔案, 請檢查原始檔案")
+      logger.error(f"FAM_file_path: {FAM_file_path}")
+      logger.error(f"VIC_file_path: {VIC_file_path}")
+      logger.error(f"CY5_file_path: {CY5_file_path}")
+      raise ValueError("QPCR 資料解析失敗, 無法解析 z480 檔案, 請檢查原始檔案")
+
+    # 轉換 dataframe 為 QPCRRecord 列表
+    for index, row in qpcr_data.data.iterrows():
+      qpcr_record_list.append(QPCRRecord(
+        well_position=WELL(row["Pos"]),
+        sample_name=row["Name"],
+        ct_value=row["Cp"],
+        ct_cutoff=CT_Threshold,
+        reporter=row["Reporter"]
+      ))
+
+  # 檢查 qpcr_data 是否為 None
+  if len(qpcr_record_list) == 0:
+    logger.error(f"QPCR 資料解析失敗沒有任何資料, 請檢查原始檔案")
+    logger.error(f"input_file_path: {input_file_path}")
+    logger.error(f"FAM_file_path: {FAM_file_path}")
+    logger.error(f"VIC_file_path: {VIC_file_path}")
+    logger.error(f"CY5_file_path: {CY5_file_path}")
+    raise ValueError("QPCR 資料解析失敗, 請檢查原始檔案")
+
+  return qpcr_record_list
