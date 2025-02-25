@@ -44,7 +44,6 @@ import { useQuasar } from 'quasar';
 import OrganizationItem from '@/components/OrganizationSection/OrganizationItem.vue';
 import { ORGAN_DATA, dataset_list, deleteData, getOrganizationDatabase, addOrganizationDatabase } from '@/firebase';
 import { load_software_version_for_dropdown, load_organization_from_firestore } from '@/firebase';
-import logger from '@/utility/logger';
 
 // 取得 Quasar
 const $q = useQuasar();
@@ -87,17 +86,15 @@ async function delete_organization(organization_id_to_delete) {
   await deleteData(dataset_list.organization_list, organization_id_to_delete)
   .then((Response) => {
     if(Response.status === 'success') {
-      logger.debug(`${Response.message} ID: ${organization_id_to_delete}`);
-
       // 發送事件
       emit('organization_List_is_updated');
     }
     else {
-      logger.error(`${Response.message} ID: ${organization_id_to_delete}`);
+      console.error(Response.message);
     }
   })
   .catch((error) => {
-    logger.error(`${error} ID: ${organization_id_to_delete}`);
+    console.error(error);
   })
   .finally(() => {
     // 關閉loading
@@ -125,20 +122,12 @@ async function update_organization_Lists(new_organization) {
         if (current_organization.organization_id === new_organization.organization_id) {
           // 如果存在則更新
           addOrganizationDatabase(current_organization);
-          logger.info(`
-          Update organization to firestore
-          id: ${current_organization.organization_id}
-          new_name: ${current_organization.organization_name}
-          new_software_version: ${current_organization.software_version}`);
         }
       }
       else {
         // 如果不存在則加入
         addOrganizationDatabase(current_organization);
-        logger.info(`
-        Add new organization to firestore
-        name: ${current_organization.organization_name}`);
-        }
+      }
     }
   });
 

@@ -69,7 +69,7 @@ import { USER_INFO, EMAIL_INFO, login_method } from '@/firebase';
 import { addLoginInfoDatabase, addEmailListDatabase, getEmailList } from '@/firebase';
 
 // Logger
-import logger from '@/utility/logger';
+import loggerV2 from '@/composables/loggerV2';
 
 // composables
 import { useAccountManagement } from '@/composables/accountManagement.js';
@@ -127,7 +127,10 @@ async function onSubmit() {
   await create_User_Account(input_email.value, input_password.value)
   .then((result) => {
     // 紀錄到 logger
-    logger.info(`New user registered: ${input_email.value}`);
+    const message = `新用戶註冊成功, Email: ${input_email.value}`;
+    const source = 'RegisterForm.vue line.126';
+    const user = 'admin';
+    loggerV2.debug(message, source, user);
 
     // 將登入資訊加入到 database
     const id = result.user.uid;
@@ -159,10 +162,19 @@ async function onSubmit() {
   })
   .catch((error) => {
     // 補捉重複註冊
-    if (catch_duplicate_register(error.message)) { return; }
+    if (catch_duplicate_register(error.message)) {
+      const message = `重複註冊, Email: ${input_email.value}`;
+      const source = 'RegisterForm.vue line.189';
+      const user = 'admin';
+      loggerV2.warn(message, source, user);
+      return;
+    }
 
     // 紀錄到 logger
-    logger.error(`Register failed, Email: ${input_email.value}, Reason: ${error}`);
+    const message = `用戶註冊失敗, Email: ${input_email.value}, 原因: ${error}`;
+    const source = 'RegisterForm.vue line.163';
+    const user = 'admin';
+    loggerV2.error(message, source, user);
 
     // 註冊失敗
     $q.notify({
@@ -182,7 +194,6 @@ async function applyGoogleLogin() {
 // 補捉重複註冊
 function catch_duplicate_register(err_msg) {
   if (err_msg.includes('email-already-in-use')) {
-    logger.error(`Duplicate register, Email: ${input_email.value}`);
     $q.notify({
       message: '此信箱已經註冊過',
       color: 'deep-orange-5',

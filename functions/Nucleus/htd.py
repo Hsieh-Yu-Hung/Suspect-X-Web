@@ -18,9 +18,8 @@ sys.path.append(parent_dir)
 sys.path.append(current_dir)
 
 # 引入 saveLogs
-from config_admin import bucket
-from saveLogs import Logger
-logger = Logger(bucket)
+from systemLogger import Logger
+logger = Logger()
 
 # 定義 Standard Peak 篩選範圍
 STD_PEAK_DIVIATION = Range(MIN=0.9, MAX=1.1)
@@ -140,9 +139,14 @@ class HTD_Output(AnalysisOutput):
 # 執行 HTD 主程式
 def HTD(control_file_path, samples_file_list, user_info):
 
-  logger.info(f"\n")
-  logger.info(f" ----> Start HTD Analysis <---- ")
-  logger.info(f" User Info: {user_info}")
+  # Logger settings
+  sender = user_info.organization
+  logger.setSender(sender)
+
+  # Logger : Start Message
+  tmp_source = "htd.py line. 140"
+  logger.analysis(f" ----> Start HTD Analysis <---- ", tmp_source)
+  logger.analysis(f" User Info: {user_info}", tmp_source)
 
   # 取得 config
   config = {
@@ -167,19 +171,22 @@ def HTD(control_file_path, samples_file_list, user_info):
 
   # 檢查 standard_peaks 是否為空
   if len(standard_peaks) == 0:
-    logger.warn(f"Error: 終止 HTD 分析, 因為 Standard Peak 問題!")
+    tmp_source = "htd.py line. 174"
+    logger.warn(f"Error: 終止 HTD 分析, 因為 Standard Peak 問題!", tmp_source)
     htd_output.qc_status = QCStatus.FAILED.value
     htd_output.errMsg = "Standard Peak 不足 2 個"
     return htd_output
 
   # log 印出 standard_peaks
   for peak in standard_peaks:
-    logger.info(f"Standard Peak: {peak}")
+    tmp_source = "htd.py line. 180"
+    logger.analysis(f"Standard Peak: {peak}", tmp_source)
 
   # 檢查 standard_peaks 是否都 inRange, 若有一個不在範圍內, 則回傳 "Inconclusive"
   std_in_range = all(peak.inRange for peak in standard_peaks)
   if not std_in_range:
-    logger.warn(f"Error: 終止 HTD 分析, 因為 Standard Peak 不在指定範圍內!")
+    tmp_source = "htd.py line. 185"
+    logger.warn(f"Error: 終止 HTD 分析, 因為 Standard Peak 不在指定範圍內!", tmp_source)
     htd_output.qc_status = QCStatus.FAILED.value
     htd_output.errMsg = "Standard Peak 不在指定範圍內"
     return htd_output
@@ -195,7 +202,8 @@ def HTD(control_file_path, samples_file_list, user_info):
   for sample_id, data in sampleData.items():
     # 若 internal_ctrl_peaks 不足 1 個, 則判定 "Inconclusive"
     if data.internal_ctrl_peaks is None:
-      logger.warn(f"Warning: Sample {sample_id} 缺少 internal_ctrl_peaks, 判定為 'Inconclusive'!")
+      tmp_source = "htd.py line. 205"
+      logger.warn(f"Warning: Sample {sample_id} 缺少 internal_ctrl_peaks, 判定為 'Inconclusive'!", tmp_source)
       data.assessment = AssessmentStatus.INCONCLUSIVE
       data.error_message = f"Sample {sample_id} 缺少 internal_ctrl_peaks"
       data.sample_qc_status = QCStatus.FAILED.value
@@ -203,7 +211,8 @@ def HTD(control_file_path, samples_file_list, user_info):
 
     # 若 target_peaks 不足 1 個, 則判定 "Invalid"
     if not data.selected_target_peaks:
-      logger.warn(f"Warning: Sample {sample_id} 缺少 target_peaks, 判定為 'Invalid'!")
+      tmp_source = "htd.py line. 211"
+      logger.warn(f"Warning: Sample {sample_id} 缺少 target_peaks, 判定為 'Invalid'!", tmp_source)
       data.assessment = AssessmentStatus.INVALID
       data.error_message = f"Sample {sample_id} 缺少 target_peaks"
       data.sample_qc_status = QCStatus.FAILED.value
@@ -211,7 +220,8 @@ def HTD(control_file_path, samples_file_list, user_info):
 
     # 若 target_peaks 大於 2 則判定 "Invalid"
     if len(data.selected_target_peaks) > 2:
-      logger.warn(f"Warning: Sample {sample_id} 的 HTD peak 數量大於 2, 判定為 'Invalid'!")
+      tmp_source = "htd.py line. 214"
+      logger.warn(f"Warning: Sample {sample_id} 的 HTD peak 數量大於 2, 判定為 'Invalid'!", tmp_source)
       data.assessment = AssessmentStatus.INVALID
       data.error_message = f"Sample {sample_id} 的 HTD peak 數量大於 2"
       data.sample_qc_status = QCStatus.FAILED.value
@@ -228,17 +238,21 @@ def HTD(control_file_path, samples_file_list, user_info):
 
   # log 印出 sampleData
   for sample_id, data in sampleData.items():
-    logger.info(f"Sample Name: {sample_id}")
-    logger.info(f"Assessment List: {[assessment.value for assessment in data.assessmentList]}")
-    logger.info(f"ErrMessage: {data.error_message}")
-    logger.info(f"Internal Ctrl Peaks: {data.internal_ctrl_peaks}")
-    logger.info(f"Selected Target Peaks: \n\t{'\n\t'.join([str(peak) for peak in data.selected_target_peaks])}")
+    tmp_source = "htd.py line. 240"
+    logger.analysis(f"\n\
+      Sample Name: {sample_id} \n\
+      Assessment List: {[assessment.value for assessment in data.assessmentList]} \n\
+      ErrMessage: {data.error_message} \n\
+      Internal Ctrl Peaks: {data.internal_ctrl_peaks} \n\
+      Selected Target Peaks: \n\
+      \t{'\n\t'.join([str(peak) for peak in data.selected_target_peaks])}", tmp_source)
 
   # 更新 htd_output
   htd_output.errMsg += ";" + ";".join([data.error_message for data in sampleData.values() if data.error_message != ""])
   htd_output.result = sampleData
 
-  logger.info(f"* HTD Analysis Completed *")
+  tmp_source = "htd.py line. 253"
+  logger.analysis(f"* HTD Analysis Completed *", tmp_source)
 
   return htd_output.toJson()
 
@@ -250,7 +264,8 @@ def getStandardPeak(control_df):
 
   # 如果 SC 不足 2 個, 則回傳空列表
   if len(top2_sc_peaks) < 2:
-    logger.warn(f"Warning: Standard Peak 不足 2 個!")
+    tmp_source = "htd.py line. 263"
+    logger.warn(f"Warning: Standard Peak 不足 2 個!", tmp_source)
     return []
 
   # 轉換成 STD_HTDPeak 列表
@@ -280,7 +295,8 @@ def getSamplePeak(sample_df, peak_type):
 
     # 如果 internal_ctrl_peaks 不足 1 個, 則回 None
     if len(Called_peak) == 0:
-      logger.warn(f"Warning: Sample internal_ctrl Peak 不足 1 個!")
+      tmp_source = "htd.py line. 294"
+      logger.warn(f"Warning: Sample internal_ctrl Peak 不足 1 個!", tmp_source)
       return None
 
     # CallPeak 取得 internal_ctrl_peaks 並轉換成 SAMPLE_HTDPeak 列表
@@ -302,7 +318,8 @@ def getSamplePeak(sample_df, peak_type):
 
     # 如果 target_peaks 不足 1 個, 則回 None
     if len(target_peaks) == 0:
-      logger.warn(f"Warning: Sample target Peak 沒有找到!")
+      tmp_source = "htd.py line. 319"
+      logger.warn(f"Warning: Sample target Peak 沒有找到!", tmp_source)
       return None
 
     # CallPeak 取得 target_peaks 並轉換成 SAMPLE_HTDPeak 列表
@@ -339,7 +356,8 @@ def getSamplePeak(sample_df, peak_type):
     return selected_target_peak
 
   else:
-    logger.warn(f"Warning: 不支援的 Peak Type: {peak_type}")
+    tmp_source = "htd.py line. 356"
+    logger.warn(f"Warning: 不支援的 Peak Type: {peak_type}", tmp_source)
     return None
 
 # 分析 Sample Peaks
@@ -368,7 +386,8 @@ def analyzeSamplePeaks(samples_obj_list):
     # 如果 target_peaks 為 None, 則跳過
     if target_peaks is None:
       error_message = f"Sample {sample_obj.sample_id} target_peaks 沒有找到"
-      logger.warn(f"Warning: {error_message}")
+      tmp_source = "htd.py line. 385"
+      logger.warn(f"Warning: {error_message}", tmp_source)
       htd_data.error_message = error_message
     else:
       # 更新 target_peaks
@@ -394,7 +413,8 @@ def parseParams():
 
   # 驗證 CLI 參數
   if not os.path.exists(args.control):
-    print(f"控制檔案不存在, 請確認路徑是否正確: {args.control}")
+    tmp_source = "htd.py line. 413"
+    logger.warn(f"Warning: 控制檔案不存在, 請確認路徑是否正確: {args.control}", tmp_source)
     return
 
   # 使用逗號分隔樣本檔案路徑
@@ -403,13 +423,17 @@ def parseParams():
   # 驗證樣本檔案是否存在
   for sample in args.samples:
     if not os.path.exists(sample):
-      print(f"樣本檔案不存在, 請確認路徑是否正確: {sample}")
+      tmp_source = "htd.py line. 421"
+      logger.warn(f"Warning: 樣本檔案不存在, 請確認路徑是否正確: {sample}", tmp_source)
       return
 
   return args
 
 # 執行 CLI
 if __name__ == "__main__":
+
+  # 設定 Logger 模式
+  logger = Logger(mode="offline")
 
   # 接收參數, 取得檔案路徑
   args = parseParams()

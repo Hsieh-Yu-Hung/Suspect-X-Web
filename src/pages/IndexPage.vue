@@ -22,7 +22,6 @@
 <script setup>
 
 /* Import modules */
-import logger from '@/utility/logger';
 import { ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { useQuasar } from 'quasar';
@@ -110,13 +109,10 @@ const check_user_exist = async (user_email) => {
   .then((result) => {
     if (result.status === 'success' && result.data) {
       user_exist = true;
-    } else {
-      user_exist = false;
-      logger.error('使用者不存在');
     }
   })
   .catch((error) => {
-    logger.error(error);
+    console.error(` Check user exist failed, Error: ${error}`);
   });
   return user_exist;
 }

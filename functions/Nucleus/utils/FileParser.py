@@ -14,10 +14,9 @@ sys.path.append(parent_dir_parent)
 sys.path.append(parent_dir)
 sys.path.append(current_dir)
 
-# 引入 saveLogs
-from config_admin import bucket
-from saveLogs import Logger
-logger = Logger(bucket)
+# 引入 systemLogger
+from systemLogger import Logger
+logger = Logger()
 
 # 定義非法字符列表
 ILLEGAL_CHARS = ['/', '\\', '?', '%', '*', ':', '|', '"', '<', '>', '.', ',']
@@ -185,14 +184,16 @@ class FileParser:
     try:
       header_row = findHeaderRow(file_path, header_keywords, "utf-8")
     except UnicodeDecodeError as e:
-      logger.warn(f"Tower 檔以 utf-8 編碼讀取失敗, 嘗試使用 latin1 編碼")
+      tmp_source = "FileParser.py line. 186"
+      logger.warn(f"Tower 檔以 utf-8 編碼讀取失敗, 嘗試使用 latin1 編碼", tmp_source)
       header_row = findHeaderRow(file_path, header_keywords, "latin1")
 
     # 讀取 CSV 檔案
     try:
       df = pd.read_csv(file_path,sep=",",skiprows=header_row)
     except UnicodeDecodeError as e:
-      logger.warn(f"Tower 檔以 utf-8 編碼讀取失敗, 嘗試使用 latin1 編碼")
+      tmp_source = "FileParser.py line. 194"
+      logger.warn(f"Tower 檔以 utf-8 編碼讀取失敗, 嘗試使用 latin1 編碼", tmp_source)
       df = pd.read_csv(file_path,sep=",",skiprows=header_row, encoding="latin1")
 
     # 檔名, 不包含副檔名
@@ -306,8 +307,9 @@ def readQPCRData(input_file_path, FAM_file_path, VIC_file_path, instrument, CT_T
     qpcr_data = file_parser.parseQs3File(input_file_path)
 
     if not qpcr_data:
-      logger.error(f"QPCR 資料解析失敗, 無法解析 qs3 檔案, 請檢查原始檔案")
-      logger.error(f"input_file_path: {input_file_path}")
+      tmp_source = "FileParser.py line. 309"
+      logger.error(f"QPCR 資料解析失敗, 無法解析 qs3 檔案, 請檢查原始檔案", tmp_source)
+      logger.error(f"input_file_path: {input_file_path}", tmp_source)
       raise ValueError("QPCR 資料解析失敗, 無法解析 qs3 檔案, 請檢查原始檔案")
 
     # 轉換 dataframe 為 QPCRRecord 列表
@@ -326,8 +328,9 @@ def readQPCRData(input_file_path, FAM_file_path, VIC_file_path, instrument, CT_T
     qpcr_data = file_parser.parseTowerFile(input_file_path)
 
     if not qpcr_data:
-      logger.error(f"QPCR 資料解析失敗, 無法解析 tower 檔案, 請檢查原始檔案")
-      logger.error(f"input_file_path: {input_file_path}")
+      tmp_source = "FileParser.py line. 330"
+      logger.error(f"QPCR 資料解析失敗, 無法解析 tower 檔案, 請檢查原始檔案", tmp_source)
+      logger.error(f"input_file_path: {input_file_path}", tmp_source)
       raise ValueError("QPCR 資料解析失敗, 無法解析 tower 檔案, 請檢查原始檔案")
 
     # 轉換 dataframe 為 QPCRRecord 列表
@@ -346,10 +349,11 @@ def readQPCRData(input_file_path, FAM_file_path, VIC_file_path, instrument, CT_T
     qpcr_data = file_parser.parseZ480File(FAM_file_path, VIC_file_path, CY5_file_path)
 
     if not qpcr_data:
-      logger.error(f"QPCR 資料解析失敗, 無法解析 z480 檔案, 請檢查原始檔案")
-      logger.error(f"FAM_file_path: {FAM_file_path}")
-      logger.error(f"VIC_file_path: {VIC_file_path}")
-      logger.error(f"CY5_file_path: {CY5_file_path}")
+      tmp_source = "FileParser.py line. 351"
+      logger.error(f"QPCR 資料解析失敗, 無法解析 z480 檔案, 請檢查原始檔案", tmp_source)
+      logger.error(f"FAM_file_path: {FAM_file_path}", tmp_source)
+      logger.error(f"VIC_file_path: {VIC_file_path}", tmp_source)
+      logger.error(f"CY5_file_path: {CY5_file_path}", tmp_source)
       raise ValueError("QPCR 資料解析失敗, 無法解析 z480 檔案, 請檢查原始檔案")
 
     # 轉換 dataframe 為 QPCRRecord 列表
@@ -364,11 +368,12 @@ def readQPCRData(input_file_path, FAM_file_path, VIC_file_path, instrument, CT_T
 
   # 檢查 qpcr_data 是否為 None
   if len(qpcr_record_list) == 0:
-    logger.error(f"QPCR 資料解析失敗沒有任何資料, 請檢查原始檔案")
-    logger.error(f"input_file_path: {input_file_path}")
-    logger.error(f"FAM_file_path: {FAM_file_path}")
-    logger.error(f"VIC_file_path: {VIC_file_path}")
-    logger.error(f"CY5_file_path: {CY5_file_path}")
+    tmp_source = "FileParser.py line. 370"
+    logger.error(f"QPCR 資料解析失敗沒有任何資料, 請檢查原始檔案", tmp_source)
+    logger.error(f"input_file_path: {input_file_path}", tmp_source)
+    logger.error(f"FAM_file_path: {FAM_file_path}", tmp_source)
+    logger.error(f"VIC_file_path: {VIC_file_path}", tmp_source)
+    logger.error(f"CY5_file_path: {CY5_file_path}", tmp_source)
     raise ValueError("QPCR 資料解析失敗, 請檢查原始檔案")
 
   return qpcr_record_list

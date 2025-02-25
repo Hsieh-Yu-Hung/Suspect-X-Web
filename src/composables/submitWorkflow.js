@@ -1,6 +1,6 @@
 // Import functions
 import { useCheckFileFormat } from '@/composables/inputFormatChecker';
-import logger from '@/utility/logger';
+import loggerV2 from '@/composables/loggerV2';
 
 // 導入 firebase function
 import { RunAnalysis } from '@/firebase/firebaseFunction';
@@ -38,7 +38,9 @@ async function checkFileFormat(check_list, check_type) {
   if (checkRes.some(res => res.status === 'error')) {
     // 印出 error message
     message = checkRes.filter(res => res.status === 'error').map(res => res.message).join(', \n');
-    logger.error(message);
+    const source = 'submitWorkflow.js line.38';
+    const user = 'system';
+    loggerV2.error(message, source, user);
     PASS_CHECK_FILE_FORMAT = false;
     return {check_pass: PASS_CHECK_FILE_FORMAT, message : message, check_res: checkRes};
   }
@@ -47,7 +49,9 @@ async function checkFileFormat(check_list, check_type) {
   if (checkRes.some(res => res.data.check_result === false)) {
     // 印出 error message
     message = checkRes.filter(res => res.data.check_result === false).map(res => res.message).join(', \n');
-    logger.warn(message);
+    const source = 'submitWorkflow.js line.49';
+    const user = 'system';
+    loggerV2.error(message, source, user);
     PASS_CHECK_FILE_FORMAT = false;
   }
 

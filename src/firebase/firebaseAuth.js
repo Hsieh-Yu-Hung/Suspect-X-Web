@@ -2,7 +2,7 @@
 import { getAuth, createUserWithEmailAndPassword, signOut, onAuthStateChanged } from "firebase/auth";
 import { GoogleAuthProvider, signInWithPopup } from "firebase/auth";
 import { signInWithEmailAndPassword } from "firebase/auth";
-import logger from "@/utility/logger";
+import loggerV2 from "@/composables/loggerV2";
 import app from "./firebaseApp";
 
 // 取得 auth
@@ -36,15 +36,26 @@ export const signInWithGoogle = async () => {
     const userEmail = result.user.email;
     const userUID = result.user.uid;
     exec_status = {status: 'success', message: `Google login success`, user_email: userEmail, user_uid: userUID};
-    logger.info(`Google login success, Email: ${userEmail}, UID: ${userUID}`);
+
+    // 紀錄到 logger
+    const message = `Google login success, Email: ${userEmail}, UID: ${userUID}`;
+    const source = 'firebaseAuth.js line.32';
+    const user = 'system';
+    loggerV2.info(message, source, user);
   } catch (error) {
     exec_status = {status: 'error', message: `Google login failed, error: ${error}`, error_code: error.code};
     if (error.code === 'auth/popup-closed-by-user' || error.code === 'auth/cancelled-popup-request') {
       exec_status = {status: 'error', message: `Close popup Warning, Error message: ${error.message}`, error_code: error.code};
-      logger.warn(`Close popup Warning, Error message: ${error.message}`);
+      const message = `Close popup Warning, Error message: ${error.message}`;
+      const source = 'firebaseAuth.js line.48';
+      const user = 'system';
+      loggerV2.debug(message, source, user);
     } else {
       exec_status = {status: 'error', message: `Google login failed, error: ${error}`, error_code: error.code};
-      logger.error(`Google login failed, error: ${error}`);
+      const message = `Google login failed, error: ${error}`;
+      const source = 'firebaseAuth.js line.54';
+      const user = 'system';
+      loggerV2.error(message, source, user);
     }
   }
   return exec_status;

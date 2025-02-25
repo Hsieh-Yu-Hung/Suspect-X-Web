@@ -77,13 +77,13 @@ import { useRouter } from 'vue-router';
 // 導入 composable
 import { submitWorkflow } from '@/composables/submitWorkflow';
 import { updateGetUserInfo } from '@/composables/accessStoreUserInfo';
-import { CATEGORY_LIST, upload_files_to_storage } from '@/utility/storageManager';
+import { CATEGORY_LIST, upload_files_to_storage } from '@/composables/storageManager';
 import { setAnalysisID } from '@/composables/checkAnalysisStatus';
 import { ANALYSIS_RESULT, update_userAnalysisData } from '@/firebase/firebaseDatabase';
 
 // 元件
 import WarningDialog from '@/components/WarningDialog.vue';
-import logger from '@/utility/logger';
+import loggerV2 from '@/composables/loggerV2';
 
 // 定義 FXS 的 result 格式
 const FXS_RESULT = (control_data, sample_data, control_qc, result) => {
@@ -307,7 +307,10 @@ async function uploadFile(files, type) {
     warning_dialog.value.open_warning_dialog();
 
     // 印出 error message
-    logger.warn(error_message);
+    const message = error_message;
+    const source = 'ImportPCRTmpl.vue line.297';
+    const user = user_info.value.email;
+    loggerV2.error(message, source, user);
   }
 
   // 更新 files 中 file 的 path

@@ -160,7 +160,7 @@ import { ref, watch, onMounted } from 'vue';
 import { useStore } from 'vuex';
 import { useQuasar } from 'quasar';
 import { updateGetUserInfo } from '@/composables/accessStoreUserInfo';
-import { CATEGORY_LIST, upload_files_to_storage } from '@/utility/storageManager';
+import { CATEGORY_LIST, upload_files_to_storage } from '@/composables/storageManager';
 
 // 導入 store, Quasar
 const store = useStore();

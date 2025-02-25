@@ -43,7 +43,7 @@
 /* Import modules */
 import { ref, onMounted, watch } from 'vue';
 import { logout } from '@/firebase';
-import logger from '@/utility/logger';
+import loggerV2 from '@/composables/loggerV2';
 import { useRouter } from 'vue-router';
 import { useStore } from 'vuex';
 
@@ -97,9 +97,18 @@ async function on_logout() {
       store.commit('login_status/init_login_status');
       router.push('/');
     }
+    else {
+      const message = result.message;
+      const source = 'RightDrawer.vue line.96';
+      const user = props.account_name;
+      loggerV2.error(message, source, user);
+    }
   })
   .catch((error) => {
-    logger.error(error);
+    const message = `登出失敗, 原因: ${error}`;
+    const source = 'RightDrawer.vue line.107';
+    const user = props.account_name;
+    loggerV2.error(message, source, user);
   });
 }
 

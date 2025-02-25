@@ -2,7 +2,7 @@
 import { uploadFileToStorage } from '@/firebase/firebaseStorage';
 
 // logger
-import logger from '@/utility/logger';
+import loggerV2 from '@/composables/loggerV2';
 
 // 定義 category
 const CATEGORY_LIST = {
@@ -28,7 +28,10 @@ async function uploadWithRetry(file, upload_path, retries = 3, timeout = 5000) {
       return response;
     } catch (error) {
       if (attempt === retries) throw error;
-      logger.warn(`Upload attempt ${attempt} failed. Retrying...`);
+      const message = `Upload attempt ${attempt} failed. Retrying...`;
+      const source = 'storageManager.js line.29';
+      const user = 'system';
+      loggerV2.debug(message, source, user);
     }
   }
 }
@@ -76,12 +79,15 @@ export async function upload_files_to_storage(file, user_id=null, category=CATEG
   const fileName = file ? file.name : '';
 
   // 印出 log
-  logger.debug(`
+  const message = `
     ${fileName} attempt to upload,
     status: ${execute_result.status},
     message: ${execute_result.message},
     storage_path: ${execute_result.storage_path}
-    `);
+  `;
+  const source = 'storageManager.js line.82';
+  const user = 'system';
+  loggerV2.debug(message, source, user);
   return execute_result;
 }
 

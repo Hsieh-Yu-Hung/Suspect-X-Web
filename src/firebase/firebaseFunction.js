@@ -7,9 +7,6 @@ const functions = getFunctions(app, 'asia-east1');
 // 導出 functions
 export const Functions = functions;
 
-// 呼叫 saveLoggers
-const saveLoggers = httpsCallable(functions, 'saveLogs');
-
 // 呼叫 uploadLogs
 const uploadLogs = httpsCallable(functions, 'uploadLogs');
 
@@ -19,9 +16,8 @@ const checkFileFormat = httpsCallable(functions, 'check_file_format');
 // 呼叫 RunAnalysis
 const RunAnalysis = httpsCallable(functions, 'RunAnalysis');
 
-// 導出 saveLoggers
+// 導出 functions
 export {
-  saveLoggers,
   checkFileFormat,
   RunAnalysis,
   uploadLogs,

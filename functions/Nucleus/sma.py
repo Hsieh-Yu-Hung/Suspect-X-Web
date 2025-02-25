@@ -1,7 +1,6 @@
 # 引入套件
 import os
 import sys
-import json
 import argparse
 from dataclasses import dataclass
 from collections import Counter
@@ -19,9 +18,8 @@ sys.path.append(parent_dir)
 sys.path.append(current_dir)
 
 # 引入 saveLogs
-from config_admin import bucket
-from saveLogs import Logger
-logger = Logger(bucket)
+from systemLogger import Logger
+logger = Logger()
 
 # 定義 SMA 的 CT 門檻
 TOWER_CT_Threshold_RANGE = Range(15, 30)
@@ -150,9 +148,14 @@ class SMAOutput(AnalysisOutput):
 # SMA 分析腳本
 def SMA(input_file_path, FAM_file_path, VIC_file_path, CY5_file_path, SC1_well, SC2_well, NTC_well, SMA_version, user_info):
 
-  logger.info(f"\n")
-  logger.info(f" ----> Start SMA Analysis <---- ")
-  logger.info(f" User Info: {user_info}")
+  # Logger settings
+  sender = user_info.organization
+  logger.setSender(sender)
+
+  # Logger : Start Message
+  tmp_source = "sma.py line. 149"
+  logger.analysis(f" ----> Start SMA Analysis <---- ", tmp_source)
+  logger.analysis(f" User Info: {user_info}", tmp_source)
 
   # 取得 config
   config = {
@@ -179,9 +182,10 @@ def SMA(input_file_path, FAM_file_path, VIC_file_path, CY5_file_path, SC1_well, 
         r.pass_cutoff = False
 
   # 紀錄 QPCRRecord 列表
-  logger.info(f"[{user_info.instrument}] QPCR Raw data:")
+  tmp_source = "sma.py line. 185"
+  logger.analysis(f"[{user_info.instrument}] QPCR Raw data:", tmp_source)
   for r in qpcr_record_list:
-    logger.info(f"{r}")
+    logger.analysis(f"{r}", tmp_source)
 
   # 初始化 controlWell 和 ntcWell
   sc1_well = SC1_well
@@ -202,14 +206,16 @@ def SMA(input_file_path, FAM_file_path, VIC_file_path, CY5_file_path, SC1_well, 
   for controlWell in [sc1_well, sc2_well]:
     if controlWell not in [r.well_position for r in qpcr_record_list]:
       errorMessage = f"control_well {controlWell} 不在 QPCRRecord 列表裡面"
-      logger.error(errorMessage)
+      tmp_source = "sma.py line. 206"
+      logger.error(errorMessage, tmp_source)
       sma_output.errMsg = errorMessage
       return sma_output.toJson()
 
   # 檢查 ntc_well 是否在 QPCRRecord 列表裡面
   if ntc_well not in [r.well_position for r in qpcr_record_list]:
     errorMessage = f"ntc_well {ntc_well} 不在 QPCRRecord 列表裡面"
-    logger.error(errorMessage)
+    tmp_source = "sma.py line. 215"
+    logger.error(errorMessage, tmp_source)
     sma_output.errMsg = errorMessage
     return sma_output.toJson()
 
@@ -242,9 +248,10 @@ def SMA(input_file_path, FAM_file_path, VIC_file_path, CY5_file_path, SC1_well, 
     sample_assessment_results = [SampleAssessment(data, user_info.instrument, Threshold_Range, SMA_version) for data in dataMatrix["sample"]]
 
     # 輸出 Sample Assessment 結果
-    logger.info(f"Sample Assessment Results:")
+    tmp_source = "sma.py line. 250"
+    logger.analysis(f"Sample Assessment Results:", tmp_source)
     for result in sample_assessment_results:
-      logger.info(result)
+      logger.analysis(str(result), tmp_source)
 
     # 更新 SMAOutput
     sma_output.qc_status = qc_status
@@ -252,17 +259,20 @@ def SMA(input_file_path, FAM_file_path, VIC_file_path, CY5_file_path, SC1_well, 
 
   # QC 失敗, 跳過 Sample Assessment
   elif qc_status == QCStatus.FAILED:
-    logger.error(qc_message)
+    tmp_source = "sma.py line. 260"
+    logger.error(qc_message, tmp_source)
     sma_output.qc_status = qc_status
     sma_output.errMsg = qc_message
 
   # 若 QC 未分析, 也跳過 Sample Assessment
   else:
-    logger.error("Not Analyzed")
+    tmp_source = "sma.py line. 268"
+    logger.error("Not Analyzed", tmp_source)
     sma_output.qc_status = qc_status
     sma_output.errMsg = qc_message
 
-  logger.info(f"* SMA Analysis Completed *")
+  tmp_source = "sma.py line. 275"
+  logger.analysis(f"* SMA Analysis Completed *", tmp_source)
 
   return sma_output.toJson()
 
@@ -322,12 +332,13 @@ def parseSMAData(qpcr_record_list, sc1_well, sc2_well, ntc_well, instrument):
   ) for name in sample_names]
 
   # 輸出 MTHFRData 列表
-  logger.info(f"SMAData:")
-  logger.info(sc1SMAData)
-  logger.info(sc2SMAData)
-  logger.info(ntcSMAData)
+  tmp_source = "sma.py line. 280"
+  logger.analysis(f"SMAData:", tmp_source)
+  logger.analysis(str(sc1SMAData), tmp_source)
+  logger.analysis(str(sc2SMAData), tmp_source)
+  logger.analysis(str(ntcSMAData), tmp_source)
   for data in sampleSMADataList:
-    logger.info(data)
+    logger.analysis(str(data), tmp_source)
 
   dataMatrix = {
     "sc1": sc1SMAData,
@@ -378,7 +389,8 @@ def QC(dataMatrix, instrument):
   for data in [sc1Data, sc2Data, ntcData]:
     if not data.smn1 or not data.smn2 or not data.rnp:
       errMsg = f"{data.group} 的 smn1 或 smn2 或 rnp 為 None"
-      logger.error(errMsg)
+      tmp_source = "sma.py line. 389"
+      logger.error(errMsg, tmp_source)
       qc_status = QCStatus.FAILED
       qc_message = errMsg
       return qc_status, qc_message
@@ -387,14 +399,16 @@ def QC(dataMatrix, instrument):
   condition1 = not ntcData.smn1.pass_cutoff and not ntcData.smn2.pass_cutoff and not ntcData.rnp.pass_cutoff
   if not condition1:
     errMsg = f"Failed QC: NTC 的 smn1 或 smn2 或 rnp 沒有通過 cutoff"
-    logger.warn(errMsg)
+    tmp_source = "sma.py line. 400"
+    logger.warn(errMsg, tmp_source)
     qc_message = errMsg
 
   # QC 條件2: SC1 和 SC2 的 smn1 和 smn2 都通過 cutoff
   condition2 = sc1Data.smn1.pass_cutoff and sc1Data.smn2.pass_cutoff and sc2Data.smn1.pass_cutoff and sc2Data.smn2.pass_cutoff
   if not condition2:
     errMsg = f"Failed QC: SC1 或 SC2 的 smn1 或 smn2 沒有通過 cutoff"
-    logger.warn(errMsg)
+    tmp_source = "sma.py line. 408"
+    logger.warn(errMsg, tmp_source)
     qc_message = errMsg
 
   # QS3, 條件3 為 SC1, SC2 的 normalized_smn1 和 normalized_smn2 要在指定區間之內
@@ -409,7 +423,8 @@ def QC(dataMatrix, instrument):
 
     if not condition3:
       errMsg = f"Failed QC: SMN1 或 SMN2 的 SC1 和 SC2 的 delta CT 差值不在指定區間"
-      logger.warn(errMsg)
+      tmp_source = "sma.py line. 424"
+      logger.warn(errMsg, tmp_source)
       qc_message = errMsg
 
   # Tower, 條件3 為 SC1 的 normalized_smn1 和 normalized_smn2 都大於 0
@@ -417,7 +432,8 @@ def QC(dataMatrix, instrument):
     condition3 = sc1Data.normalized_smn1 > 0 and sc1Data.normalized_smn2 > 0
     if not condition3:
       errMsg = f"Failed QC: SC1 的 normalized_smn1 或 normalized_smn2 不大於 0"
-      logger.warn(errMsg)
+      tmp_source = "sma.py line. 431"
+      logger.warn(errMsg, tmp_source)
       qc_message = errMsg
 
   # Z480, 並沒有額外條件
@@ -608,6 +624,9 @@ def parseParams():
 
 # SMA CLI
 if __name__ == "__main__":
+
+  # 設定 Logger 模式
+  logger = Logger(mode="offline")
 
   # 處理 CLI parameters
   args = parseParams()

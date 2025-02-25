@@ -42,7 +42,6 @@ import SoftwareItem from '@/components/SoftwareSection/SoftwareItem.vue';
 import { deleteData, dataset_list } from '@/firebase';
 import { SOFTWARE_DATA, addSoftwareVersionDatabase, getSoftwareVersionDatabase } from '@/firebase';
 import { load_software_version_from_firestore } from '@/firebase';
-import logger from '@/utility/logger';
 
 // 取得 Quasar
 const $q = useQuasar();
@@ -80,17 +79,15 @@ async function delete_software(software_id_to_delete) {
   await deleteData(dataset_list.software_version_list, software_id_to_delete)
   .then((Response) => {
     if(Response.status === 'success') {
-      logger.debug(`${Response.message} ID: ${software_id_to_delete}`);
-
       // 發送事件
       emit('software_List_is_updated');
     }
     else {
-      logger.error(`${Response.message} ID: ${software_id_to_delete}`);
+      console.error(Response.message);
     }
   })
   .catch((error) => {
-    logger.error(`${error} ID: ${software_id_to_delete}`);
+    console.error(error);
   }).finally(() => {
     // 關閉loading
     $q.loading.hide();
@@ -117,22 +114,11 @@ async function update_software_Lists(new_software) {
         if (current_software.list_id === new_software.list_id) {
           // 如果存在則更新
           addSoftwareVersionDatabase(current_software);
-          logger.info(`
-          Update software version to firestore
-          id: ${current_software.list_id}
-          new_name: ${current_software.software_name}
-          new_version: ${current_software.software_version}
-          new_note: ${current_software.software_note}`);
         }
       }
       else {
         // 如果不存在則加入
         addSoftwareVersionDatabase(current_software);
-        logger.info(`
-        Add new software version to firestore
-        name: ${current_software.software_name}
-        version: ${current_software.software_version}
-        note: ${current_software.software_note}`);
       }
     }
   });

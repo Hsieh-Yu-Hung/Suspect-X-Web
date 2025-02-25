@@ -1,5 +1,5 @@
 # 引入 Firebase 函數庫
-from firebase_admin import initialize_app, credentials, storage
+from firebase_admin import initialize_app, credentials, storage, firestore
 
 # 初始化 Firebase 應用程式
 app = initialize_app(
@@ -11,3 +11,6 @@ app = initialize_app(
 
 # 取得 storage bucket
 bucket = storage.bucket(app=app)
+
+# 取得 firestore
+db = firestore.client(app=app)

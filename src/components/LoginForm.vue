@@ -68,7 +68,7 @@ import { useStore } from 'vuex';
 import { ref, onMounted } from 'vue';
 
 // logger
-import logger from '@/utility/logger';
+import loggerV2 from '@/composables/loggerV2';
 
 // composables
 import { useAccountManagement } from '@/composables/accountManagement.js';
@@ -127,33 +127,49 @@ async function onSubmit() {
     // 將 user_info 加入到 store
     storeUserInfo(store, router, $q);
 
-    // 登入成功
+    // 登入成功 紀錄到 logger
     status = 'success';
-    logger.info(`Login success, Email: ${result.user.email}, UID: ${result.user.uid}`);
+    const message = `登入成功, Email: ${result.user.email}, UID: ${result.user.uid}`;
+    const source = 'LoginForm.vue line.130';
+    const user = 'admin';
+    loggerV2.debug(message, source, user);
   })
   .catch((error) => {
     // 登入失敗
     status = 'error';
+
+    // Case 1: 電子郵件格式錯誤
     if (error.code === 'auth/invalid-email') {
       email_error.value = true;
       email_input_hint.value = "請輸入有效格式的電子郵件";
-      logger.warn(`Invalid email, Email: ${email_input.value}`);
-    } else if (error.code === 'auth/user-not-found') {
+    }
+
+    // Case 2: 找不到此帳號
+    else if (error.code === 'auth/user-not-found') {
       email_error.value = true;
       email_input_hint.value = "找不到此帳號, 請先註冊";
-      logger.warn(`User not found, Email: ${email_input.value}`);
-    } else if (error.code === 'auth/wrong-password') {
+    }
+
+    // Case 3: 密碼錯誤
+    else if (error.code === 'auth/wrong-password') {
       password_error.value = true;
       password_input_hint.value = "密碼錯誤, 請重新輸入";
-      logger.warn(`Wrong password, Email: ${email_input.value}`);
-    } else {
+    }
+
+    // Case 4: 其他錯誤
+    else {
       $q.notify({
         message: '[未知原因] 登入失敗, 請聯絡管理員',
         color: 'red',
         icon: 'error',
         position: 'top'
       });
-      logger.error(`Login failed, Error Code: ${error.code}`);
+
+      // 紀錄到 logger
+      const message = `未知原因用戶登入失敗, 錯誤代碼: ${error.code}`;
+      const source = 'LoginForm.vue line.159';
+      const user = 'admin';
+      loggerV2.error(message, source, user);
     }
   }).finally(() => {
     // 隱藏 loading

@@ -18,9 +18,8 @@ sys.path.append(parent_dir)
 sys.path.append(current_dir)
 
 # 引入 saveLogs
-from config_admin import bucket
-from saveLogs import Logger
-logger = Logger(bucket)
+from systemLogger import Logger
+logger = Logger()
 
 # CT_THRESHOLD
 class CT_Threshold(Enum):
@@ -70,9 +69,14 @@ class MTHFROutput(AnalysisOutput):
 # MTHFR 主程式
 def MTHFR(input_file_path, FAM_file_path, VIC_file_path, control_well, ntc_well, user_info):
 
-  logger.info(f"\n")
-  logger.info(f" ----> Start MTHFR Analysis <---- ")
-  logger.info(f" User Info: {user_info}")
+  # Logger settings
+  sender = user_info.organization
+  logger.setSender(sender)
+
+  # Logger : Start Message
+  tmp_source = "mthfr.py line. 70"
+  logger.analysis(f" ----> Start MTHFR Analysis <---- ", tmp_source)
+  logger.analysis(f" User Info: {user_info}", tmp_source)
 
   # 取得 config
   config = {
@@ -99,9 +103,10 @@ def MTHFR(input_file_path, FAM_file_path, VIC_file_path, control_well, ntc_well,
   qpcr_record_list = readQPCRData(input_file_path, FAM_file_path, VIC_file_path, user_info.instrument, ct_threshold)
 
   # 紀錄 QPCRRecord 列表
-  logger.info(f"[{user_info.instrument}] QPCR Raw data:")
+  tmp_source = "mthfr.py line. 105"
+  logger.analysis(f"[{user_info.instrument}] QPCR Raw data:", tmp_source)
   for r in qpcr_record_list:
-    logger.info(f"{r}")
+    logger.analysis(f"{r}", tmp_source)
 
   # 初始化 controlWell 和 ntcWell
   controlWell = control_well
@@ -116,14 +121,16 @@ def MTHFR(input_file_path, FAM_file_path, VIC_file_path, control_well, ntc_well,
 
   # 檢查 control_well 是否在 QPCRRecord 列表裡面
   if controlWell not in [r.well_position for r in qpcr_record_list]:
-    logger.error(f"control_well {control_well} 不在 QPCRRecord 列表裡面")
+    tmp_source = "mthfr.py line. 123"
+    logger.error(f"control_well {control_well} 不在 QPCRRecord 列表裡面", tmp_source)
     mthfr_output.qc_status = QCStatus.FAILED.value
     mthfr_output.errMsg = "control_well 不在 QPCRRecord 列表裡面"
     return mthfr_output.toJson()
 
   # 檢查 ntc_well 是否在 QPCRRecord 列表裡面
   if ntcWell not in [r.well_position for r in qpcr_record_list]:
-    logger.error(f"ntc_well {ntc_well} 不在 QPCRRecord 列表裡面")
+    tmp_source = "mthfr.py line. 131"
+    logger.error(f"ntc_well {ntc_well} 不在 QPCRRecord 列表裡面", tmp_source)
     mthfr_output.qc_status = QCStatus.FAILED.value
     mthfr_output.errMsg = "ntc_well 不在 QPCRRecord 列表裡面"
     return mthfr_output.toJson()
@@ -141,7 +148,8 @@ def MTHFR(input_file_path, FAM_file_path, VIC_file_path, control_well, ntc_well,
 
   # 如果 QC 失敗, 則跳過 Sample Assessment
   if qc_result == QCStatus.FAILED:
-    logger.warn(f"QC Failed, 跳過 Sample Assessment")
+    tmp_source = "mthfr.py line. 150"
+    logger.warn(f"QC Failed, 跳過 Sample Assessment", tmp_source)
     mthfr_output.qc_status = QCStatus.FAILED.value
     mthfr_output.errMsg = "QC 失敗, 跳過 Sample Assessment"
     mthfr_output.resultList = []
@@ -155,7 +163,8 @@ def MTHFR(input_file_path, FAM_file_path, VIC_file_path, control_well, ntc_well,
   # 更新 mthfr_output
   mthfr_output.resultList = sample_assessment_result
 
-  logger.info(f"* MTHFR Analysis Completed *")
+  tmp_source = "mthfr.py line. 167"
+  logger.analysis(f"* MTHFR Analysis Completed *", tmp_source)
 
   return mthfr_output.toJson()
 
@@ -195,11 +204,12 @@ def parseMTHFRData(qpcr_record_list, controlWell, ntcWell):
   ) for name in sample_names]
 
   # 輸出 MTHFRData 列表
-  logger.info(f"MTHFRData:")
-  logger.info(controlMTHFRData)
-  logger.info(ntcMTHFRData)
+  tmp_source = "mthfr.py line. 172"
+  logger.analysis(f"MTHFRData:", tmp_source)
+  logger.analysis(str(controlMTHFRData), tmp_source)
+  logger.analysis(str(ntcMTHFRData), tmp_source)
   for data in sampleMTHFRDataList:
-    logger.info(data)
+    logger.analysis(str(data), tmp_source)
 
   # DataMatrix
   dataMatrix = {
@@ -224,29 +234,35 @@ def QC(dataMatrix, reagent):
 
     # Control 的 c677_wt 和 c677_mut 都不能為 None
     if not controlData.c677_wt or not controlData.c677_mut:
-      logger.error(f"controlData 的 c677_wt 或 c677_mut 為 None")
+      tmp_source = "mthfr.py line. 236"
+      logger.error(f"controlData 的 c677_wt 或 c677_mut 為 None", tmp_source)
       qc_status = QCStatus.FAILED
       return qc_status
 
     # NTC 的 c677_wt 和 c677_mut 都不能為 None
     if not NTCData.c677_wt or not NTCData.c677_mut:
-      logger.error(f"NTCData 的 c677_wt 或 c677_mut 為 None")
+      tmp_source = "mthfr.py line. 243"
+      logger.error(f"NTCData 的 c677_wt 或 c677_mut 為 None", tmp_source)
       qc_status = QCStatus.FAILED
       return qc_status
 
     # QC 條件1: Control 的 c677_wt 和 c677_mut 都通過 cutoff (CT < CT_Threshold)
     condition1 = controlData.c677_wt.pass_cutoff and controlData.c677_mut.pass_cutoff
     if not condition1:
-      logger.warn(f"Control 的 c677_wt 或 c677_mut '沒有通過' cutoff")
+      tmp_source = "mthfr.py line. 249"
+      logger.warn(f"Control 的 c677_wt 或 c677_mut '沒有通過' cutoff", tmp_source)
 
     # QC 條件2: NTC 的 c677_wt 和 c677_mut 都"不"通過 cutoff (CT > CT_Threshold 或 沒有數值)
     condition2 = not NTCData.c677_wt.pass_cutoff and not NTCData.c677_mut.pass_cutoff
     if not condition2:
-      logger.warn(f"NTCData 的 c677_wt 或 c677_mut '通過' cutoff")
+      tmp_source = "mthfr.py line. 254"
+      logger.warn(f"NTCData 的 c677_wt 或 c677_mut '通過' cutoff", tmp_source)
 
     if condition1 and condition2:
       qc_status = QCStatus.PASSED
     else:
+      tmp_source = "mthfr.py line. 263"
+      logger.warn(f"QC Failed", tmp_source)
       qc_status = QCStatus.FAILED
 
   elif reagent == "accuinMTHFR2":
@@ -257,30 +273,35 @@ def QC(dataMatrix, reagent):
 
     # Control 的 c677_wt 和 c677_mut, c1298_wt 和 c1298_mut 都不能為 None
     if not controlData.c677_wt or not controlData.c677_mut or not controlData.c1298_wt or not controlData.c1298_mut:
-      logger.error(f"controlData 的 c677_wt 或 c677_mut 或 c1298_wt 或 c1298_mut 為 None")
+      tmp_source = "mthfr.py line. 275"
+      logger.error(f"controlData 的 c677_wt 或 c677_mut 或 c1298_wt 或 c1298_mut 為 None", tmp_source)
       qc_status = QCStatus.FAILED
       return qc_status
 
     # NTC 的 c677_wt 和 c677_mut 都不能為 None
     if not NTCData.c677_wt or not NTCData.c677_mut:
-      logger.error(f"NTCData 的 c677_wt 或 c677_mut為 None")
+      tmp_source = "mthfr.py line. 282"
+      logger.error(f"NTCData 的 c677_wt 或 c677_mut為 None", tmp_source)
       qc_status = QCStatus.FAILED
       return qc_status
 
     # QC 條件1: Control 的 c1298_wt 和 c1298_mut 都通過 cutoff (CT < CT_Threshold)
     condition1 = controlData.c1298_wt.pass_cutoff and controlData.c1298_mut.pass_cutoff
     if not condition1:
-      logger.warn(f"Control 的 c1298_wt 或 c1298_mut '沒有通過' cutoff")
+      tmp_source = "mthfr.py line. 288"
+      logger.warn(f"Control 的 c1298_wt 或 c1298_mut '沒有通過' cutoff", tmp_source)
 
     # QC 條件2: Control 的 c677_wt 和 c677_mut 都通過 cutoff (CT < CT_Threshold)
     condition2 = controlData.c677_wt.pass_cutoff and controlData.c677_mut.pass_cutoff
     if not condition2:
-      logger.warn(f"Control 的 c677_wt 或 c677_mut '沒有通過' cutoff")
+      tmp_source = "mthfr.py line. 293"
+      logger.warn(f"Control 的 c677_wt 或 c677_mut '沒有通過' cutoff", tmp_source)
 
     # QC 條件3: NTC 的 c677_wt 和 c677_mut 都"不"通過 cutoff (CT > CT_Threshold 或 沒有數值)
     condition3 = not NTCData.c677_wt.pass_cutoff and not NTCData.c677_mut.pass_cutoff
     if not condition3:
-      logger.warn(f"NTCData 的 c677_wt 或 c677_mut '通過' cutoff")
+      tmp_source = "mthfr.py line. 298"
+      logger.warn(f"NTCData 的 c677_wt 或 c677_mut '通過' cutoff", tmp_source)
 
     if condition1 and condition2 and condition3:
       qc_status = QCStatus.PASSED
@@ -295,30 +316,35 @@ def QC(dataMatrix, reagent):
 
     # Control 的 c677_wt 和 c677_mut 都不能為 None
     if not controlData.c677_wt or not controlData.c677_mut:
-      logger.error(f"controlData 的 c677_wt 或 c677_mut 為 None")
+      tmp_source = "mthfr.py line. 317"
+      logger.error(f"controlData 的 c677_wt 或 c677_mut 為 None", tmp_source)
       qc_status = QCStatus.FAILED
       return qc_status
 
     # NTC 的 c677_wt 和 c677_mut 都不能為 None
     if not NTCData.c677_wt or not NTCData.c677_mut:
-      logger.error(f"NTCData 的 c677_wt 或 c677_mut 為 None")
+      tmp_source = "mthfr.py line. 324"
+      logger.error(f"NTCData 的 c677_wt 或 c677_mut 為 None", tmp_source)
       qc_status = QCStatus.FAILED
       return qc_status
 
     # QC 條件1: Control 的 c677_wt 和 c677_mut 都通過 cutoff (CT > 0)
     condition1 = controlData.c677_wt.pass_cutoff and controlData.c677_mut.pass_cutoff
     if not condition1:
-      logger.warn(f"Control 的 c677_wt 或 c677_mut '沒有通過' cutoff")
+      tmp_source = "mthfr.py line. 331"
+      logger.warn(f"Control 的 c677_wt 或 c677_mut '沒有通過' cutoff", tmp_source)
 
     # QC 條件2: NTC 的 c677_wt 和 c677_mut 都"不"通過 cutoff (CT > 0)
     condition2 = not NTCData.c677_wt.pass_cutoff and not NTCData.c677_mut.pass_cutoff
     if not condition2:
-      logger.warn(f"NTCData 的 c677_wt 或 c677_mut '通過' cutoff")
+      tmp_source = "mthfr.py line. 337"
+      logger.warn(f"NTCData 的 c677_wt 或 c677_mut '通過' cutoff", tmp_source)
 
     # QC 條件3: Control 的 c677_wt 和 c677_mut 的 CT 值差值必須小於 4
     condition3 = abs(controlData.c677_wt.ct_value - controlData.c677_mut.ct_value) < CT_Threshold.DELTA_CT_THRESHOLD_V3.value
     if not condition3:
-      logger.warn(f"Control 的 c677_wt 和 c677_mut 的 CT 值差值必須小於 {CT_Threshold.DELTA_CT_THRESHOLD_V3.value}")
+      tmp_source = "mthfr.py line. 343"
+      logger.warn(f"Control 的 c677_wt 和 c677_mut 的 CT 值差值必須小於 {CT_Threshold.DELTA_CT_THRESHOLD_V3.value}", tmp_source)
 
     # 如果所有條件都通過, 則 QC 狀態為 PASSED
     if condition1 and condition2 and condition3:
@@ -590,6 +616,9 @@ def parseParams():
 
 # Run MTHFR CLI
 if __name__ == "__main__":
+
+  # 設定 Logger 模式
+  logger = Logger(mode="offline")
 
   # 解析 CLI 參數
   args = parseParams()

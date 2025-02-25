@@ -199,11 +199,12 @@ import { v4 as uuidv4 } from 'uuid';
 // 導入 composable
 import { updateGetUserInfo } from '@/composables/accessStoreUserInfo';
 import { setAnalysisID } from '@/composables/checkAnalysisStatus';
-import { upload_files_to_storage } from '@/utility/storageManager';
-import { CATEGORY_LIST } from '@/utility/storageManager';
+import { upload_files_to_storage } from '@/composables/storageManager';
+import { CATEGORY_LIST } from '@/composables/storageManager';
 import { update_userAnalysisData, getData, dataset_list, ANALYSIS_RESULT } from '@/firebase/firebaseDatabase';
 import { deleteData } from '@/firebase/firebaseDatabase';
 import { submitWorkflow } from '@/composables/submitWorkflow';
+import loggerV2 from '@/composables/loggerV2';
 
 // import component
 import peakSetting from './peakSetting.vue';
@@ -269,7 +270,7 @@ const getConfigsFromDatabase = async () => {
     return response.data;
   }
   else {
-    logger.error("getConfigsFromDatabase failed: ", response.message);
+    console.error(response.message);
     return [];
   }
 }
@@ -334,7 +335,7 @@ async function saveConfig(config_name, clear_smav4Files = true, mute = true) {
   if (setConfigName !== null) {
     update_userAnalysisData(user_info.value.uid, databaseConfigPath, data, setConfigName);
   } else {
-    logger.error("Config save failed: setConfigName is null");
+    console.error("Config save failed: setConfigName is null");
   }
 
   // 隱藏 loading 視窗
@@ -492,7 +493,10 @@ async function uploadFile(file_list) {
     warning_dialog.value.open_warning_dialog();
 
     // 印出 error message
-    logger.warn(error_message);
+    const message = error_message;
+    const source = 'ImportSMAQsep.vue line.483';
+    const user = user_info.value.email;
+    loggerV2.error(message, source, user);
   }
 
   // 更新 file_list 中 file 的 path

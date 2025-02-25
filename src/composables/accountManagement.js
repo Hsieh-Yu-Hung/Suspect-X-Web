@@ -8,7 +8,7 @@ import { dataset_list, USER_INFO, EMAIL_INFO, login_method } from '@/firebase';
 import { addLoginInfoDatabase, addEmailListDatabase, getData, getEmailList } from '@/firebase';
 
 // logger
-import logger from '@/utility/logger';
+import loggerV2 from '@/composables/loggerV2';
 
 /* functions */
 
@@ -55,7 +55,10 @@ export async function useGoogleLogin(store, router, $q) {
     }
   })
   .catch((error) => {
-    logger.warn(` Google login failed, error: ${error}`);
+    const message = `用戶 Google 登入失敗, error: ${error}`;
+    const source = 'accountManagement.js line.57';
+    const user = 'admin';
+    loggerV2.warn(message, source, user);
     // change status
     status = 'error';
   }).finally(() => {
@@ -132,16 +135,14 @@ async function storeUserInfo(store, router, $q) {
         // 跳轉
         redirect_page(store, router, $q);
 
-      } else {
-        logger.error(` Get user info failed, Error: No user info found!`);
       }
     } else {
-      logger.error(` Get user info failed, Error: ${result.message}`);
+      console.error(` Get user info failed, Error: ${result.message}`);
     }
   })
   .catch((error) => {
-      logger.error(` Get user info failed, Error: ${error}`);
-    });
+    console.error(` Get user info failed, Error: ${error}`);
+  });
 }
 
 // 輸出

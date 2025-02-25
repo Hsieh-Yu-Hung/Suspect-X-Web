@@ -18,9 +18,8 @@ sys.path.append(parent_dir)
 sys.path.append(current_dir)
 
 # 引入 saveLogs
-from config_admin import bucket
-from saveLogs import Logger
-logger = Logger(bucket)
+from systemLogger import Logger
+logger = Logger()
 
 # CT_Threshold
 class CT_Threshold(Enum):
@@ -63,9 +62,14 @@ class NUDT15Output(AnalysisOutput):
 # NUDT15 主程式
 def NUDT15(input_file_path, FAM_file_path, VIC_file_path, control_well, ntc_well, user_info):
 
-  logger.info(f"\n")
-  logger.info(f" ----> Start NUDT15 Analysis <---- ")
-  logger.info(f" User Info: {user_info}")
+  # Logger settings
+  sender = user_info.organization
+  logger.setSender(sender)
+
+  # Logger : Start Message
+  tmp_source = "nudt15.py line. 64"
+  logger.analysis(f" ----> Start NUDT15 Analysis <---- ", tmp_source)
+  logger.analysis(f" User Info: {user_info}", tmp_source)
 
   # 取得 config
   config = {
@@ -90,9 +94,10 @@ def NUDT15(input_file_path, FAM_file_path, VIC_file_path, control_well, ntc_well
   qpcr_record_list = readQPCRData(input_file_path, FAM_file_path, VIC_file_path, user_info.instrument, ct_threshold)
 
   # 紀錄 QPCRRecord 列表
-  logger.info(f"[{user_info.instrument}] QPCR Raw data:")
+  tmp_source = "nudt15.py line. 97"
+  logger.analysis(f"[{user_info.instrument}] QPCR Raw data:", tmp_source)
   for r in qpcr_record_list:
-    logger.info(f"{r}")
+    logger.analysis(f"{r}", tmp_source)
 
   # 初始化 controlWell 和 ntcWell
   controlWell = control_well
@@ -107,14 +112,16 @@ def NUDT15(input_file_path, FAM_file_path, VIC_file_path, control_well, ntc_well
 
   # 檢查 control_well 是否在 QPCRRecord 列表裡面
   if controlWell not in [r.well_position for r in qpcr_record_list]:
-    logger.error(f"control_well {control_well} 不在 QPCRRecord 列表裡面")
+    tmp_source = "nudt15.py line. 114"
+    logger.error(f"control_well {control_well} 不在 QPCRRecord 列表裡面", tmp_source)
     nudt15_output.qc_status = QCStatus.FAILED.value
     nudt15_output.errMsg = "control_well 不在 QPCRRecord 列表裡面"
     return nudt15_output.toJson()
 
   # 檢查 ntc_well 是否在 QPCRRecord 列表裡面
   if ntcWell not in [r.well_position for r in qpcr_record_list]:
-    logger.error(f"ntc_well {ntc_well} 不在 QPCRRecord 列表裡面")
+    tmp_source = "nudt15.py line. 121"
+    logger.error(f"ntc_well {ntc_well} 不在 QPCRRecord 列表裡面", tmp_source)
     nudt15_output.qc_status = QCStatus.FAILED.value
     nudt15_output.errMsg = "ntc_well 不在 QPCRRecord 列表裡面"
     return nudt15_output.toJson()
@@ -132,7 +139,8 @@ def NUDT15(input_file_path, FAM_file_path, VIC_file_path, control_well, ntc_well
 
   # 如果 QC 失敗, 則跳過 Sample Assessment
   if qc_result == QCStatus.FAILED:
-    logger.warn(f"QC Failed, 跳過 Sample Assessment")
+    tmp_source = "nudt15.py line. 140"
+    logger.warn(f"QC Failed, 跳過 Sample Assessment", tmp_source)
     nudt15_output.qc_status = QCStatus.FAILED.value
     nudt15_output.errMsg = "QC 失敗, 跳過 Sample Assessment"
     nudt15_output.resultList = []
@@ -146,7 +154,8 @@ def NUDT15(input_file_path, FAM_file_path, VIC_file_path, control_well, ntc_well
   # 更新 nudt15_output
   nudt15_output.resultList = resultList
 
-  logger.info(f"* NUDT15 Analysis Completed *")
+  tmp_source = "nudt15.py line. 158"
+  logger.analysis(f"* NUDT15 Analysis Completed *", tmp_source)
 
   return nudt15_output.toJson()
 
@@ -180,11 +189,12 @@ def parseNUDT15Data(qpcr_record_list, controlWell, ntcWell):
   ) for name in sample_names]
 
   # 輸出 MTHFRData 列表
-  logger.info(f"NUDT15Data:")
-  logger.info(controlNUDT15Data)
-  logger.info(ntcNUDT15Data)
+  tmp_source = "nudt15.py line. 163"
+  logger.analysis(f"NUDT15Data:", tmp_source)
+  logger.analysis(str(controlNUDT15Data), tmp_source)
+  logger.analysis(str(ntcNUDT15Data), tmp_source)
   for data in sampleNUDT15DataList:
-    logger.info(data)
+    logger.analysis(str(data), tmp_source)
 
   # DataMatrix
   dataMatrix = {
@@ -207,30 +217,35 @@ def QC(dataMatrix):
 
   # Control 的 wt 和 mut 都不能為 None
   if not controlData.wt or not controlData.mut:
-    logger.error(f"controlData 的 wt 或 mut 為 None")
+    tmp_source = "nudt15.py line. 218"
+    logger.error(f"controlData 的 wt 或 mut 為 None", tmp_source)
     qc_status = QCStatus.FAILED
     return qc_status
 
   # NTC 的 wt 和 mut 都不能為 None
   if not NTCData.wt or not NTCData.mut:
-    logger.error(f"NTCData 的 wt 或 mut 為 None")
+    tmp_source = "nudt15.py line. 225"
+    logger.error(f"NTCData 的 wt 或 mut 為 None", tmp_source)
     qc_status = QCStatus.FAILED
     return qc_status
 
   # QC 條件1: Control 的 wt 和 mut 都是 CT > 0
   condition1 = controlData.wt.ct_value > 0 and controlData.mut.ct_value > 0
   if not condition1:
-    logger.warn(f"Failed QC: Control 的 wt 或 mut CT 值 < 0")
+    tmp_source = "nudt15.py line. 230"
+    logger.warn(f"Failed QC: Control 的 wt 或 mut CT 值 < 0", tmp_source)
 
   # QC 條件2: NTC 的 wt 和 mut 都"不"通過 cutoff (CT > CT_Threshold 或 沒有數值)
   condition2 = not NTCData.wt.pass_cutoff and not NTCData.mut.pass_cutoff
   if not condition2:
-    logger.warn(f"Failed QC: NTCData 的 wt 或 mut CT 值 pass cutoff")
+    tmp_source = "nudt15.py line. 232"
+    logger.warn(f"Failed QC: NTCData 的 wt 或 mut CT 值 pass cutoff", tmp_source)
 
   # QC 條件3: Control 的 wt 和 mut 的 CT 值相差不得超過 DELTA_CT_THRESHOLD
   condition3 = abs(controlData.wt.ct_value - controlData.mut.ct_value) <= CT_Threshold.DELTA_CT_THRESHOLD.value
   if not condition3:
-    logger.warn(f"Failed QC: Control 的 wt 和 mut CT 值相差超過 {CT_Threshold.DELTA_CT_THRESHOLD.value}")
+    tmp_source = "nudt15.py line. 234"
+    logger.warn(f"Failed QC: Control 的 wt 和 mut CT 值相差超過 {CT_Threshold.DELTA_CT_THRESHOLD.value}", tmp_source)
 
   if condition1 and condition2:
     qc_status = QCStatus.PASSED
@@ -374,10 +389,13 @@ def parseParams():
 # Run NUDT15 CLI
 if __name__ == "__main__":
 
+    # 設定 Logger
+    logger = Logger(mode="offline")
+
     # 處理 CLI parameters
     args = parseParams()
 
-    #
+    # 解析 CLI 參數
     input_file_path = args.inputfile
     FAM_file_path = args.FAMfile
     VIC_file_path = args.VICfile

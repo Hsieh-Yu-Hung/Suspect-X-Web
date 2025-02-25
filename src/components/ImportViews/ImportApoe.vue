@@ -92,16 +92,14 @@ import { v4 as uuidv4 } from 'uuid';
 import WarningDialog from '@/components/WarningDialog.vue';
 
 // 導入 composable
-import { upload_files_to_storage } from '@/utility/storageManager';
+import { upload_files_to_storage } from '@/composables/storageManager';
 import { updateGetUserInfo } from '@/composables/accessStoreUserInfo';
 import { submitWorkflow } from '@/composables/submitWorkflow';
-import { CATEGORY_LIST } from '@/utility/storageManager';
+import { CATEGORY_LIST } from '@/composables/storageManager';
 import { setAnalysisID } from '@/composables/checkAnalysisStatus';
 import { ANALYSIS_RESULT } from '@/firebase/firebaseDatabase';
 import { update_userAnalysisData } from '@/firebase/firebaseDatabase';
-
-// logger
-import logger from '@/utility/logger';
+import loggerV2 from '@/composables/loggerV2';
 
 // consts
 const $q = useQuasar();
@@ -282,14 +280,22 @@ async function uploadFile(file_list, analysisID, subDir) {
     const error_file = uploading.filter(res => res.status === 'error');
 
     // 印出 error 的檔案
-    const error_message = error_file.map(res => res.message).join(', \n');
+    let error_message = error_file.map(res => res.message).join(', \n');
+
+    // 捕抓 timeout 的錯誤
+    if (error_message.includes("Timeout")) {
+      error_message = "由於連線問題檔案上傳逾時, 請重新整理頁面, 稍後再試一次！";
+    }
 
     // 設定 dialog_error_message, 跳出警告視窗
     dialog_error_message.value = error_message;
     warning_dialog.value.open_warning_dialog();
 
     // 印出 error message
-    logger.warn(error_message);
+    const message = error_message;
+    const source = 'ImportApoe.vue line.277';
+    const user = user_info.value.email;
+    loggerV2.error(message, source, user);
   }
 
   // 更新 file_list 中 file 的 path
@@ -339,7 +345,10 @@ async function handleSampleFileUpload(newVal) {
       }
     }))
     .catch((error) => {
-      logger.error(error);
+      const message = error;
+      const source = 'ImportApoe.vue line.342';
+      const user = user_info.value.email;
+      loggerV2.error(message, source, user);
     });
   }
 

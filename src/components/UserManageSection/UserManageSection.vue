@@ -76,8 +76,12 @@ import { USER_INFO, dataset_list } from '@/firebase';
 import { load_organization_for_dropdown } from '@/firebase';
 import { load_users_from_firestore } from '@/firebase';
 import { update_userData, getUsers_from_firestore, deleteData } from '@/firebase';
-import logger from '@/utility/logger';
+import loggerV2 from '@/composables/loggerV2';
 import DropDownList from '@/components/DropDownList.vue';
+import { updateGetUserInfo } from '@/composables/accessStoreUserInfo';
+
+// 取得 login_status
+const { login_status } = updateGetUserInfo();
 
 // 取得 Quasar
 const $q = useQuasar();
@@ -232,19 +236,28 @@ async function update_user_info(data) {
   // 如果是帳號開通, 則更新帳號開通
   if(data.check_account_active){
     newData.account_active = data.account_active;
-    logger.info(`帳號開通: id: ${data.id}, email: ${targetUser.email}, 帳號開通: ${data.account_active}`);
+    const message = `帳號開通: id: ${data.id}, email: ${targetUser.email}, 帳號開通: ${data.account_active}`;
+    const source = 'UserManageSection.vue line.233';
+    const user = login_status.value.user_info.email;
+    loggerV2.info(message, source, user);
   }
 
   // 如果是換組織, 則更新組織
   else if(data.organization){
     newData.organization = data.organization;
-    logger.info(`換組織: id: ${data.id}, email: ${targetUser.email}, 舊組織: ${targetUser.organization}, 新組織: ${data.organization}`);
+    const message = `換組織: id: ${data.id}, email: ${targetUser.email}, 舊組織: ${targetUser.organization}, 新組織: ${data.organization}`;
+    const source = 'UserManageSection.vue line.242';
+    const user = login_status.value.user_info.email;
+    loggerV2.info(message, source, user);
   }
 
   // 如果是換帳號身份, 則更新帳號身份
   else if(data.role){
     newData.role = data.role;
-    logger.info(`換帳號身份: id: ${data.id}, email: ${targetUser.email}, 舊帳號身份: ${targetUser.role}, 新帳號身份: ${data.role}`);
+    const message = `換帳號身份: id: ${data.id}, email: ${targetUser.email}, 舊帳號身份: ${targetUser.role}, 新帳號身份: ${data.role}`;
+    const source = 'UserManageSection.vue line.249';
+    const user = login_status.value.user_info.email;
+    loggerV2.info(message, source, user);
   }
 
   // 更新使用者資料
@@ -294,8 +307,6 @@ async function delete_user(user_id_to_delete) {
   await deleteData(dataset_list.user_info, user_id_to_delete)
   .then((Response) => {
     if(Response.status === 'success') {
-      logger.debug(`${Response.message} ID: ${user_id_to_delete}`);
-
       // 發送事件
       emit('user_List_is_updated');
 
@@ -303,11 +314,11 @@ async function delete_user(user_id_to_delete) {
       refresh_user_list();
     }
     else {
-      logger.error(`${Response.message} ID: ${user_id_to_delete}`);
+      console.error(Response.message);
     }
   })
   .catch((error) => {
-    logger.error(`${error} ID: ${user_id_to_delete}`);
+    console.error(error);
   }).finally(() => {
     // 關閉loading
     $q.loading.hide();

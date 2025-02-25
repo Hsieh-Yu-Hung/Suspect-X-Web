@@ -23,18 +23,18 @@
   <q-item class="item">
 
     <!-- icon -->
-    <q-item-section avatar>
+    <q-item-section avatar class="col-1" style="width: 50px;">
       <q-icon name="home_work" color="brown-4" :style="organization_name === masked_organization_name ? { display: 'none' } : { display: 'block' }" />
     </q-item-section>
 
     <!-- 組織名稱 -->
-    <q-item-section>
+    <q-item-section class="col">
       <q-item-label v-if="organization_name === masked_organization_name">{{ organization_name }}</q-item-label>
       <q-input style="min-width: 100px" color="lime-2" borderless :readonly="disable_edit" dense filled v-else v-model="organization_name" />
     </q-item-section>
 
     <!-- 軟體版本 -->
-    <q-item-section>
+    <q-item-section class="col">
       <q-item-label v-if="organization_name === masked_organization_name">{{ software_selection }}</q-item-label>
       <DropDownList
         name="software_dropdown"
@@ -47,17 +47,17 @@
     </q-item-section>
 
     <!-- 成員數量 -->
-    <q-item-section>
+    <q-item-section class="col-1" style="width: 100px;">
       <q-item-label>{{ member_count }}</q-item-label>
     </q-item-section>
 
     <!-- 加入日期 -->
-    <q-item-section>
+    <q-item-section class="col-1" style="width: 100px;">
       <q-item-label>{{ join_date }}</q-item-label>
     </q-item-section>
 
     <!-- 編輯按鈕 -->
-    <q-item-section>
+    <q-item-section class="col-1" style="width: 100px;">
       <div class="flex flex-center" :style="organization_name === masked_organization_name ? { display: 'none' } : { display: 'block' }">
         <q-btn dense glossy :icon="disable_edit ? 'edit' : 'check'" :color="disable_edit ? 'primary' : 'green'" style="margin-inline: 5px" @click="edit_organization" />
         <q-btn dense glossy icon="delete" color="red-9" @click="pop_up_warning_dialog" />

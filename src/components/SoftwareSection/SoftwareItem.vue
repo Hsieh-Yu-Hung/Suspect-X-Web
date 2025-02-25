@@ -23,30 +23,30 @@
   <q-item class="item">
 
     <!-- icon -->
-    <q-item-section class="col-1" avatar>
+    <q-item-section class="col-1" avatar style="width: 50px;">
       <q-icon color="indigo-6" name="api" :style="software_name === masked_software_name ? { display: 'none' } : { display: 'block' }" />
     </q-item-section>
 
     <!-- 軟體名稱 -->
-    <q-item-section class="col">
+    <q-item-section class="col-1" style="width: 200px;">
       <q-item-label v-if="software_name === masked_software_name">{{ software_name }}</q-item-label>
       <q-input color="lime-2" :readonly="disable_edit" dense v-else v-model="software_name" />
     </q-item-section>
 
     <!-- 軟體版本號 -->
-    <q-item-section class="col">
+    <q-item-section class="col-1" style="width: 100px;">
       <q-item-label v-if="software_name === masked_software_name">{{ software_version }}</q-item-label>
       <q-input color="lime-2" :readonly="disable_edit" dense v-else v-model="software_version" />
     </q-item-section>
 
     <!-- 軟體備注 -->
-    <q-item-section class="col-4">
+    <q-item-section class="col">
       <q-item-label v-if="software_name === masked_software_name">{{ software_note }}</q-item-label>
       <q-input color="lime-2" :readonly="disable_edit" filled borderless dense v-else v-model="software_note" />
     </q-item-section>
 
     <!-- 編輯按鈕 -->
-    <q-item-section class="col">
+    <q-item-section class="col-1" style="width: 100px;">
       <div :style="software_name === masked_software_name ? { display: 'none' } : { display: 'block' }">
         <q-btn dense glossy :icon="disable_edit ? 'edit' : 'check'" :color="disable_edit ? 'primary' : 'green'" style="margin-inline: 5px" @click="edit_software" />
         <q-btn dense glossy icon="delete" color="red-9" @click="pop_up_warning_dialog" />

@@ -23,7 +23,7 @@
   <q-item class="item">
 
     <!-- 使用者 Email -->
-    <q-item-section class="col-3">
+    <q-item-section class="col" style="min-width: 250px;">
       <q-item-label v-if="props.user_info.id === masked_user_id">{{ display_user_info.email }}</q-item-label>
       <q-field dense v-else standout="bg-teal text-white" stack-label>
         <template v-slot:control>
@@ -33,7 +33,7 @@
     </q-item-section>
 
     <!-- 所屬組織 -->
-    <q-item-section class="col-2">
+    <q-item-section class="col" style="min-width: 150px;">
       <q-item-label v-if="props.user_info.id === masked_user_id">{{ display_user_info.organization }}</q-item-label>
       <DropDownList v-else
       name="organization_dropdown"
@@ -44,7 +44,7 @@
     </q-item-section>
 
     <!-- 帳號開通 -->
-    <q-item-section class="col">
+    <q-item-section class="col-1" style="width: 100px;">
       <q-item-label v-if="props.user_info.id === masked_user_id">{{ display_user_info.account_active }}</q-item-label>
       <div v-else class="flex flex-center" style="gap: 10px;">
         <q-btn-toggle
@@ -78,7 +78,7 @@
     </q-item-section>
 
     <!-- 帳號身份 -->
-    <q-item-section class="col-2">
+    <q-item-section class="col-1" style="width: 150px;">
       <q-item-label v-if="props.user_info.id === masked_user_id">{{ display_user_info.role }}</q-item-label>
       <DropDownList v-else
         name="account_role_dropdown"
@@ -90,13 +90,13 @@
     </q-item-section>
 
     <!-- 申請日期 -->
-    <q-item-section class="col">
+    <q-item-section class="col-1" style="width: 200px;">
       <q-item-label v-if="props.user_info.id === masked_user_id">{{ display_user_info.created_at }}</q-item-label>
       <q-item-label v-else>{{ props.user_info.created_at }}</q-item-label>
     </q-item-section>
 
     <!-- 編輯按鈕 -->
-    <q-item-section class="col-1">
+    <q-item-section class="col-1" style="width: 50px;">
       <div>
         <q-btn dense glossy icon="delete" color="red-9" @click="pop_up_warning_dialog"
           :style="props.user_info.id === masked_user_id ? 'display: none;' : ''" />

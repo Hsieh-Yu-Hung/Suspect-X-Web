@@ -1,99 +1,34 @@
-# This works, use it as a template
+# [On call] This works, use it as a template
 # @https_fn.on_request(region="asia-east1", cors=options.CorsOptions(cors_origins="*", cors_methods=["get", "post"]))
 # def on_request_example(req: https_fn.Request):
 #     response_data = {"data": {"message": "Hello world!"}}
 #     return https_fn.Response(json.dumps(response_data), content_type="application/json")
+#
+# [On schedule] This works, use it as a template
+# @scheduler_fn.on_schedule(region="asia-east1", schedule="every day 00:00", timezone="Asia/Taipei", memory=512)
+# def ScheduleUploadLogs(event: scheduler_fn.ScheduledEvent) -> None:
+#     try:
+#
+#       # 上傳日誌
+#       logger.upload_logs_to_storage()
+#
+#       # 回傳 message
+#       print("Successfully upload logs on schedule!")
+#
+#     except Exception as e:
+#         print("Failed to upload logs on schedule: " + str(e))
 
-# 引入 Firebase 函數庫
+# 導入模組
+import json
 from firebase_functions import https_fn, options, scheduler_fn
-
-# 引入自製模組
 from config_admin import bucket
-from saveLogs import Logger
-
-# 引入 check_file_format
 from check_FileFormat import FileFormatChecker
 from check_FileFormat import ProductType
-
-# 引入 Nucleus
 from Nucleus import Core
-
-# 其他
-import json
 
 # 載入環境變數
 from config_env import load_env
 load_env()
-
-# 實體化 Logger
-logger = Logger(bucket)
-# 保存日誌
-@https_fn.on_request(region="asia-east1", cors=options.CorsOptions(cors_origins="*", cors_methods=["get", "post"]), memory=512)
-def saveLogs(req: https_fn.Request):
-
-    # 回傳 message
-    response_data = {"data": {"status": "pending", "message": "Waiting to save logs..."}}
-
-    try:
-
-      # 取得 input data
-      input_data = json.loads(req.data.decode("utf-8"))["data"]
-      message = input_data["message"]
-      logType = input_data["logType"]
-
-      # 紀錄日誌
-      if logType == "debug":
-          logger.debug(message)
-      elif logType == "error":
-          logger.error(message)
-      elif logType == "warn":
-          logger.warn(message)
-      elif logType == "info":
-          logger.info(message)
-
-      # 回傳 message
-      response_data = {"data": {"status": "success", "message": "Save logs!"}}
-
-    except Exception as e:
-        response_data = {"data": {"status": "error", "message": str(e)}}
-
-    # 回傳 response
-    return https_fn.Response(json.dumps(response_data), content_type="application/json")
-
-# 上傳日誌：呼叫觸發
-@https_fn.on_request(region="asia-east1", cors=options.CorsOptions(cors_origins="*", cors_methods=["get", "post"]), memory=512)
-def uploadLogs(req: https_fn.Request):
-
-    # 回傳 message
-    response_data = {"data": {"status": "pending", "message": "Waiting to upload logs..."}}
-
-    try:
-
-      # 上傳日誌
-      logger.upload_logs_to_storage()
-
-      # 回傳 message
-      response_data = {"data": {"status": "success", "message": "Successfully upload logs!"}}
-
-    except Exception as e:
-        response_data = {"data": {"status": "error", "message": str(e)}}
-
-    # 回傳 response
-    return https_fn.Response(json.dumps(response_data), content_type="application/json")
-
-# 上傳日誌：定時觸發
-@scheduler_fn.on_schedule(region="asia-east1", schedule="every day 00:00", timezone="Asia/Taipei", memory=512)
-def ScheduleUploadLogs(event: scheduler_fn.ScheduledEvent) -> None:
-    try:
-
-      # 上傳日誌
-      logger.upload_logs_to_storage()
-
-      # 回傳 message
-      print("Successfully upload logs on schedule!")
-
-    except Exception as e:
-        print("Failed to upload logs on schedule: " + str(e))
 
 # 檢查 input 檔案格式
 @https_fn.on_request(region="asia-east1", cors=options.CorsOptions(cors_origins="*", cors_methods=["get", "post"]), memory=1024)

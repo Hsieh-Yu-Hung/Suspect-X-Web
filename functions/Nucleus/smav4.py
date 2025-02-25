@@ -18,9 +18,8 @@ sys.path.append(parent_dir)
 sys.path.append(current_dir)
 
 # 引入 saveLogs
-from config_admin import bucket
-from saveLogs import Logger
-logger = Logger(bucket)
+from systemLogger import Logger
+logger = Logger()
 
 # 定義 SMAv4 peak obj
 @dataclass
@@ -190,9 +189,14 @@ def SMAv4(
     peak_condition, user_info
   ):
 
-  logger.info(f"\n")
-  logger.info(f" ----> Start SMAv4 Analysis <---- ")
-  logger.info(f" User Info: {user_info}")
+  # Logger settings
+  sender = user_info.organization
+  logger.setSender(sender)
+
+  # Logger : Start Message
+  tmp_source = "smav4.py line. 185"
+  logger.analysis(f" ----> Start SMAv4 Analysis <---- ", tmp_source)
+  logger.analysis(f" User Info: {user_info}", tmp_source)
 
   # 取得 config
   config = {
@@ -242,7 +246,8 @@ def SMAv4(
 
   # 進行 QC
   QC_result, QC_message = QC(std_data_objs)
-  logger.info(f"QC Result: {QC_result}, QC Message: {QC_message}")
+  tmp_source = "smav4.py line. 248"
+  logger.analysis(f"QC Result: {QC_result}, QC Message: {QC_message}", tmp_source)
 
   # 更新 smav4_output
   smav4_output.qc_status = QC_result
@@ -252,7 +257,8 @@ def SMAv4(
 
   # 計算 Copy Number Ranges
   copy_number_ranges = determine_range(std_data_objs)
-  logger.info(f"Copy Number Ranges: {copy_number_ranges}")
+  tmp_source = "smav4.py line. 259"
+  logger.analysis(f"Copy Number Ranges: {copy_number_ranges}", tmp_source)
 
   # 更新 smav4_output
   smav4_output.COPY_NUMBER_RANGES = copy_number_ranges
@@ -268,13 +274,15 @@ def SMAv4(
       smn1_copy_number=smn1_copy_number,
       smn2_copy_number=smn2_copy_number
     )
-    logger.info(f"SMAv4 Result: {result}")
+    tmp_source = "smav4.py line. 269"
+    logger.analysis(f"SMAv4 Result: {result}", tmp_source)
     assessment_results[sample] = result
 
   # 更新 smav4_output
   smav4_output.RESULT_LIST = assessment_results
 
-  logger.info(f"* SMAv4 Analysis Completed *")
+  tmp_source = "smav4.py line. 285"
+  logger.analysis(f"* SMAv4 Analysis Completed *", tmp_source)
 
   # 回傳 smav4_output
   return smav4_output.toJson()
@@ -320,7 +328,8 @@ def summary_smn1_data(dataframe, group, ic_peak_range, tg_peak_range, ic_rfu_cut
 
   # 如果 ic_peak_list 為空, 則回傳 None
   if len(ic_peak_list) == 0:
-    logger.warn(f"{group} 找不到 IC peak")
+    tmp_source = "smav4.py line. 330"
+    logger.warn(f"{group} 找不到 IC peak", tmp_source)
     ic_peak_obj = None
   else:
     # 實體化 SMAv4Peak
@@ -334,7 +343,8 @@ def summary_smn1_data(dataframe, group, ic_peak_range, tg_peak_range, ic_rfu_cut
 
   # 如果 tg_peak_list 為空, 則回傳 None
   if len(tg_peak_list) == 0:
-    logger.warn(f"{group} 找不到 TG peak")
+    tmp_source = "smav4.py line. 345"
+    logger.warn(f"{group} 找不到 TG peak", tmp_source)
     target_peak_obj = None
   else:
     # 實體化 SMAv4Peak
@@ -355,7 +365,8 @@ def summary_smn2_data(dataframe, group, peak_size, selected_peak_range, rfu_cuto
   called_peaks = CallPeak(dataframe, selected_peak_range, top_n=top_n)
 
   if len(called_peaks) < top_n:
-    logger.warn(f"{group} 範圍內找不到 {top_n} 個 peak")
+    tmp_source = "smav4.py line. 367"
+    logger.warn(f"{group} 範圍內找不到 {top_n} 個 peak", tmp_source)
     data = SMAv4Data(smn="smn2", group=group, ic_peak=None, tg_peak=None) # 回傳 None
     return data
 
@@ -417,7 +428,8 @@ def summary_std_data(std_control_objs, use_condition, smn1_ic_peak_range, smn1_t
   # 紀錄 std_data_objs
   for smn in std_data_objs:
     for group in std_data_objs[smn]:
-      logger.info(f"{smn} {group} {std_data_objs[smn][group]}")
+      tmp_source = "smav4.py line. 429"
+      logger.analysis(f"{smn} {group} {std_data_objs[smn][group]}", tmp_source)
 
   return std_data_objs
 
@@ -447,7 +459,8 @@ def summary_sample_data(sample_objs, use_condition, smn1_ic_peak_range, smn1_tar
   # 紀錄 sample_data_objs
   for smn in sample_data_objs:
     for group in sample_data_objs[smn]:
-      logger.info(f"{smn} {group} {sample_data_objs[smn][group]}")
+      tmp_source = "smav4.py line. 460"
+      logger.analysis(f"{smn} {group} {sample_data_objs[smn][group]}", tmp_source)
 
   return sample_data_objs
 
@@ -578,6 +591,11 @@ def parseParams():
   parser.add_argument("--configfile", "-c", required=True, type=str, help="由於 SMAv4 需要設定複雜, 使用設定檔, 指定路徑 (JSON格式)")
   parser.add_argument("--output", "-o", required=False, type=str, help="輸出結果的 JSON 檔案路徑, 若不給定, 則輸出到 console")
   args = parser.parse_args()
+
+  # 檢查 configfile 是否存在
+  if not os.path.exists(args.configfile):
+    raise FileNotFoundError(f"設定檔不存在: {args.configfile}")
+
   return args
 
 # 處理 Config 檔案
@@ -622,6 +640,9 @@ def parseConfig(configfile):
 
 # SMAv4 CLI
 if __name__ == "__main__":
+
+  # 設定 Logger 模式
+  logger = Logger(mode="offline")
 
   # 處理 CLI parameters
   args = parseParams()
