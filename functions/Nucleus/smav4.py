@@ -247,7 +247,10 @@ def SMAv4(
   # 進行 QC
   QC_result, QC_message = QC(std_data_objs)
   tmp_source = "smav4.py line. 248"
-  logger.analysis(f"QC Result: {QC_result}, QC Message: {QC_message}", tmp_source)
+  if QC_result == QCStatus.FAILED:
+    logger.warn(f"QC Result: {QC_result}, QC Message: {QC_message}", tmp_source)
+  else:
+    logger.analysis(f"QC Result: {QC_result}, QC Message: {QC_message}", tmp_source)
 
   # 更新 smav4_output
   smav4_output.qc_status = QC_result

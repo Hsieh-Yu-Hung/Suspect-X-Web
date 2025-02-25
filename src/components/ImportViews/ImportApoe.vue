@@ -152,8 +152,6 @@ async function onSubmit() {
   });
 
   // 設定輸入
-  const sampleFileAll = sampleFile.value.reduce((acc, val) => acc.concat(val), []);
-  const checkList = [...control1File.value, ...control2File.value, ...sampleFileAll];
   const parsedSampleNameList = sampleFile.value.map((fileList) => { return filenameParser(fileList[0].name); });
   const id_labeled_sample_name_list = sampleFile.value.map((fileList) => {
     return {
@@ -171,7 +169,7 @@ async function onSubmit() {
   const currentSettingProps = store.getters["analysis_setting/getSettingProps"];
 
   // 執行 submitWorkflow
-  const analysisResult = await submitWorkflow(checkList, 'APOE', ApoeInputData, user_info.value, currentSettingProps);
+  const analysisResult = await submitWorkflow('APOE', ApoeInputData, user_info.value, currentSettingProps);
 
   // 檢查有沒有出錯
   if (analysisResult.status == 'success'){

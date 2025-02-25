@@ -160,11 +160,6 @@ async function onSubmit() {
     messageColor: "white",
   });
 
-  // 輸入
-  let checkList = [];
-  if (controlSampleFile.value) checkList.push(controlSampleFile.value);
-  if (testingSampleFile.value) checkList.push(...testingSampleFile.value);
-
   // 取得 inputData
   const InputData = {
     controlPath: controlSampleFile.value ? controlSampleFile.value.path : null,
@@ -175,7 +170,7 @@ async function onSubmit() {
   const currentSettingProps = store.getters["analysis_setting/getSettingProps"];
 
   // 執行 submitWorkflow
-  const analysisResult = await submitWorkflow(checkList, props.analysis_name, InputData, user_info.value, currentSettingProps);
+  const analysisResult = await submitWorkflow(props.analysis_name, InputData, user_info.value, currentSettingProps);
 
   // 檢查有沒有出錯
   if (analysisResult.status == 'success'){

@@ -687,7 +687,7 @@ async function onSubmit() {
   const currentSettingProps = store.getters["analysis_setting/getSettingProps"];
 
   // 執行 submitWorkflow
-  const analysisResult = await submitWorkflow(FileCheckList, 'SMA', InputData, user_info.value, currentSettingProps);
+  const analysisResult = await submitWorkflow('SMA', InputData, user_info.value, currentSettingProps);
 
   // 檢查有沒有出錯
   if (analysisResult.status == 'success'){

@@ -16,44 +16,6 @@
   </q-card>
 </template>
 
-<script setup>
-// 導入模組
-import { useQuasar } from 'quasar';
-import { uploadLogs } from '@/firebase/firebaseFunction.js';
-
-// 取得 Quasar
-const $q = useQuasar();
-
-// 上傳日誌
-const callUploadLogs = async () => {
-  $q.loading.show();
-  const response = await uploadLogs().then(res => {
-    return res.data;
-  });
-  if (response.status === "success") {
-    $q.notify({
-      message: response.message,
-      progress: true,
-      color: 'green',
-      icon: 'check',
-      position: 'top',
-      timeout: 1000
-    });
-  }
-  else {
-    $q.notify({
-      message: response.message,
-      color: 'red',
-      icon: 'warning',
-      position: 'top',
-      timeout: 3000
-    });
-  }
-  $q.loading.hide();
-}
-
-</script>
-
 <style scoped>
 .card {
   width: 100%;

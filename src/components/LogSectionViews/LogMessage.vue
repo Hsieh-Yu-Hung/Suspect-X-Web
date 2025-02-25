@@ -19,7 +19,7 @@
     <!-- 時間 -->
     <div style="display: flex; flex-direction: row; gap: 10px;">
       <span :style="{ display: expand_msg_block ? 'block' : 'none' }">時間：</span>
-      <span>{{ timestamp }}</span>
+      <span>{{ parsed_timestamp }}</span>
     </div>
 
     <!-- 發送者 -->
@@ -60,7 +60,7 @@
 <script setup>
 
 // 導入模組
-import { ref } from 'vue';
+import { ref, computed } from 'vue';
 
 // Props
 const props = defineProps({
@@ -153,6 +153,16 @@ const sender_color = (sender) => {
 function toggle_expand_msg_block() {
   expand_msg_block.value = !expand_msg_block.value;
 }
+
+// 處理 timestamp 格式 (不顯示毫秒)
+const parsed_timestamp = computed(() => {
+  if (props.timestamp.includes('.')) {
+    return props.timestamp.split('.')[0];
+  } else {
+    return props.timestamp;
+  }
+})
+
 </script>
 
 <style scoped>

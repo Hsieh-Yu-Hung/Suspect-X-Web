@@ -3,6 +3,7 @@ import os
 from dataclasses import dataclass
 from utils.ConstVaribles import PATH_OF_DATA
 from utils.DataObject import WELL
+from utils.FormatChecker import FileFormatChecker
 
 # 預期 input 格式
 DEFAULT_EXPECTED_INPUT_ITEMS = [ 'instrument', 'reagent', 'organization', 'input_data' ]
@@ -97,6 +98,9 @@ class InputParser:
     # 初始化 bucket
     self.bucket = bucket
 
+    # 初始化 FileFormatChecker
+    self.fileFormatChecker = FileFormatChecker()
+
     # 預期 input 格式
     if expectedInputItems:
       self.expectedInputItems = expectedInputItems
@@ -156,10 +160,10 @@ class InputParser:
       apoe_input_data = self.parseAPOEInputData(self.input_data)
       return apoe_input_data
     elif analysisName == AnalysisName.MTHFR:
-      mthfr_input_data = self.parseMTHFRInputData(self.input_data)
+      mthfr_input_data = self.parseMTHFRInputData(self.input_data, self.instrument)
       return mthfr_input_data
     elif analysisName == AnalysisName.NUDT15:
-      nudt15_input_data = self.parseNUDT15InputData(self.input_data)
+      nudt15_input_data = self.parseNUDT15InputData(self.input_data, self.instrument)
       return nudt15_input_data
     elif analysisName == AnalysisName.FXS:
       fxs_input_data = self.parseFXSInputData(self.input_data)
@@ -168,7 +172,7 @@ class InputParser:
       htd_input_data = self.parseHTDInputData(self.input_data)
       return htd_input_data
     elif analysisName == AnalysisName.SMA:
-      sma_input_data = self.parseSMAInputData(self.input_data)
+      sma_input_data = self.parseSMAInputData(self.input_data, self.instrument)
       return sma_input_data
     elif analysisName == AnalysisName.SMAv4:
       sma_input_data = self.parseSMAv4InputData(self.input_data)
@@ -207,6 +211,14 @@ class InputParser:
     for sample in apoe_input_data['samplePathList']:
       sample_list[sample['sampleId']] = [os.path.join(PATH_OF_DATA, filePath) for filePath in sample['filePathList']]
 
+    # 檢查 input 檔案格式
+    sampleList = control1_list + control2_list
+    for sample in sample_list.values(): sampleList += sample
+    check_status = list(map(lambda x: self.fileFormatChecker.check_qsep100_format(x), sampleList))
+    if not all(check_status):
+      error_message = self.fileFormatChecker.error_message
+      raise ValueError(error_message)
+
     return APOEInputData(
       control1=control1_list,
       control2=control2_list,
@@ -214,7 +226,7 @@ class InputParser:
     )
 
   # 解析 MTHFR input 資料
-  def parseMTHFRInputData(self, mthfr_input_data):
+  def parseMTHFRInputData(self, mthfr_input_data, instrument):
 
     # 取得 input 檔案
     input_file = mthfr_input_data['file_path']
@@ -238,6 +250,23 @@ class InputParser:
     control_well = WELL(mthfr_input_data['control_well'][0])
     ntc_well = WELL(mthfr_input_data['ntc_well'])
 
+    # 檢查 input 檔案格式
+    checkList = [file for file in [input_file, FAM_file, VIC_file] if file]
+
+    # 以儀器決定檢查方式
+    if instrument == 'z480':
+      check_status = list(map(lambda x: self.fileFormatChecker.check_z480_format(x), checkList))
+    elif instrument == 'qs3':
+      check_status = list(map(lambda x: self.fileFormatChecker.check_qs3_format(x), checkList))
+    elif instrument == 'tower':
+      check_status = list(map(lambda x: self.fileFormatChecker.check_tower_format(x), checkList))
+    else:
+      raise ValueError(f"MTHFR 不支援此儀器: {instrument}")
+
+    if not all(check_status):
+      error_message = self.fileFormatChecker.error_message
+      raise ValueError(error_message)
+
     # 回傳 MTHFRInputData
     return MTHFRInputData(
       input_file_path = input_file,
@@ -248,7 +277,7 @@ class InputParser:
     )
 
   # 解析 NUDT15 input 資料
-  def parseNUDT15InputData(self, nudt15_input_data):
+  def parseNUDT15InputData(self, nudt15_input_data, instrument):
     # 取得 input 檔案
     input_file = nudt15_input_data['file_path']
     FAM_file = nudt15_input_data['FAM_file_path']
@@ -270,6 +299,23 @@ class InputParser:
     # 取得 well 位置
     control_well = WELL(nudt15_input_data['control_well'][0])
     ntc_well = WELL(nudt15_input_data['ntc_well'])
+
+    # 檢查 input 檔案格式
+    checkList = [file for file in [input_file, FAM_file, VIC_file] if file]
+
+    # 以儀器決定檢查方式
+    if instrument == 'z480':
+      check_status = list(map(lambda x: self.fileFormatChecker.check_z480_format(x), checkList))
+    elif instrument == 'qs3':
+      check_status = list(map(lambda x: self.fileFormatChecker.check_qs3_format(x), checkList))
+    elif instrument == 'tower':
+      check_status = list(map(lambda x: self.fileFormatChecker.check_tower_format(x), checkList))
+    else:
+      raise ValueError(f"NUDT15 不支援此儀器: {instrument}")
+
+    if not all(check_status):
+      error_message = self.fileFormatChecker.error_message
+      raise ValueError(error_message)
 
     # 回傳 input 檔案路徑
     return NUDT15InputData(
@@ -301,6 +347,13 @@ class InputParser:
     # 加上 PATH_OF_DATA
     samples_file_list = [os.path.join(PATH_OF_DATA, sample) for sample in samples_file_list]
 
+    # 檢查 input 檔案格式
+    sampleList = [control_file_path] + samples_file_list
+    check_status = list(map(lambda x: self.fileFormatChecker.check_qsep100_format(x), sampleList))
+    if not all(check_status):
+      error_message = self.fileFormatChecker.error_message
+      raise ValueError(error_message)
+
     return FXSInputData(
       control_file_path = control_file_path,
       samples_file_list = samples_file_list
@@ -327,13 +380,20 @@ class InputParser:
     # 加上 PATH_OF_DATA
     samples_file_list = [os.path.join(PATH_OF_DATA, sample) for sample in samples_file_list]
 
+    # 檢查 input 檔案格式
+    sampleList = [control_file_path] + samples_file_list
+    check_status = list(map(lambda x: self.fileFormatChecker.check_qsep100_format(x), sampleList))
+    if not all(check_status):
+      error_message = self.fileFormatChecker.error_message
+      raise ValueError(error_message)
+
     return HTDInputData(
       control_file_path = control_file_path,
       samples_file_list = samples_file_list
     )
 
   # 解析 SMA input 資料
-  def parseSMAInputData(self, sma_input_data):
+  def parseSMAInputData(self, sma_input_data, instrument):
 
     # 取得 input 檔案
     input_file = sma_input_data['file_path']
@@ -360,6 +420,24 @@ class InputParser:
     sc1_well = WELL(sma_input_data['control_well'][0])
     sc2_well = WELL(sma_input_data['control_well'][1])
     ntc_well = WELL(sma_input_data['ntc_well'])
+
+    # 檢查 input 檔案格式
+    checkList = [file for file in [input_file, FAM_file, VIC_file, CY5_file] if file]
+
+    # 以儀器決定檢查方式
+    if instrument == 'z480':
+      check_status = list(map(lambda x: self.fileFormatChecker.check_z480_format(x), checkList))
+    elif instrument == 'qs3':
+      check_status = list(map(lambda x: self.fileFormatChecker.check_qs3_format(x), checkList))
+    elif instrument == 'tower':
+      check_status = list(map(lambda x: self.fileFormatChecker.check_tower_format(x), checkList))
+    else:
+      raise ValueError(f"SMA 不支援此儀器: {instrument}")
+
+    # 檢查 input 檔案格式
+    if not all(check_status):
+      error_message = self.fileFormatChecker.error_message
+      raise ValueError(error_message)
 
     # 回傳 SMAInputData
     return SMAInputData(
@@ -413,6 +491,13 @@ class InputParser:
       smn2_std3 = os.path.join(PATH_OF_DATA, smn2_std3)
     smn1_samples = [os.path.join(PATH_OF_DATA, sample) for sample in smn1_samples if sample]
     smn2_samples = [os.path.join(PATH_OF_DATA, sample) for sample in smn2_samples if sample]
+
+    # 檢查 input 檔案格式
+    sampleList = [smn1_std1, smn1_std2, smn1_std3, smn2_std1, smn2_std2, smn2_std3] + smn1_samples + smn2_samples
+    check_status = list(map(lambda x: self.fileFormatChecker.check_qsep100_format(x), sampleList))
+    if not all(check_status):
+      error_message = self.fileFormatChecker.error_message
+      raise ValueError(error_message)
 
     # 回傳 SMAv4InputData
     return SMAv4InputData(
