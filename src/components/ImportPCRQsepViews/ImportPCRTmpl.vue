@@ -149,6 +149,17 @@ function initInputs() {
   testingSampleFile.value = null;
 }
 
+// 取得檔名並且移除附檔名
+const simplifyFilePath = (file_path) => {
+  if (!file_path) return '';
+
+  // 先取得檔案名稱（移除路徑）
+  const fileName = file_path.split('/').pop();
+
+  // 移除附檔名
+  return fileName.replace(/\.[^.]+$/, '');
+}
+
 // 送出按鈕
 async function onSubmit() {
   // *. 顯示 loading 視窗
@@ -196,6 +207,7 @@ async function onSubmit() {
         currentAnalysisID.value.analysis_name,
         currentAnalysisID.value.analysis_uuid,
         resultObj.config,
+        [simplifyFilePath(controlSampleFile.value.name)],
         resultObj.qc_status,
         "",
         FXS_Result

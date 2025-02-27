@@ -653,6 +653,30 @@ const SMAv4_RESULT = (STD_DATA, SAMPLE_DATA, COPY_NUMBER_RANGES, RESULT_LIST, PA
   }
 }
 
+// 取得 control_ids
+const getControlID = (smav4InputFilesObj) => {
+
+  // 取得檔名並且移除附檔名
+  const simplifyFilePath = (file_path) => {
+    if (!file_path) return '';
+
+    // 先取得檔案名稱（移除路徑）
+    const fileName = file_path.split('/').pop();
+
+    // 移除附檔名
+    return fileName.replace(/\.[^.]+$/, '');
+  }
+
+  return [
+    simplifyFilePath(smav4InputFilesObj.smn1_std1),
+    simplifyFilePath(smav4InputFilesObj.smn1_std2),
+    simplifyFilePath(smav4InputFilesObj.smn1_std3),
+    simplifyFilePath(smav4InputFilesObj.smn2_std1),
+    simplifyFilePath(smav4InputFilesObj.smn2_std2),
+    simplifyFilePath(smav4InputFilesObj.smn2_std3),
+  ]
+}
+
 /* 主程式 */
 async function onSubmit() {
 
@@ -678,6 +702,9 @@ async function onSubmit() {
 
   // 解析 SMA v4 檔案
   const smav4InputFilesObj = parseSMAv4Input(FileCheckList);
+
+  // 取得 control_ids
+  const control_id = getControlID(smav4InputFilesObj);
 
   // inputData
   const InputData = {
@@ -714,6 +741,7 @@ async function onSubmit() {
       "SMAv4",
       currentAnalysisID.value.analysis_uuid,
       resultObj.config,
+      control_id,
       resultObj.qc_status,
       resultObj.errMsg,
       SMAv4_Result

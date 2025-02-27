@@ -68,8 +68,8 @@
           <q-card class="text-center" flat>
             <q-card-section>
               <div class="text-grey-7 text-overline">Control ID</div>
-              <div class="text-grey-7 text-weight-bolder">
-                {{ props.controlId }}
+              <div v-for="id in props.controlId" :key="id" class="text-grey-7 text-weight-bolder">
+                {{ id }}
               </div>
             </q-card-section>
           </q-card>
@@ -152,7 +152,7 @@ const props = defineProps({
     required: true
   },
   controlId: {
-    type: String,
+    type: Array,
     required: true
   },
   QCResult: {
@@ -273,6 +273,5 @@ const getQCMessageContent = computed(() => {
     return messages.map((message, index) => ({index,message}));
   }
 })
-
 
 </script>

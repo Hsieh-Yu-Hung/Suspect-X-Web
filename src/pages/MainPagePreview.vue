@@ -113,7 +113,7 @@ const DEFAULT_QC_PANEL_DISPLAY = {
   instrument: 'N/A',
   reagent: 'N/A',
   analysis_method: 'N/A',
-  controlId: 'N/A',
+  controlId: [],
   QCResult: 'N/A',
   assessmentTime: 'N/A',
   QCMessage: 'N/A',
@@ -156,7 +156,7 @@ function updateQC_PANEL_DISPLAY(currentAnalysisResult){
       QC_PANEL_DISPLAY.value.instrument = currentAnalysisResult.config[SMA_analyser_selection].instrument;
       QC_PANEL_DISPLAY.value.reagent = currentAnalysisResult.config[SMA_analyser_selection].reagent;
       QC_PANEL_DISPLAY.value.analysis_method = "ACCUiN BioTech Analyzer";
-      QC_PANEL_DISPLAY.value.controlId = "control-id";
+      QC_PANEL_DISPLAY.value.controlId = currentAnalysisResult.control_ids[SMA_analyser_selection];
       QC_PANEL_DISPLAY.value.QCResult = currentAnalysisResult.qc_status[SMA_analyser_selection];
       QC_PANEL_DISPLAY.value.assessmentTime = currentAnalysisResult.analysis_time;
       QC_PANEL_DISPLAY.value.QCMessage = currentAnalysisResult.qc_message[SMA_analyser_selection];
@@ -169,7 +169,7 @@ function updateQC_PANEL_DISPLAY(currentAnalysisResult){
       QC_PANEL_DISPLAY.value.instrument = currentAnalysisResult.config.instrument;
       QC_PANEL_DISPLAY.value.reagent = currentAnalysisResult.config.reagent;
       QC_PANEL_DISPLAY.value.analysis_method = "ACCUiN BioTech Analyzer";
-      QC_PANEL_DISPLAY.value.controlId = "control-id";
+      QC_PANEL_DISPLAY.value.controlId = currentAnalysisResult.control_ids;
       QC_PANEL_DISPLAY.value.QCResult = currentAnalysisResult.qc_status;
       QC_PANEL_DISPLAY.value.assessmentTime = currentAnalysisResult.analysis_time;
       QC_PANEL_DISPLAY.value.QCMessage = currentAnalysisResult.qc_message;

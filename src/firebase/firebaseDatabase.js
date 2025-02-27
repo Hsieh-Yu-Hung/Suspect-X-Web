@@ -86,12 +86,13 @@ export const LOG_DATA = (id, log_level, log_message, log_time, log_source, log_u
 }
 
 // 定義分析結果資料結構
-export const ANALYSIS_RESULT = (analysis_name, analysis_id, config, qc_status, qc_message, resultObj) => {
+export const ANALYSIS_RESULT = (analysis_name, analysis_id, config, control_ids, qc_status, qc_message, resultObj) => {
   const current_time = moment().format('YYYY-MM-DD HH:mm:ss');
   const analysisRes = {
     analysis_name: analysis_name,
     analysis_id: analysis_id,
     config: config,
+    control_ids: control_ids,
     qc_status: qc_status,
     qc_message: qc_message,
     resultObj: resultObj,
