@@ -171,7 +171,7 @@ async function onSubmit() {
 
     // 製作 ANALYSIS_RESULT
     const AnalysisResult = ANALYSIS_RESULT(
-        currentAnalysisID.value.analysis_name,
+        "SMA",
         currentAnalysisID.value.analysis_uuid,
         {
           V1: resultV1Obj.config,
@@ -197,6 +197,12 @@ async function onSubmit() {
 
     // 將結果存到 firestore
     update_userAnalysisData(user_info.value.uid, dbSMAResultPath, AnalysisResult, currentAnalysisID.value.analysis_uuid);
+
+    // 更新 currentDisplayAnalysisID
+    store.commit("analysis_setting/updateCurrentDisplayAnalysisID", {
+      analysis_name: "SMA",
+      analysis_uuid: currentAnalysisID.value.analysis_uuid,
+    });
 
     // 更新 currentAnalysisID
     const new_id = `analysis_${uuidv4()}`;

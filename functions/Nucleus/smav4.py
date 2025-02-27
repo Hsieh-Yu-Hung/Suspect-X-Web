@@ -178,6 +178,20 @@ DEFAULT_PEAK_CONDITION = {
     "SMA1_TG": 123,
     "SMA2_IC": 340,
     "SMA2_TG": 306
+  },
+  "PEAK_RANGE_DIV":{
+    "SMA1_IC": {
+      "Negative_range": 10,
+      "Positive_range": 10
+    },
+    "SMA1_TG": {
+      "Negative_range": 10,
+      "Positive_range": 10
+    },
+    "SMA2": {
+      "Negative_range": 10,
+      "Positive_range": 10
+    }
   }
 }
 
@@ -374,7 +388,7 @@ def summary_smn2_data(dataframe, group, peak_size, selected_peak_range, rfu_cuto
     return data
 
   # 使用 peak_size 排序 called_peaks
-  called_peaks = sorted(called_peaks, key=lambda x: x.peak_size)
+  called_peaks = sorted(called_peaks, key=lambda x: x.peak_size, reverse=True)
 
   # 檢查 peak_size 中 SMA2_IC 和 SMA2_TG 大小
 
@@ -569,6 +583,20 @@ def convert_peak_condition(peak_condition):
       "SMA1_TG": int(peak_condition['smn1']['targetPeak']['Peak_size']),
       "SMA2_IC": int(peak_condition['smn2']['peak_condition']['internal_ctrl_size']),
       "SMA2_TG": int(peak_condition['smn2']['peak_condition']['target_size'])
+    },
+    "PEAK_RANGE_DIV":{
+      "SMA1_IC": {
+        "Negative_range": int(peak_condition['smn1']['internalControlPeak']['Negative_range']),
+        "Positive_range": int(peak_condition['smn1']['internalControlPeak']['Positive_range'])
+      },
+      "SMA1_TG": {
+        "Negative_range": int(peak_condition['smn1']['targetPeak']['Negative_range']),
+        "Positive_range": int(peak_condition['smn1']['targetPeak']['Positive_range'])
+      },
+      "SMA2": {
+        "Negative_range": int(peak_condition['smn2']['peak_condition']['Negative_range']),
+        "Positive_range": int(peak_condition['smn2']['peak_condition']['Positive_range'])
+      }
     }
   }
 

@@ -161,8 +161,8 @@
                     </q-item-section>
                     <q-item-section>
                       <div style="display: flex; flex-direction: row; align-items: flex-end; justify-content: flex-end;">
-                        <q-btn :color="config.edit? 'green-8' : 'primary'" :icon="config.edit? 'mdi-check' : 'mdi-pencil'" flat @click="editConfig(config)" padding="xs"/>
-                        <q-btn color="red-8" icon="mdi-close" flat @click="deleteConfig(config)" padding="xs"/>
+                        <q-btn :color="config.edit? 'green-8' : 'primary'" :icon="config.edit? 'mdi-check' : 'mdi-pencil'" flat @click.stop="editConfig(config)" padding="xs"/>
+                        <q-btn color="red-8" icon="mdi-close" flat @click.stop="deleteConfig(config)" padding="xs"/>
                       </div>
                     </q-item-section>
                   </q-item>
@@ -486,11 +486,12 @@ async function uploadFile(file_list) {
     const error_file = uploading.filter(res => res.status === 'error');
 
     // 印出 error 的檔案
-    const error_message = error_file.map(res => res.message).join(', \n');
+    let error_message = error_file.map(res => res.message).join(';');
 
-    // 設定 dialog_error_message, 跳出警告視窗
-    dialog_error_message.value = error_message;
-    warning_dialog.value.open_warning_dialog();
+    // 捕抓 timeout 的錯誤
+    if (error_message.includes("Timeout")) {
+      error_message = "由於連線問題檔案上傳逾時, 請重新整理頁面, 稍後再試一次！";
+    }
 
     // 印出 error message
     const message = error_message;
@@ -641,13 +642,14 @@ const parseSMAv4Input = (file_list) => {
 }
 
 // 定義 SMA v4 的 result object
-const SMAv4_RESULT = (STD_DATA, SAMPLE_DATA, COPY_NUMBER_RANGES, RESULT_LIST, PARAMETERS) => {
+const SMAv4_RESULT = (STD_DATA, SAMPLE_DATA, COPY_NUMBER_RANGES, RESULT_LIST, PARAMETERS, INPUT_FILE_OBJ) => {
   return {
     STD_DATA,
     SAMPLE_DATA,
     COPY_NUMBER_RANGES,
     RESULT_LIST,
-    PARAMETERS
+    PARAMETERS,
+    INPUT_FILE_OBJ
   }
 }
 
@@ -703,12 +705,13 @@ async function onSubmit() {
       resultObj.SAMPLE_DATA,
       resultObj.COPY_NUMBER_RANGES,
       resultObj.RESULT_LIST,
-      resultObj.PARAMETERS
+      resultObj.PARAMETERS,
+      smav4InputFilesObj
     );
 
     // 製作 ANALYSIS_RESULT
     const AnalysisResult = ANALYSIS_RESULT(
-      currentAnalysisID.value.analysis_name,
+      "SMAv4",
       currentAnalysisID.value.analysis_uuid,
       resultObj.config,
       resultObj.qc_status,
@@ -719,10 +722,16 @@ async function onSubmit() {
     // 將結果存到 firestore
     update_userAnalysisData(user_info.value.uid, dbSMAv4ResultPath, AnalysisResult, currentAnalysisID.value.analysis_uuid);
 
+    // 更新 currentDisplayAnalysisID
+    store.commit("analysis_setting/updateCurrentDisplayAnalysisID", {
+      analysis_name: "SMAv4",
+      analysis_uuid: currentAnalysisID.value.analysis_uuid,
+    });
+
     // 更新 currentAnalysisID
     const new_id = `analysis_${uuidv4()}`;
     store.commit('analysis_setting/updateCurrentAnalysisID', {
-      analysis_name: 'SMA',
+      analysis_name: 'SMAv4',
       analysis_uuid: new_id,
     });
     currentAnalysisID.value = store.getters['analysis_setting/getCurrentAnalysisID'];
@@ -734,9 +743,7 @@ async function onSubmit() {
     setTimeout(()=>{
 
       // 跳轉到分析結果頁面
-      router.push({
-        path: '/page-preview',
-      });
+      router.push({path: '/page-preview'});
     }, 500);
   }
   else if (analysisResult.status == 'error'){
@@ -766,7 +773,7 @@ onMounted(async () => {
 
   // 先嘗試取得當前的分析 ID, 如果沒有則建立新的分析 ID
   currentAnalysisID.value = store.getters['analysis_setting/getCurrentAnalysisID'];
-  setAnalysisID(store, 'SMA');
+  setAnalysisID(store, 'SMAv4');
 
   // 更新設定檔
   await updateConfigs();

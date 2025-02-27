@@ -9,3 +9,15 @@ export const getDefaultSettingProps = (state) => {
 export const getCurrentAnalysisID = (state) => {
   return state.currentAnalysisID;
 };
+
+export const getCurrentDisplayAnalysisID = (state) => {
+  return state.currentDisplayAnalysisID;
+};
+
+export const getSMAv4ReanalyseSelection = (state) => {
+  return state.SMAv4ReanalyseSelection;
+};
+
+export const getSMAv4ReanalysePeakSettings = (state) => {
+  return state.SMAv4ReanalysePeakSettings;
+};

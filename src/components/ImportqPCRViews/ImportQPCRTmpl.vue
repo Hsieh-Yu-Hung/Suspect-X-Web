@@ -184,6 +184,12 @@ async function onSubmit() {
 
       // 將結果存到 firestore
       update_userAnalysisData(user_info.value.uid, dbMTHFRResultPath, AnalysisResult, currentAnalysisID.value.analysis_uuid);
+
+      // 更新 currentDisplayAnalysisID
+      store.commit("analysis_setting/updateCurrentDisplayAnalysisID", {
+        analysis_name: "MTHFR",
+        analysis_uuid: currentAnalysisID.value.analysis_uuid,
+      });
     }
     else if (props.analysis_name === "NUDT15") {
       // 製作 NUDT15_RESULT
@@ -206,6 +212,12 @@ async function onSubmit() {
 
       // 將結果存到 firestore
       update_userAnalysisData(user_info.value.uid, dbNUDT15ResultPath, AnalysisResult, currentAnalysisID.value.analysis_uuid);
+
+      // 更新 currentDisplayAnalysisID
+      store.commit("analysis_setting/updateCurrentDisplayAnalysisID", {
+        analysis_name: "NUDT15",
+        analysis_uuid: currentAnalysisID.value.analysis_uuid,
+      });
     }
 
     // 更新 currentAnalysisID

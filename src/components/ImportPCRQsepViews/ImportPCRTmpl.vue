@@ -203,6 +203,12 @@ async function onSubmit() {
 
       // 將結果存到 firestore
       update_userAnalysisData(user_info.value.uid, dbFXSResultPath, AnalysisResult, currentAnalysisID.value.analysis_uuid);
+
+      // 更新 currentDisplayAnalysisID
+      store.commit("analysis_setting/updateCurrentDisplayAnalysisID", {
+        analysis_name: "FXS",
+        analysis_uuid: currentAnalysisID.value.analysis_uuid,
+      });
     }
     else if (props.analysis_name === 'HTD') {
       // 製作 HTD_RESULT
@@ -224,6 +230,12 @@ async function onSubmit() {
 
       // 將結果存到 firestore
       update_userAnalysisData(user_info.value.uid, dbHTDResultPath, AnalysisResult, currentAnalysisID.value.analysis_uuid);
+
+      // 更新 currentDisplayAnalysisID
+      store.commit("analysis_setting/updateCurrentDisplayAnalysisID", {
+        analysis_name: "HTD",
+        analysis_uuid: currentAnalysisID.value.analysis_uuid,
+      });
     }
 
     // 更新 currentAnalysisID

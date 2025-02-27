@@ -199,6 +199,12 @@ async function onSubmit() {
     // 將結果存到 firestore
     update_userAnalysisData(user_info.value.uid, dbAPOEResultPath, AnalysisResult, currentAnalysisID.value.analysis_uuid);
 
+    // 更新 currentDisplayAnalysisID
+    store.commit("analysis_setting/updateCurrentDisplayAnalysisID", {
+      analysis_name: "APOE",
+      analysis_uuid: currentAnalysisID.value.analysis_uuid,
+    });
+
     // 更新 currentAnalysisID
     const new_id = `analysis_${uuidv4()}`;
     store.commit('analysis_setting/updateCurrentAnalysisID', {
@@ -278,7 +284,7 @@ async function uploadFile(file_list, analysisID, subDir) {
     const error_file = uploading.filter(res => res.status === 'error');
 
     // 印出 error 的檔案
-    let error_message = error_file.map(res => res.message).join(', \n');
+    let error_message = error_file.map(res => res.message).join(';');
 
     // 捕抓 timeout 的錯誤
     if (error_message.includes("Timeout")) {

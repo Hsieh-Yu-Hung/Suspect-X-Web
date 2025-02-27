@@ -483,3 +483,38 @@ export const update_userAnalysisData = async (user_id, subDir, data, name) => {
     loggerV2.error(message, source, user);
   });
 }
+
+// 取得 database 中分析結果
+export const getAnalysisResult = async (user_id, analysis_name, analysis_id) => {
+
+  // 用 analysis_name 決定路徑名稱
+  const get_db_path = (analysis_name) => {
+    switch (analysis_name) {
+      case 'APOE':
+        return 'apoe_result';
+      case 'FXS':
+        return 'fxs_result';
+      case 'SMA':
+        return 'sma_result';
+      case 'HTD':
+        return 'htd_result';
+      case 'MTHFR':
+        return 'mthfr_result';
+      case 'NUDT15':
+        return 'nudt15_result';
+      case 'SMAv4':
+        return 'sma_v4_result';
+      default:
+        return analysis_name;
+    }
+  }
+
+  const db_path = get_db_path(analysis_name);
+  const doc_ref = doc(collection(database, `${dataset_list.user_analysis}/${user_id}/${db_path}`), analysis_id);
+  const data = await getDoc(doc_ref).then((snapshot) => {
+    return snapshot.data();
+  }).catch((error) => {
+    console.error(` Get analysis result failed, ID: ${analysis_id}, Error: ${error}`);
+  });
+  return data;
+}

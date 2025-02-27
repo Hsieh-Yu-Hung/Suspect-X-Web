@@ -62,7 +62,7 @@ async function create_fake_user(email, password, admin=false) {
     })
     .catch((error) => {
       if (error.code === 'auth/email-already-in-use') {
-        console.log(` Admin is already exist, Skip ...`);
+        console.warn(` Admin is already exist, Skip ...`);
       } else {
         console.error(` Admin login failed, Error: ${error}`);
       }
