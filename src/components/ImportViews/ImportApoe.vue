@@ -97,7 +97,7 @@ import { updateGetUserInfo } from '@/composables/accessStoreUserInfo';
 import { submitWorkflow } from '@/composables/submitWorkflow';
 import { CATEGORY_LIST } from '@/composables/storageManager';
 import { setAnalysisID } from '@/composables/checkAnalysisStatus';
-import { ANALYSIS_RESULT } from '@/firebase/firebaseDatabase';
+import { ANALYSIS_RESULT, simplifyFilePath } from '@/firebase/firebaseDatabase';
 import { update_userAnalysisData } from '@/firebase/firebaseDatabase';
 import loggerV2 from '@/composables/loggerV2';
 
@@ -165,6 +165,11 @@ async function onSubmit() {
     samplePathList: id_labeled_sample_name_list
   }
 
+  // 取得 control1 和 control2 的 ID
+  const control1IDs = ApoeInputData.control1PathList.map((path) => {return simplifyFilePath(path)});
+  const control2IDs = ApoeInputData.control2PathList.map((path) => {return simplifyFilePath(path)});
+  const controlIDs = [...control1IDs, ...control2IDs];
+
   // 取得 settingProps
   const currentSettingProps = store.getters["analysis_setting/getSettingProps"];
 
@@ -191,8 +196,9 @@ async function onSubmit() {
       currentAnalysisID.value.analysis_name,
       currentAnalysisID.value.analysis_uuid,
       resultObj.config,
+      controlIDs,
       resultObj.qc_status,
-      "",
+      resultObj.errMsg,
       APOE_Result
     );
 

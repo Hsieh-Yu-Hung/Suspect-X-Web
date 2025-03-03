@@ -79,7 +79,7 @@ import { submitWorkflow } from '@/composables/submitWorkflow';
 import { updateGetUserInfo } from '@/composables/accessStoreUserInfo';
 import { CATEGORY_LIST, upload_files_to_storage } from '@/composables/storageManager';
 import { setAnalysisID } from '@/composables/checkAnalysisStatus';
-import { ANALYSIS_RESULT, update_userAnalysisData } from '@/firebase/firebaseDatabase';
+import { ANALYSIS_RESULT, update_userAnalysisData, simplifyFilePath } from '@/firebase/firebaseDatabase';
 
 // 元件
 import WarningDialog from '@/components/WarningDialog.vue';
@@ -147,17 +147,6 @@ const dbHTDResultPath = "htd_result";
 function initInputs() {
   controlSampleFile.value = null;
   testingSampleFile.value = null;
-}
-
-// 取得檔名並且移除附檔名
-const simplifyFilePath = (file_path) => {
-  if (!file_path) return '';
-
-  // 先取得檔案名稱（移除路徑）
-  const fileName = file_path.split('/').pop();
-
-  // 移除附檔名
-  return fileName.replace(/\.[^.]+$/, '');
 }
 
 // 送出按鈕

@@ -519,3 +519,14 @@ export const getAnalysisResult = async (user_id, analysis_name, analysis_id) => 
   });
   return data;
 }
+
+// 取得檔名並且移除附檔名
+export const simplifyFilePath = (file_path) => {
+  if (!file_path) return '';
+
+  // 先取得檔案名稱（移除路徑）
+  const fileName = file_path.split('/').pop();
+
+  // 移除附檔名
+  return fileName.replace(/\.[^.]+$/, '');
+}

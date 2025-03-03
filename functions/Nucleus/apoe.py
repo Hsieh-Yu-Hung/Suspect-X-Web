@@ -46,6 +46,7 @@ class APOEData:
 @dataclass
 class APOEAssessment:
   qc_status: str
+  qc_message: str
   assessment: str
   rfu_status: list
 
@@ -126,6 +127,7 @@ def APOE(control1_list, control2_list, samples_list, user_info):
     # 製作 inconclusive 的 result
     inconclusive_result = APOEAssessment(
       qc_status=QCStatus.FAILED.value,
+      qc_message=f"Standard Control QC 未通過, 跳過 Sample Assessment.",
       assessment=AssessmentStatus.INCONCLUSIVE.value,
       rfu_status=[]
     )
@@ -141,8 +143,8 @@ def APOE(control1_list, control2_list, samples_list, user_info):
   # 5. Sample Assessment
   sample_assessment_list = {}
   for sample_name in sample_apoeData_list:
-    assessment_status, sample_qc_status, rfuList = SampleAssessment(sample_apoeData_list[sample_name])
-    sample_assessment_list[sample_name] = APOEAssessment(qc_status=sample_qc_status, assessment=assessment_status, rfu_status=rfuList)
+    assessment_status, sample_qc_status, qc_message, rfuList = SampleAssessment(sample_apoeData_list[sample_name])
+    sample_assessment_list[sample_name] = APOEAssessment(qc_status=sample_qc_status, qc_message=qc_message, assessment=assessment_status, rfu_status=rfuList)
   # 更新 APOE_output: result
   APOE_output.result = sample_assessment_list
 
@@ -155,18 +157,21 @@ def APOE(control1_list, control2_list, samples_list, user_info):
     logger.analysis(f" \n\
       Sample: {sample_name}, \n\
       QC status: {sample_assessment_list[sample_name].qc_status.value}, \n\
+      QC message: {sample_assessment_list[sample_name].qc_message}, \n\
       Assessment: {sample_assessment_list[sample_name].assessment.value}, \n\
       RFU status: {sample_assessment_list[sample_name].rfu_status}", tmp_source)
 
   # 7. 判斷有沒有任何一個 Failed QC assessment
   checkQCList = [ctrl1_qc_status, ctrl2_qc_status] + [q.qc_status for q in sample_assessment_list.values()]
   if any(qc_status == QCStatus.FAILED for qc_status in checkQCList):
-    tmp_source = "apoe.py line. 164"
-    logger.warn(f" * ... Some samples QC Failed ... * ", tmp_source)
-    APOE_output.qc_status = QCStatus.FAILED.value
+    # 找出 failed 的 sample 並紀錄到 qc message
+    failed_samples = [sample_name for sample_name in sample_assessment_list if sample_assessment_list[sample_name].qc_status == QCStatus.FAILED]
+    failed_samples_message = [f"{sample_name}: {sample_assessment_list[sample_name].qc_message}" for sample_name in failed_samples]
+    APOE_output.errMsg = f"; ".join(failed_samples_message)
 
-    # 回傳 APOE_output
-    return APOE_output.toJson()
+    # 打印 failed 的 sample
+    tmp_source = "apoe.py line. 164"
+    logger.warn(f" * Some samples QC Failed :{', '.join(failed_samples)}* ", tmp_source)
 
   # 更新 APOE_output: qc_status
   tmp_source = "apoe.py line. 170"
@@ -460,10 +465,11 @@ def SampleAssessment(APOEDataList):
   # 初始化 Assessment, QC 狀態
   assessment_status = AssessmentStatus.INVALID
   qc_status = QCStatus.PASSED
+  qc_message = ""
 
   # 檢查有沒有 peak_group='error', 如果有, 則回傳 QC_FAILED
   if any(data.peak_group == 'error' for data in APOEDataList):
-    return assessment_status, qc_status, []
+    return assessment_status, qc_status, qc_message, []
 
   # 取得各個 E2, E3, E4 的 normalized_rfu
   e2_apoe_rfu = [data for data in APOEDataList if data.peak_group == 'E2'][0].normalized_rfu
@@ -476,7 +482,8 @@ def SampleAssessment(APOEDataList):
   # 如果 RFUList 為空, 則回傳 INVALID
   if len(RFUList) == 0:
     qc_status = QCStatus.FAILED
-    return assessment_status, qc_status, RFUList
+    qc_message = "該 Sample 沒有任何 peak 通過 RFU Cutoff"
+    return assessment_status, qc_status, qc_message, RFUList
 
   # 取得通過 Cutoff 的 peak_group, 如果該 peak_group 沒有通過 Cutoff, 則他會變成 None
   peak_group_list = [x.peak_group for x in RFUList if x.pass_cutoff]
@@ -484,7 +491,8 @@ def SampleAssessment(APOEDataList):
   # 如果通過 Cutoff 的 peak_group 數量小於 2, 則回傳 INVALID
   if len(peak_group_list) < 2:
     qc_status = QCStatus.FAILED
-    return assessment_status, qc_status, RFUList
+    qc_message = "該 Sample 通過 RFU Cutoff 的 peak 數量小於 2"
+    return assessment_status, qc_status, qc_message, RFUList
 
   # Low Risk 的判斷: (E2, E2) 或 (E2, E3)
   if peak_group_list == ["E2", "E2"] or ("E2" in peak_group_list and "E3" in peak_group_list):
@@ -500,7 +508,7 @@ def SampleAssessment(APOEDataList):
     ("E3" in peak_group_list and "E4" in peak_group_list):
     assessment_status = AssessmentStatus.HIGH_RISK
 
-  return assessment_status, qc_status, RFUList
+  return assessment_status, qc_status, qc_message, RFUList
 
 # 處理 CLI 參數
 def parseParams():
