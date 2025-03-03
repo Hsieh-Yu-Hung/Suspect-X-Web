@@ -1,5 +1,5 @@
 <template>
-  <q-card bordered>
+  <q-card bordered :style="{display: showResult ? 'block' : 'none'}">
     <q-card-section>
       <div class="row">
 
@@ -123,6 +123,9 @@ Chart.register(annotationPlugin);
 
 // 取得 store
 const store = useStore();
+
+// 控制結果版面顯示
+const showResult = ref(true);
 
 // 響應式變數
 const showChartId = ref(null);
@@ -269,6 +272,7 @@ function update_FXS_RESULT_OBJ(fxs_result) {
   // 如果 Control 資料不合法, 則跳出
   if (!fxs_control) {
     console.error("Control data is not valid");
+    showResult.value = false;
     return;
   }
 
@@ -407,6 +411,12 @@ onMounted(async () => {
 
   // 取得當前分析結果 by 使用者 id, 分析名稱, 分析 id
   currentAnalysisResult.value = await getCurrentAnalysisResult(login_status, currentSettingProps);
+
+  // 如果當前分析結果不存在, 則跳出
+  if (!currentAnalysisResult.value) {
+    showResult.value = false;
+    return;
+  }
 
   // 更新 FXS 結果
   update_FXS_RESULT_OBJ(currentAnalysisResult.value);

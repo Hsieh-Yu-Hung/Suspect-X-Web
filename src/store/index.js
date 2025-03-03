@@ -7,6 +7,7 @@ import Vuex from 'vuex';
 import login_status from './LoginStatus';
 import analysis_setting from './AnalysisSetting';
 import FXS_analysis_data from './FXS_analysis_data';
+import HTD_analysis_data from './HTD_analysis_data';
 
 // 從 localStorage 中恢復登入狀態
 const savedState = localStorage.getItem('store');
@@ -32,7 +33,10 @@ export default store(function () {
       analysis_setting: analysis_setting,
 
       // FXS 分析結果
-      FXS_analysis_data: FXS_analysis_data
+      FXS_analysis_data: FXS_analysis_data,
+
+      // HTD 分析結果
+      HTD_analysis_data: HTD_analysis_data,
     }
   })
 

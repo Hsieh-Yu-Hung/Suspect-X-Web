@@ -235,6 +235,7 @@ async function onSubmit() {
         currentAnalysisID.value.analysis_name,
         currentAnalysisID.value.analysis_uuid,
         resultObj.config,
+        [simplifyFilePath(controlSampleFile.value.name)],
         resultObj.qc_status,
         "",
         HTD_Result
