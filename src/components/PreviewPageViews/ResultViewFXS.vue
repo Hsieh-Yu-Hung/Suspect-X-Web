@@ -251,8 +251,6 @@ const getLinear = (control_qc_obj) => {
 // 取得 FXS 結果, 整理
 function update_FXS_RESULT_OBJ(fxs_result) {
 
-  console.log(fxs_result);
-
   // 製作 QC
   const fxs_qc = FXS_QC(getQCStatus(fxs_result.qc_status), getLinear(fxs_result.resultObj.control_qc));
 

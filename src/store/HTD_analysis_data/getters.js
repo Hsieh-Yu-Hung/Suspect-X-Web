@@ -224,8 +224,6 @@ export function exportHdProps(state) {
     let bpAnnotation2 = {};
 
     state.hdResult.result.forEach((s) => {
-      console.log('Current sample:', s);
-      console.log('ShowHdChartId:', state.showHdChartId);
 
       if (s.sample_id === state.showHdChartId) {
         hdChartData.sampleId = s.sample_id;

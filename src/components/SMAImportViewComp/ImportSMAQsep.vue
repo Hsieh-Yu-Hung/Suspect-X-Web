@@ -769,8 +769,6 @@ async function onSubmit() {
 
     // 跳轉到分析結果頁面
     setTimeout(()=>{
-
-      // 跳轉到分析結果頁面
       router.push({path: '/page-preview'});
     }, 500);
   }

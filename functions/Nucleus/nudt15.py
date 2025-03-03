@@ -135,14 +135,14 @@ def NUDT15(input_file_path, FAM_file_path, VIC_file_path, control_well, ntc_well
   nudt15_output.sampleDataList = dataMatrix["sample"]
 
   # QC
-  qc_result = QC(dataMatrix)
+  qc_result, qc_message = QC(dataMatrix)
 
   # 如果 QC 失敗, 則跳過 Sample Assessment
   if qc_result == QCStatus.FAILED:
     tmp_source = "nudt15.py line. 140"
     logger.warn(f"QC Failed, 跳過 Sample Assessment", tmp_source)
     nudt15_output.qc_status = QCStatus.FAILED.value
-    nudt15_output.errMsg = "QC 失敗, 跳過 Sample Assessment"
+    nudt15_output.errMsg = "QC 失敗, 跳過 Sample Assessment. " + "; ".join(qc_message)
     nudt15_output.resultList = []
     return nudt15_output.toJson()
   else:
@@ -210,6 +210,7 @@ def QC(dataMatrix):
 
   # 初始化 qc_status
   qc_status = QCStatus.NOT_ANALYZED
+  qc_message = []
 
   # 取得 controlData 和 NTCData
   controlData = dataMatrix["control"]
@@ -220,39 +221,44 @@ def QC(dataMatrix):
     tmp_source = "nudt15.py line. 218"
     logger.error(f"controlData 的 wt 或 mut 為 None", tmp_source)
     qc_status = QCStatus.FAILED
-    return qc_status
+    qc_message.append("controlData 的 wt 或 mut 為 None")
+    return qc_status, qc_message
 
   # NTC 的 wt 和 mut 都不能為 None
   if not NTCData.wt or not NTCData.mut:
     tmp_source = "nudt15.py line. 225"
     logger.error(f"NTCData 的 wt 或 mut 為 None", tmp_source)
     qc_status = QCStatus.FAILED
-    return qc_status
+    qc_message.append("NTCData 的 wt 或 mut 為 None")
+    return qc_status, qc_message
 
   # QC 條件1: Control 的 wt 和 mut 都是 CT > 0
   condition1 = controlData.wt.ct_value > 0 and controlData.mut.ct_value > 0
   if not condition1:
     tmp_source = "nudt15.py line. 230"
     logger.warn(f"Failed QC: Control 的 wt 或 mut CT 值 < 0", tmp_source)
+    qc_message.append("Control 的 wt 或 mut CT 值 < 0")
 
   # QC 條件2: NTC 的 wt 和 mut 都"不"通過 cutoff (CT > CT_Threshold 或 沒有數值)
   condition2 = not NTCData.wt.pass_cutoff and not NTCData.mut.pass_cutoff
   if not condition2:
     tmp_source = "nudt15.py line. 232"
     logger.warn(f"Failed QC: NTCData 的 wt 或 mut CT 值 pass cutoff", tmp_source)
+    qc_message.append("NTCData 的 wt 或 mut CT 值 pass cutoff")
 
   # QC 條件3: Control 的 wt 和 mut 的 CT 值相差不得超過 DELTA_CT_THRESHOLD
   condition3 = abs(controlData.wt.ct_value - controlData.mut.ct_value) <= CT_Threshold.DELTA_CT_THRESHOLD.value
   if not condition3:
-    tmp_source = "nudt15.py line. 234"
+    tmp_source = "nudt15.py line. 247"
     logger.warn(f"Failed QC: Control 的 wt 和 mut CT 值相差超過 {CT_Threshold.DELTA_CT_THRESHOLD.value}", tmp_source)
+    qc_message.append(f"Control 的 wt 和 mut CT 值相差超過 {CT_Threshold.DELTA_CT_THRESHOLD.value}")
 
-  if condition1 and condition2:
+  if condition1 and condition2 and condition3:
     qc_status = QCStatus.PASSED
   else:
     qc_status = QCStatus.FAILED
 
-  return qc_status
+  return qc_status, qc_message
 
 # Sample Assessment
 def SampleAssessment(SampleData, reagent):

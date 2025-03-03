@@ -206,6 +206,7 @@ async function onSubmit() {
         currentAnalysisID.value.analysis_name,
         currentAnalysisID.value.analysis_uuid,
         resultObj.config,
+        [resultObj.controlData.sample_name],
         resultObj.qc_status,
         resultObj.errMsg,
         NUDT15_Result
@@ -233,9 +234,11 @@ async function onSubmit() {
     $q.loading.hide();
 
     // 跳轉到分析結果頁面
-    router.push({
-      path: '/page-preview',
-    });
+    setTimeout(()=>{
+      router.push({
+        path: '/page-preview',
+      });
+    }, 500);
   }
   else if (analysisResult.status == 'error'){
     // 通知

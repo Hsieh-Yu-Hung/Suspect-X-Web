@@ -386,8 +386,6 @@ watch(folateLst, (newVal) => {
     row.folate = newVal[index];
   });
 
-  console.log(resultTableMthfrProps.value);
-
   store.commit("MTHFR_analysis_data/updateExportResults", updated);
   store.commit("MTHFR_analysis_data/updateInputResults", [...folateLst.value]);
 }, { deep: true });
