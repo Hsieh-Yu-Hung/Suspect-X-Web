@@ -1,5 +1,5 @@
 <template>
-  <q-card bordered>
+  <q-card bordered :style="{display: showResult ? 'block' : 'none'}">
     <q-card-section>
       <div class="row">
 
@@ -162,6 +162,9 @@ const resultTableHdProps = computed(
   () => store.getters["HTD_analysis_data/resultTableHdProps"]
 );
 
+// 控制是否顯示結果
+const showResult = ref(true);
+
 // 定義 HTD result
 const HTD_RESULT_DATA = (qc_status, resultList, controls) => {
   return {
@@ -315,6 +318,7 @@ onMounted(async () => {
 
   // 如果當前分析結果不存在, 則跳出
   if (!currentAnalysisResult.value) {
+    showResult.value = false;
     return;
   }
 

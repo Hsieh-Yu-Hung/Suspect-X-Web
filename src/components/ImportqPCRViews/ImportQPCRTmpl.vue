@@ -177,6 +177,7 @@ async function onSubmit() {
         currentAnalysisID.value.analysis_name,
         currentAnalysisID.value.analysis_uuid,
         resultObj.config,
+        [resultObj.controlData.sample_name],
         resultObj.qc_status,
         resultObj.errMsg,
         MTHFR_Result

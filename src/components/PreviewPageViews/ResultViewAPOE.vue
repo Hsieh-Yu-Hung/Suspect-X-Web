@@ -1,5 +1,5 @@
 <template>
-  <q-card bordered v-if="showResult">
+  <q-card bordered :style="{display: showResult ? 'block' : 'none'}">
     <q-card-section>
       <div class="row">
 

@@ -135,7 +135,7 @@ def MTHFR(input_file_path, FAM_file_path, VIC_file_path, control_well, ntc_well,
     mthfr_output.errMsg = "ntc_well 不在 QPCRRecord 列表裡面"
     return mthfr_output.toJson()
 
-  # 解析 MTHFRData 列表
+  # 2. 解析 MTHFRData 列表
   dataMatrix = parseMTHFRData(qpcr_record_list, controlWell, ntcWell)
 
   # 更新 mthfr_output
@@ -157,7 +157,7 @@ def MTHFR(input_file_path, FAM_file_path, VIC_file_path, control_well, ntc_well,
   else:
     mthfr_output.qc_status = QCStatus.PASSED.value
 
-  # Sample Assessment
+  # 3. Sample Assessment
   sample_assessment_result = [SampleAssessment(data, user_info.reagent) for data in dataMatrix["sample"]]
 
   # 更新 mthfr_output
@@ -303,7 +303,13 @@ def QC(dataMatrix, reagent):
       tmp_source = "mthfr.py line. 298"
       logger.warn(f"NTCData 的 c677_wt 或 c677_mut '通過' cutoff", tmp_source)
 
-    if condition1 and condition2 and condition3:
+    # QC 條件4: NTC 的 c1298_wt 和 c1298_mut 都"不"通過 cutoff (CT < CT_Threshold 或 沒有數值)
+    condition4 = not NTCData.c1298_wt.pass_cutoff and not NTCData.c1298_mut.pass_cutoff
+    if not condition4:
+      tmp_source = "mthfr.py line. 303"
+      logger.warn(f"NTCData 的 c1298_wt 或 c1298_mut '通過' cutoff", tmp_source)
+
+    if condition1 and condition2 and condition3 and condition4:
       qc_status = QCStatus.PASSED
     else:
       qc_status = QCStatus.FAILED
@@ -486,7 +492,7 @@ def SampleAssessment(SampleData, reagent):
 
     # Pass QC and 設定 sample_type
     sample_qc_status = QCStatus.PASSED
-    sample_type = [f"c677_{c677_genotype}", f"c1298_{c1298_genotype}"]
+    sample_type = [c677_genotype[0], c677_genotype[1], c1298_genotype[0], c1298_genotype[1]]
 
   elif reagent == "accuinMTHFR3":
 
