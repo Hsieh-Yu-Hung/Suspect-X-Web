@@ -20,15 +20,18 @@
 
     <!-- SMA v1-3 devMode 面板 -->
     <div v-if="currentDisplayAnalysis.analysis_name === 'SMA'" class="row justify-between q-mt-lg q-mx-xl">
-      <div class="row justify-between q-mt-lg q-mx-xl">
-        SMA v1-3 devMode 面板 (尚未實作)
-      </div>
+      <!-- <SMAReanalysisParamSettings /> -->
+       Params Panel (Developping)
     </div>
 
     <!-- SMA v4 devMode 面板 -->
     <div v-else-if="currentDisplayAnalysis.analysis_name === 'SMAv4'" class="row justify-between q-mt-lg q-mx-xl">
       <div class="col">
-        <SMAv4ReanalysePanel ref="ref_SMAv4ReanalysePanel" @reAnalysis="callReAnalysisSMAv4" />
+        <SMAv4ReanalysePanel
+          ref="ref_SMAv4ReanalysePanel"
+          @reAnalysis="callReAnalysisSMAv4"
+          :smav4_config_name="getUSE_CONFIG_NAME"
+        />
       </div>
     </div>
 
@@ -78,7 +81,7 @@
 <script setup>
 
 // 導入模組
-import { onMounted, ref } from 'vue';
+import { onMounted, ref, computed } from 'vue';
 import { useQuasar } from 'quasar';
 import { useRouter } from 'vue-router';
 import { useStore } from 'vuex';
@@ -97,6 +100,7 @@ import ResultViewNUDT15 from '@/components/PreviewPageViews/ResultViewNUDT15.vue
 import ResultViewSMA from '@/components/PreviewPageViews/ResultViewSMA.vue';
 import ResultViewSMAv4 from '@/components/PreviewPageViews/ResultViewSMAv4.vue';
 import SMAv4ReanalysePanel from '@/components/PreviewPageViews/SMAv4ReanalysePanel.vue';
+import SMAReanalysisParamSettings from '@/components/PreviewPageViews/SMAReanalysisParamSettings.vue';
 
 // 取得 Quasar 和 Router 和 store
 const $q = useQuasar();
@@ -139,6 +143,15 @@ const ref_resultViewSMAv4 = ref(null);
 const ref_SMAv4ReanalysePanel = ref(null);
 
 /* Functions */
+
+const getUSE_CONFIG_NAME = computed(() => {
+  if (currentAnalysisResult.value){
+    return currentAnalysisResult.value.resultObj.USE_CONFIG_NAME;
+  }
+  else{
+    return "N/A";
+  }
+});
 
 // 更新 QC_PANEL_DISPLAY
 function updateQC_PANEL_DISPLAY(currentAnalysisResult){

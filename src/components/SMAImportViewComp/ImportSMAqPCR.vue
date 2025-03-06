@@ -52,7 +52,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { setAnalysisID } from '@/composables/checkAnalysisStatus';
 import { updateGetUserInfo } from '@/composables/accessStoreUserInfo';
 import { submitWorkflow } from '@/composables/submitWorkflow';
-import { ANALYSIS_RESULT, update_userAnalysisData } from '@/firebase/firebaseDatabase';
+import { ANALYSIS_RESULT, update_userAnalysisData, simplifyFilePath } from '@/firebase/firebaseDatabase';
 
 // 元件
 import WarningDialog from '@/components/WarningDialog.vue';
@@ -177,6 +177,11 @@ async function onSubmit() {
           V1: resultV1Obj.config,
           V2: resultV2Obj.config,
           V3: resultV3Obj.config,
+        },
+        {
+          V1: [simplifyFilePath(InputData.file_path)],
+          V2: [simplifyFilePath(InputData.file_path)],
+          V3: [simplifyFilePath(InputData.file_path)],
         },
         {
           V1: resultV1Obj.qc_status,

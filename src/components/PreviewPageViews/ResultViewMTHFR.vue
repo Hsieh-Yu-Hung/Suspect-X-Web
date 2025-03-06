@@ -291,7 +291,7 @@ const assessment = (value) => {
 
 // 圖片路徑
 const imgPath = (type) => {
-  const imgType = type[0] + '_' + type[1];
+  const imgType = type[0].toLowerCase() + '_' + type[1].toLowerCase();
   return 'diagram/' + imgType + '.svg';
 };
 

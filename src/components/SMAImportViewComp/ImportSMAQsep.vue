@@ -328,6 +328,7 @@ async function saveConfig(config_name, clear_smav4Files = true, mute = true) {
   // 如果 name 存在, 更新現有的 Config
   else {
     setConfigName = config_name;
+    currentDisplayedConfig.value = config_name;
   }
 
   // 更新資料庫
@@ -365,6 +366,7 @@ async function editConfig(target_config) {
 
   // 如果編輯狀態為 false, 則更新設定檔名稱
   if (target_config.edit === false) {
+
     const dataPath = `${dataset_list.user_analysis}/${user_info.value.uid}/${databaseConfigPath}`;
     await deleteData(dataPath, target_config.name);
 
@@ -642,14 +644,25 @@ const parseSMAv4Input = (file_list) => {
 }
 
 // 定義 SMA v4 的 result object
-const SMAv4_RESULT = (STD_DATA, SAMPLE_DATA, COPY_NUMBER_RANGES, RESULT_LIST, PARAMETERS, INPUT_FILE_OBJ) => {
+const SMAv4_RESULT = (
+  STD_DATA,
+  SAMPLE_DATA,
+  COPY_NUMBER_RANGES,
+  RESULT_LIST,
+  PARAMETERS,
+  INPUT_FILE_OBJ,
+  USE_CONFIG_NAME
+) => {
+
+  // 目前沒有特殊處理, 直接回傳
   return {
     STD_DATA,
     SAMPLE_DATA,
     COPY_NUMBER_RANGES,
     RESULT_LIST,
     PARAMETERS,
-    INPUT_FILE_OBJ
+    INPUT_FILE_OBJ,
+    USE_CONFIG_NAME
   }
 }
 
@@ -733,7 +746,8 @@ async function onSubmit() {
       resultObj.COPY_NUMBER_RANGES,
       resultObj.RESULT_LIST,
       resultObj.PARAMETERS,
-      smav4InputFilesObj
+      smav4InputFilesObj,
+      currentDisplayedConfig.value
     );
 
     // 製作 ANALYSIS_RESULT

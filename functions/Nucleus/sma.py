@@ -42,8 +42,8 @@ class SMAData:
   smn1: QPCRRecord = None
   smn2: QPCRRecord = None
   rnp: QPCRRecord = None
-  normalized_smn1: float = 0
-  normalized_smn2: float = 0
+  normalized_smn1: float = None
+  normalized_smn2: float = None
 
   def __init__(self, group, sample_name, well_position, smn1 = None, smn2 = None, rnp = None):
     self.group = group
