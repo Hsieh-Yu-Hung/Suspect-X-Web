@@ -1,33 +1,45 @@
 <template>
   <div class="drawer-content">
-    <q-btn glossy label="USER" @click="print_user_info" icon="mdi-login" />
     <q-btn glossy label="Debug" @click="debug" icon="bug_report" />
+    <q-btn glossy label="USER" @click="print_user_info" icon="account_circle" />
   </div>
 </template>
 
 <script setup>
-
-// Import modules
-import { ref } from 'vue';
 import { useStore } from 'vuex';
 
-// 導入 composable
+// Import modules
 import { updateGetUserInfo } from '@/composables/accessStoreUserInfo';
+import { getAnalysisResult } from '@/firebase/firebaseDatabase.js';
 
-// 取得 login_status
+// 使用者身份
 const { login_status } = updateGetUserInfo();
 
-// 取得 store
+// Store
 const store = useStore();
 
 /* functions */
 
 // Test check file format
 async function debug() {
-  console.log("currentAnalysisID: ", store.getters['analysis_setting/getCurrentAnalysisID']);
+  // 取得 currentSettingProps
+  const currentSettingProps = store.getters["analysis_setting/getSettingProps"];
+  // 取得 currentDisplayAnalysis
+  const currentDisplayAnalysis = {
+    analysis_uuid: store.getters["analysis_setting/getCurrentDisplayAnalysisID"].analysis_uuid,
+    analysis_name: store.getters["analysis_setting/getCurrentDisplayAnalysisID"].analysis_name,
+  }
+  const analysis_name_to_get = currentSettingProps.reagent === "accuinSma4" ? "SMAv4" : currentDisplayAnalysis.analysis_name;
+  // 取得當前的分析結果
+  const currentAnalysisResult = await getAnalysisResult(
+    login_status.value.user_info.uid,
+    analysis_name_to_get,
+    currentDisplayAnalysis.analysis_uuid,
+  );
+  console.log("currentAnalysisResult: ", currentAnalysisResult);
 }
 
-// 印出 user_info
+// Get user info
 function print_user_info() {
   console.log("is_login: ", login_status.value.is_login);
   console.log("user_info: ", login_status.value.user_info);

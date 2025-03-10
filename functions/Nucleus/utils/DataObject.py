@@ -6,8 +6,8 @@ import pandas as pd
 # 定義 Range (用於 peak 篩選)
 @dataclass
 class Range:
-  MIN: int
-  MAX: int
+  MIN: float
+  MAX: float
 
   # 定義乘法運算符
   def __mul__(self, other):
@@ -21,9 +21,9 @@ class Range:
   # 判斷是否在範圍內, 且 RFU 大於 RFU CutOff
   def inRange(self, bp, rfu_cutoff=0, rfu=None):
     if rfu is not None:
-      return self.MIN <= int(bp) <= self.MAX and float(rfu) >= rfu_cutoff
+      return self.MIN <= float(bp) <= self.MAX and float(rfu) >= rfu_cutoff
     else:
-      return self.MIN <= int(bp) <= self.MAX
+      return self.MIN <= float(bp) <= self.MAX
 
   # 回傳可迭代對象中數值在 MIN 和 MAX 之間的索引值
   def withinRange(self, iterable, indices=False):
@@ -70,7 +70,7 @@ class RFUObj:
   rfu_cutoff: float
   pass_cutoff: bool = True
 
-  # 如果 rfu_value 小於 cutoff, 則將 peak_group 設為 "Cutoff"
+  # 如果 rfu_value 小於 cutoff, 則將 pass_cutoff 設為 False
   def CutRFU(self):
     if self.rfu_value < self.rfu_cutoff:
       self.pass_cutoff = False
@@ -96,6 +96,83 @@ class AnalysisOutput:
     analysis_output_dict = asdict(self)
     analysis_output_json = json.dumps(analysis_output_dict, default=custom_serializer, indent=4, ensure_ascii=False)
     return analysis_output_json
+
+# 定義 QPCR well position object
+@dataclass
+class WELL:
+  X: str
+  Y: int
+
+  def __init__(self, well):
+    if isinstance(well, dict):
+      self.parseDictWell(well)
+    elif isinstance(well, str):
+      self.parseSTRWell(well)
+    else:
+      raise ValueError(f"well 必須是字串或字典, 目前為 {type(well)}")
+
+    # 檢查 X 是否在 A-H 之間
+    if self.X not in ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H']:
+      raise ValueError(f"X 必須是 A-H 之間的字母, 目前為 {self.X}")
+
+    # 檢查 Y 是否在 1-12 之間
+    if self.Y not in range(1, 13):
+      raise ValueError(f"Y 必須是 1-12 之間的數字, 目前為 {self.Y}")
+
+  def __str__(self):
+    return f"{self.X}{self.Y}"
+
+  def __eq__(self, other):
+    return self.X == other.X and self.Y == other.Y
+
+  # 處理字串 Well 參數
+  def parseSTRWell(self, well_str):
+    self.X = well_str[0]
+    self.Y = int(well_str[1:])
+
+  # 處理字典 Well 參數
+  def parseDictWell(self, well_dict):
+    self.X = well_dict['X']
+    self.Y = int(well_dict['Y'])
+
+# 定義 QPCR data Record Object
+@dataclass
+class QPCRRecord:
+  well_position: WELL
+  sample_name: str
+  ct_value: float
+  reporter: str
+  ct_cutoff: float
+  pass_cutoff: bool = False
+
+  def __init__(self, well_position, sample_name, ct_value, reporter, ct_cutoff):
+    self.well_position = well_position
+    self.sample_name = sample_name
+    self.ct_value = ct_value
+    self.reporter = reporter
+    self.ct_cutoff = ct_cutoff
+
+    # 處理 ct = Undetermined 或 'No Ct' 或 'NaN'
+    if ct_value == "Undetermined" or ct_value == "No Ct" or pd.isna(ct_value):
+      self.ct_value = -1
+      self.pass_cutoff = False
+    else:
+      self.ct_value = round(float(ct_value), 2)
+
+      # z480 儀器 cutoff 為大於 0
+      if self.ct_cutoff == 0:
+        # 處理 ct_value 大於 ct_cutoff
+        if self.ct_value > self.ct_cutoff:
+          self.pass_cutoff = True
+
+      # 其他儀器 cutoff 為小於 CT_Threshold
+      else:
+        # 處理 ct_value 小於 ct_cutoff
+        if self.ct_value <= self.ct_cutoff:
+          self.pass_cutoff = True
+
+  def __str__(self):
+    return f"QPCRRecord(well_position: {str(self.well_position)}, sample_name: {self.sample_name}, ct_value: {self.ct_value}, reporter: {self.reporter}, ct_cutoff: {self.ct_cutoff}, pass_cutoff: {self.pass_cutoff})"
 
 # 定義 CallPeak 方法
 def CallPeak(df: pd.DataFrame, search_range: Range, top_n: int = -1) -> list[Qsep100Peak]:

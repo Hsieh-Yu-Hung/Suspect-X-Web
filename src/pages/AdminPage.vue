@@ -1,31 +1,79 @@
 <template>
-  <q-page v-if="displayAdmin" class="flex flex-center">
+  <q-page v-if="displayAdmin" class="flex">
 
-    <!-- 其他 -->
-    <div style="width: 100%;">
+    <!-- TABS -->
+    <div style="width: 100%; min-width: 600px;">
       <q-card>
-        <q-card-section>
-          <div style="display: flex; flex-direction: row; align-items: center; justify-content: space-between;">
-            <span class="text-h6">其他控制項</span>
-            <q-btn color="primary" label="上傳日誌" @click="callUploadLogs" />
-          </div>
-        </q-card-section>
+        <q-tabs
+          v-model="current_tab"
+          dense
+          class="text-grey"
+          active-color="primary"
+          indicator-color="primary"
+          align="justify"
+          narrow-indicator
+        >
+          <q-tab name="tab_users" label="使用者" />
+          <q-tab name="tab_organizations" label="組織" />
+          <q-tab name="tab_software" label="軟體" />
+          <q-tab name="tab_logs" label="日誌" />
+          <q-tab name="tab_other" label="其他" />
+        </q-tabs>
+
+        <q-separator />
+
+        <!-- 頁籤內容 -->
+        <q-tab-panels v-model="current_tab" animated style="height: 100vh;">
+
+          <!-- 使用者頁籤 -->
+          <q-tab-panel name="tab_users">
+
+            <!-- 使用者資料管理 -->
+            <div class="section-container">
+              <UserManageSection ref="user_manage_section" />
+            </div>
+
+          </q-tab-panel>
+
+          <!-- 組織頁籤 -->
+          <q-tab-panel name="tab_organizations">
+
+            <!-- 組織管理 -->
+            <div class="section-container">
+              <OrganizationSection ref="organization_section" />
+            </div>
+
+          </q-tab-panel>
+
+          <!-- 軟體頁籤 -->
+          <q-tab-panel name="tab_software">
+
+            <!-- 軟體資料管理 -->
+            <div class="section-container">
+              <SoftwareSection ref="software_section" />
+            </div>
+
+          </q-tab-panel>
+
+          <!-- 日誌頁籤 -->
+          <q-tab-panel name="tab_logs">
+            <div class="section-container">
+              <LogSection ref="log_section" />
+            </div>
+          </q-tab-panel>
+
+          <!-- 其他頁籤 -->
+          <q-tab-panel name="tab_other">
+
+            <!-- 其他控制項 -->
+            <div class="section-container">
+              <OtherSection ref="other_section" />
+            </div>
+
+          </q-tab-panel>
+
+        </q-tab-panels>
       </q-card>
-    </div>
-
-    <!-- 組織管理 -->
-    <div class="section-container">
-      <OrganizationSection ref="organization_section" @organization_List_is_updated="update_organization_List" />
-    </div>
-
-    <!-- 軟體資料管理 -->
-    <div class="section-container">
-      <SoftwareSection ref="software_section" @software_List_is_updated="update_software_List" />
-    </div>
-
-    <!-- 使用者資料管理 -->
-    <div class="section-container" style="width: 95%; min-width: 1000px; height: 100%;">
-      <UserManageSection ref="user_manage_section" @user_List_is_updated="update_user_List" />
     </div>
 
   </q-page>
@@ -50,21 +98,26 @@ import { ref, onMounted } from 'vue';
 import { useQuasar } from 'quasar';
 import { useRouter } from 'vue-router';
 import { getEmailList } from '@/firebase/firebaseDatabase.js';
-import logger from '@/utility/logger';
+import loggerV2 from '@/composables/loggerV2';
 import { updateGetUserInfo } from '@/composables/accessStoreUserInfo.js';
-import { uploadLogs } from '@/firebase/firebaseFunction.js';
 
 // 導入元件
-import OrganizationSection from '@/components/OrganizationSection/OrganizationSection.vue';
-import SoftwareSection from '@/components/SoftwareSection/SoftwareSection.vue';
-import UserManageSection from '@/components/UserManageSection/UserManageSection.vue';
+import OrganizationSection from '@/components/AdminPageViewComp/OrganizationSection/OrganizationSection.vue';
+import SoftwareSection from '@/components/AdminPageViewComp/SoftwareSection/SoftwareSection.vue';
+import UserManageSection from '@/components/AdminPageViewComp/UserManageSection/UserManageSection.vue';
+import OtherSection from '@/components/AdminPageViewComp/OtherSettingSection/OtherSection.vue';
+import LogSection from '@/components/AdminPageViewComp/LogSectionViews/LogSection.vue';
 
 // refs
 const organization_section = ref(null);
 const software_section = ref(null);
 const user_manage_section = ref(null);
+const log_section = ref(null);
+const other_section = ref(null);
 const displayAdmin = ref(false);
 
+// 目前選取的頁面
+const current_tab = ref('tab_logs');
 // router
 const router = useRouter();
 
@@ -73,24 +126,6 @@ const { login_status } = updateGetUserInfo();
 
 // 取得 Quasar
 const $q = useQuasar();
-
-// 更新軟體列表
-const update_software_List = () => {
-  // 重新載入組織列表的軟體版本選單
-  organization_section.value.update_software_version_list();
-}
-
-// 更新組織列表
-const update_organization_List = () => {
-  // 重新載入組織列表的軟體版本選單
-  user_manage_section.value.update_organization_list();
-}
-
-// 更新使用者列表
-const update_user_List = () => {
-  // 重新載入使用者列表
-  user_manage_section.value.update_user_list();
-}
 
 // 檢查是否為管理員權限
 const check_admin_permission = async () => {
@@ -146,51 +181,19 @@ const verify_admin_permission = async () => {
   const is_admin = await check_admin_permission();
   if (!is_admin) {
     displayAdmin.value = false;
-    logger.error(`
+    const message = `
       警告, 有人嘗試進入管理員頁面！
-      Email: ${login_status.value.user_info.email}
-      Role: ${login_status.value.user_info.role}
-      Organization: ${login_status.value.user_info.organization}
-      Account Approved: ${login_status.value.user_info.account_approved}
-    `);
+      Email: ${login_status.value.user_info.email};
+      Role: ${login_status.value.user_info.role};
+      Organization: ${login_status.value.user_info.organization};
+      Account Approved: ${login_status.value.user_info.account_approved};
+    `;
+    const source = 'AdminPage.vue line.184';
+    const user = login_status.value.user_info.email;
+    loggerV2.warn(message, source, user);
   } else {
     displayAdmin.value = true;
-    logger.info(`
-      人員成功進入管理員頁面！
-      Email: ${login_status.value.user_info.email}
-      Role: ${login_status.value.user_info.role}
-      Organization: ${login_status.value.user_info.organization}
-      Account Approved: ${login_status.value.user_info.account_approved}
-    `);
   }
-}
-
-// 上傳日誌
-const callUploadLogs = async () => {
-  $q.loading.show();
-  const response = await uploadLogs().then(res => {
-    return res.data;
-  });
-  if (response.status === "success") {
-    $q.notify({
-      message: response.message,
-      progress: true,
-      color: 'green',
-      icon: 'check',
-      position: 'top',
-      timeout: 1000
-    });
-  }
-  else {
-    $q.notify({
-      message: response.message,
-      color: 'red',
-      icon: 'warning',
-      position: 'top',
-      timeout: 3000
-    });
-  }
-  $q.loading.hide();
 }
 
 // 掛載時
@@ -205,16 +208,12 @@ onMounted(async () => {
 
 <style scoped>
 .section-container {
-  width: 45%;
+  width: 100%;
   min-width: 700px;
-  height: 600px;
   display: flex;
   flex-direction: row;
   align-items: center;
   justify-content: flex-start;
   gap: 10px;
-  margin-block: auto;
-  margin-inline: 10px;
-  padding-block: 20px;
 }
 </style>

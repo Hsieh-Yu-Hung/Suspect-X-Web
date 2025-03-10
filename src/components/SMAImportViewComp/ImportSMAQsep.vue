@@ -161,8 +161,8 @@
                     </q-item-section>
                     <q-item-section>
                       <div style="display: flex; flex-direction: row; align-items: flex-end; justify-content: flex-end;">
-                        <q-btn :color="config.edit? 'green-8' : 'primary'" :icon="config.edit? 'mdi-check' : 'mdi-pencil'" flat @click="editConfig(config)" padding="xs"/>
-                        <q-btn color="red-8" icon="mdi-close" flat @click="deleteConfig(config)" padding="xs"/>
+                        <q-btn :color="config.edit? 'green-8' : 'primary'" :icon="config.edit? 'mdi-check' : 'mdi-pencil'" flat @click.stop="editConfig(config)" padding="xs"/>
+                        <q-btn color="red-8" icon="mdi-close" flat @click.stop="deleteConfig(config)" padding="xs"/>
                       </div>
                     </q-item-section>
                   </q-item>
@@ -199,15 +199,19 @@ import { v4 as uuidv4 } from 'uuid';
 // 導入 composable
 import { updateGetUserInfo } from '@/composables/accessStoreUserInfo';
 import { setAnalysisID } from '@/composables/checkAnalysisStatus';
-import { upload_files_to_storage } from '@/utility/storageManager';
-import { CATEGORY_LIST } from '@/utility/storageManager';
-import { update_userAnalysisData, getData, dataset_list } from '@/firebase/firebaseDatabase';
+import { upload_files_to_storage } from '@/composables/storageManager';
+import { CATEGORY_LIST } from '@/composables/storageManager';
+import { update_userAnalysisData, getData, dataset_list, ANALYSIS_RESULT } from '@/firebase/firebaseDatabase';
 import { deleteData } from '@/firebase/firebaseDatabase';
 import { submitWorkflow } from '@/composables/submitWorkflow';
+import loggerV2 from '@/composables/loggerV2';
 
 // import component
 import peakSetting from './peakSetting.vue';
 import WarningDialog from '@/components/WarningDialog.vue';
+
+// 定義 Database 路徑
+const dbSMAv4ResultPath = 'sma_v4_result';
 
 // 使用者身份
 const is_login = ref(false);
@@ -266,7 +270,7 @@ const getConfigsFromDatabase = async () => {
     return response.data;
   }
   else {
-    logger.error("getConfigsFromDatabase failed: ", response.message);
+    console.error(response.message);
     return [];
   }
 }
@@ -324,6 +328,7 @@ async function saveConfig(config_name, clear_smav4Files = true, mute = true) {
   // 如果 name 存在, 更新現有的 Config
   else {
     setConfigName = config_name;
+    currentDisplayedConfig.value = config_name;
   }
 
   // 更新資料庫
@@ -331,7 +336,7 @@ async function saveConfig(config_name, clear_smav4Files = true, mute = true) {
   if (setConfigName !== null) {
     update_userAnalysisData(user_info.value.uid, databaseConfigPath, data, setConfigName);
   } else {
-    logger.error("Config save failed: setConfigName is null");
+    console.error("Config save failed: setConfigName is null");
   }
 
   // 隱藏 loading 視窗
@@ -361,6 +366,7 @@ async function editConfig(target_config) {
 
   // 如果編輯狀態為 false, 則更新設定檔名稱
   if (target_config.edit === false) {
+
     const dataPath = `${dataset_list.user_analysis}/${user_info.value.uid}/${databaseConfigPath}`;
     await deleteData(dataPath, target_config.name);
 
@@ -482,14 +488,18 @@ async function uploadFile(file_list) {
     const error_file = uploading.filter(res => res.status === 'error');
 
     // 印出 error 的檔案
-    const error_message = error_file.map(res => res.message).join(', \n');
+    let error_message = error_file.map(res => res.message).join(';');
 
-    // 設定 dialog_error_message, 跳出警告視窗
-    dialog_error_message.value = error_message;
-    warning_dialog.value.open_warning_dialog();
+    // 捕抓 timeout 的錯誤
+    if (error_message.includes("Timeout")) {
+      error_message = "由於連線問題檔案上傳逾時, 請重新整理頁面, 稍後再試一次！";
+    }
 
     // 印出 error message
-    logger.warn(error_message);
+    const message = error_message;
+    const source = 'ImportSMAQsep.vue line.483';
+    const user = user_info.value.email;
+    loggerV2.error(message, source, user);
   }
 
   // 更新 file_list 中 file 的 path
@@ -633,6 +643,53 @@ const parseSMAv4Input = (file_list) => {
   return smav4InputFilesObj;
 }
 
+// 定義 SMA v4 的 result object
+const SMAv4_RESULT = (
+  STD_DATA,
+  SAMPLE_DATA,
+  COPY_NUMBER_RANGES,
+  RESULT_LIST,
+  PARAMETERS,
+  INPUT_FILE_OBJ,
+  USE_CONFIG_NAME
+) => {
+
+  // 目前沒有特殊處理, 直接回傳
+  return {
+    STD_DATA,
+    SAMPLE_DATA,
+    COPY_NUMBER_RANGES,
+    RESULT_LIST,
+    PARAMETERS,
+    INPUT_FILE_OBJ,
+    USE_CONFIG_NAME
+  }
+}
+
+// 取得 control_ids
+const getControlID = (smav4InputFilesObj) => {
+
+  // 取得檔名並且移除附檔名
+  const simplifyFilePath = (file_path) => {
+    if (!file_path) return '';
+
+    // 先取得檔案名稱（移除路徑）
+    const fileName = file_path.split('/').pop();
+
+    // 移除附檔名
+    return fileName.replace(/\.[^.]+$/, '');
+  }
+
+  return [
+    simplifyFilePath(smav4InputFilesObj.smn1_std1),
+    simplifyFilePath(smav4InputFilesObj.smn1_std2),
+    simplifyFilePath(smav4InputFilesObj.smn1_std3),
+    simplifyFilePath(smav4InputFilesObj.smn2_std1),
+    simplifyFilePath(smav4InputFilesObj.smn2_std2),
+    simplifyFilePath(smav4InputFilesObj.smn2_std3),
+  ]
+}
+
 /* 主程式 */
 async function onSubmit() {
 
@@ -659,6 +716,9 @@ async function onSubmit() {
   // 解析 SMA v4 檔案
   const smav4InputFilesObj = parseSMAv4Input(FileCheckList);
 
+  // 取得 control_ids
+  const control_id = getControlID(smav4InputFilesObj);
+
   // inputData
   const InputData = {
     file_path: smav4InputFilesObj,
@@ -669,19 +729,51 @@ async function onSubmit() {
   const currentSettingProps = store.getters["analysis_setting/getSettingProps"];
 
   // 執行 submitWorkflow
-  const analysisResult = await submitWorkflow(FileCheckList, 'SMA', InputData, user_info.value, currentSettingProps);
+  const analysisResult = await submitWorkflow('SMA', InputData, user_info.value, currentSettingProps);
 
   // 檢查有沒有出錯
   if (analysisResult.status == 'success'){
     dialog_error_message.value = "";
 
-    // 印出 analysisResult, 從這裡繼續
-    console.log("analysisResult",analysisResult.result);
+    // 將 result 中 Infinity 轉換成 null
+    const resultStr = analysisResult.result.replace(/Infinity/g, 'null');
+    const resultObj = JSON.parse(resultStr);
+
+    // 製作 SMAv4_RESULT
+    const SMAv4_Result = SMAv4_RESULT(
+      resultObj.STD_DATA,
+      resultObj.SAMPLE_DATA,
+      resultObj.COPY_NUMBER_RANGES,
+      resultObj.RESULT_LIST,
+      resultObj.PARAMETERS,
+      smav4InputFilesObj,
+      currentDisplayedConfig.value
+    );
+
+    // 製作 ANALYSIS_RESULT
+    const AnalysisResult = ANALYSIS_RESULT(
+      "SMAv4",
+      currentAnalysisID.value.analysis_uuid,
+      resultObj.config,
+      control_id,
+      resultObj.qc_status,
+      resultObj.errMsg,
+      SMAv4_Result
+    );
+
+    // 將結果存到 firestore
+    update_userAnalysisData(user_info.value.uid, dbSMAv4ResultPath, AnalysisResult, currentAnalysisID.value.analysis_uuid);
+
+    // 更新 currentDisplayAnalysisID
+    store.commit("analysis_setting/updateCurrentDisplayAnalysisID", {
+      analysis_name: "SMAv4",
+      analysis_uuid: currentAnalysisID.value.analysis_uuid,
+    });
 
     // 更新 currentAnalysisID
     const new_id = `analysis_${uuidv4()}`;
     store.commit('analysis_setting/updateCurrentAnalysisID', {
-      analysis_name: 'SMA',
+      analysis_name: 'SMAv4',
       analysis_uuid: new_id,
     });
     currentAnalysisID.value = store.getters['analysis_setting/getCurrentAnalysisID'];
@@ -691,11 +783,7 @@ async function onSubmit() {
 
     // 跳轉到分析結果頁面
     setTimeout(()=>{
-
-      // 跳轉到分析結果頁面
-      router.push({
-        path: '/page-preview',
-      });
+      router.push({path: '/page-preview'});
     }, 500);
   }
   else if (analysisResult.status == 'error'){
@@ -725,7 +813,7 @@ onMounted(async () => {
 
   // 先嘗試取得當前的分析 ID, 如果沒有則建立新的分析 ID
   currentAnalysisID.value = store.getters['analysis_setting/getCurrentAnalysisID'];
-  setAnalysisID(store, 'SMA');
+  setAnalysisID(store, 'SMAv4');
 
   // 更新設定檔
   await updateConfigs();

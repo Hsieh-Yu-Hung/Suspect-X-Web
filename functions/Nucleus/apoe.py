@@ -19,10 +19,9 @@ parent_dir = os.path.abspath(os.path.join(current_dir, os.pardir))
 sys.path.append(parent_dir)
 sys.path.append(current_dir)
 
-# 引入 saveLogs
-from config_admin import bucket
-from saveLogs import Logger
-logger = Logger(bucket)
+# 引入 systemLogger
+from systemLogger import Logger
+logger = Logger()
 
 # 定義 APOE peak Object
 @dataclass
@@ -47,6 +46,7 @@ class APOEData:
 @dataclass
 class APOEAssessment:
   qc_status: str
+  qc_message: str
   assessment: str
   rfu_status: list
 
@@ -73,9 +73,14 @@ E4_RFU_CUTOFF = 0.8
 # APOE 主程式
 def APOE(control1_list, control2_list, samples_list, user_info):
 
-  logger.info(f"\n")
-  logger.info(f" ----> Start APOE Analysis <---- ")
-  logger.info(f" User Info: {user_info}")
+  # Logger settings
+  sender = user_info.organization
+  logger.setSender(sender)
+
+  # Logger : Start Message
+  tmp_source = "apoe.py line. 72"
+  logger.analysis(f" ----> Start APOE Analysis <---- ", tmp_source)
+  logger.analysis(f" User Info: {user_info}", tmp_source)
 
   # 取得 config
   config = {
@@ -113,14 +118,16 @@ def APOE(control1_list, control2_list, samples_list, user_info):
 
   # 檢查 QC 狀態, 如果 Failed, 跳過 sample assessment
   if ctrl1_qc_status == QCStatus.FAILED or ctrl2_qc_status == QCStatus.FAILED:
-    logger.warn(f" * Standard Control QC Failed, skip sample assessment * ")
-    logger.warn(f" Control1: {ctrl1_qc_status.value}, RFU status: {ctrl1_rfuList}")
-    logger.warn(f" Control2: {ctrl2_qc_status.value}, RFU status: {ctrl2_rfuList}")
+    tmp_source = "apoe.py line. 120"
+    logger.warn(f" * Standard Control QC Failed, skip sample assessment * ", tmp_source)
+    logger.warn(f" Control1: {ctrl1_qc_status.value}, RFU status: {ctrl1_rfuList}", tmp_source)
+    logger.warn(f" Control2: {ctrl2_qc_status.value}, RFU status: {ctrl2_rfuList}", tmp_source)
     APOE_output.qc_status = QCStatus.FAILED.value
 
     # 製作 inconclusive 的 result
     inconclusive_result = APOEAssessment(
       qc_status=QCStatus.FAILED.value,
+      qc_message=f"Standard Control QC 未通過, 跳過 Sample Assessment.",
       assessment=AssessmentStatus.INCONCLUSIVE.value,
       rfu_status=[]
     )
@@ -136,31 +143,39 @@ def APOE(control1_list, control2_list, samples_list, user_info):
   # 5. Sample Assessment
   sample_assessment_list = {}
   for sample_name in sample_apoeData_list:
-    assessment_status, sample_qc_status, rfuList = SampleAssessment(sample_apoeData_list[sample_name])
-    sample_assessment_list[sample_name] = APOEAssessment(qc_status=sample_qc_status, assessment=assessment_status, rfu_status=rfuList)
+    assessment_status, sample_qc_status, qc_message, rfuList = SampleAssessment(sample_apoeData_list[sample_name])
+    sample_assessment_list[sample_name] = APOEAssessment(qc_status=sample_qc_status, qc_message=qc_message, assessment=assessment_status, rfu_status=rfuList)
   # 更新 APOE_output: result
   APOE_output.result = sample_assessment_list
 
   # 6. 打印結果
-  logger.info(f" * Assessment Results * ")
-  logger.info(f" Control1 QC status: {ctrl1_qc_status.value}, RFU status: {ctrl1_rfuList}")
-  logger.info(f" Control2 QC status: {ctrl2_qc_status.value}, RFU status: {ctrl2_rfuList}")
+  tmp_source = "apoe.py line. 152"
+  logger.analysis(f" * Assessment Results * ", tmp_source)
+  logger.analysis(f" Control1 QC status: {ctrl1_qc_status.value}, RFU status: {ctrl1_rfuList}", tmp_source)
+  logger.analysis(f" Control2 QC status: {ctrl2_qc_status.value}, RFU status: {ctrl2_rfuList}", tmp_source)
   for sample_name in sample_assessment_list:
-    logger.info(f" \n\
+    logger.analysis(f" \n\
       Sample: {sample_name}, \n\
       QC status: {sample_assessment_list[sample_name].qc_status.value}, \n\
+      QC message: {sample_assessment_list[sample_name].qc_message}, \n\
       Assessment: {sample_assessment_list[sample_name].assessment.value}, \n\
-      RFU status: {sample_assessment_list[sample_name].rfu_status}")
+      RFU status: {sample_assessment_list[sample_name].rfu_status}", tmp_source)
 
   # 7. 判斷有沒有任何一個 Failed QC assessment
   checkQCList = [ctrl1_qc_status, ctrl2_qc_status] + [q.qc_status for q in sample_assessment_list.values()]
   if any(qc_status == QCStatus.FAILED for qc_status in checkQCList):
-    logger.warn(f" * ... Some samples QC Failed ... * ")
-    APOE_output.qc_status = QCStatus.FAILED.value
-    return APOE_output.toJson()
+    # 找出 failed 的 sample 並紀錄到 qc message
+    failed_samples = [sample_name for sample_name in sample_assessment_list if sample_assessment_list[sample_name].qc_status == QCStatus.FAILED]
+    failed_samples_message = [f"{sample_name}: {sample_assessment_list[sample_name].qc_message}" for sample_name in failed_samples]
+    APOE_output.errMsg = f"; ".join(failed_samples_message)
+
+    # 打印 failed 的 sample
+    tmp_source = "apoe.py line. 164"
+    logger.warn(f" * Some samples QC Failed :{', '.join(failed_samples)}* ", tmp_source)
 
   # 更新 APOE_output: qc_status
-  logger.info(f" * Analysis Completed * ")
+  tmp_source = "apoe.py line. 170"
+  logger.analysis(f" * Analysis Completed * ", tmp_source)
   APOE_output.qc_status = QCStatus.PASSED.value
 
   # 轉換成 JSON 並回傳
@@ -221,8 +236,9 @@ def readControlPeaks(data_df):
 
   # 檢查 data_df 是否為 DataFrame
   if not isinstance(data_df, pd.DataFrame):
+    tmp_source = "apoe.py line. 229"
     error_message = "Internal control Error: Can not read Control peaks dataframe!"
-    logger.error(error_message)
+    logger.error(error_message, tmp_source)
     return APOEPeak(peak_group="error", peak_type=error_message, peak_size=-1, peak_rfu=-1)
 
   # 排除非數值的 bp 的行
@@ -263,20 +279,23 @@ def readControlPeaks(data_df):
 
   # 狀況 4: 都沒有 peak
   elif number_of_E2_peak == 0 and number_of_E3_peak == 0 and number_of_E4_peak == 0:
+    tmp_source = "apoe.py line. 275"
     error_message = f"Internal control Error: E2, E3, E4 No peak was found!"
-    logger.warn(error_message)
+    logger.warn(error_message, tmp_source)
     return APOEPeak(peak_group="error", peak_type=error_message, peak_size=-1, peak_rfu=-1)
 
   # 狀況 5: 有兩個以上的 peak
   elif number_of_E2_peak > 1 or number_of_E3_peak > 1 or number_of_E4_peak > 1:
+    tmp_source = "apoe.py line. 282"
     error_message = f"Internal control Error: Multiple peaks were found!"
-    logger.warn(error_message)
+    logger.warn(error_message, tmp_source)
     return APOEPeak(peak_group="error", peak_type=error_message, peak_size=-1, peak_rfu=-1)
 
   # 狀況 6: 其他狀況
   else:
     error_message = f"Internal control Error: Unknown error!"
-    logger.error(error_message)
+    tmp_source = "apoe.py line. 289"
+    logger.error(error_message, tmp_source)
     return APOEPeak(peak_group="error", peak_type=error_message, peak_size=-1, peak_rfu=-1)
 
 # 讀取 Target peak (單個)
@@ -285,7 +304,8 @@ def readTargetPeaks(data_df):
   # 檢查 data_df 是否為 DataFrame
   if not isinstance(data_df, pd.DataFrame):
     error_message = "Target peak Error: Can not read Target peaks dataframe!"
-    logger.error(error_message)
+    tmp_source = "apoe.py line. 299"
+    logger.error(error_message, tmp_source)
     return APOEPeak(peak_group="error", peak_type=error_message, peak_size=-1, peak_rfu=-1)
 
   # 排除非數值的 bp 的行
@@ -302,7 +322,8 @@ def readTargetPeaks(data_df):
     return APOEPeak(peak_group="Target", peak_type="target", peak_size=top_RFU["bp"], peak_rfu=top_RFU["RFU"])
   else:
     error_message = "No Target peak was found!"
-    logger.warn(error_message)
+    tmp_source = "apoe.py line. 317"
+    logger.warn(error_message, tmp_source)
     return APOEPeak(peak_group="error", peak_type=error_message, peak_size=-1, peak_rfu=-1)
 
 # 讀取 peaks (全部)
@@ -363,13 +384,15 @@ def RFUAssessment(e2_norm_rfu, e3_norm_rfu, e4_norm_rfu):
 
   # 檢查是否全部為 0
   if sum(list(map(lambda x: x > 0, [e2_norm_rfu, e3_norm_rfu, e4_norm_rfu]))) == 0:
-    logger.warn("[Type Assessment Failed] All type ratio are zero")
+    tmp_source = "apoe.py line. 380"
+    logger.warn("[Type Assessment Failed] All type ratio are zero", tmp_source)
     return []
 
   else:
     # 如果 E2, E3, E4 不為 0 但 RFU 數值完全相同, 則回傳空列表
     if e2_norm_rfu == e3_norm_rfu and e3_norm_rfu == e4_norm_rfu:
-      logger.warn("[Type Assessment Failed] All type ratio are the same (non-zero)")
+      tmp_source = "apoe.py line. 385"
+      logger.warn("[Type Assessment Failed] All type ratio are the same (non-zero)", tmp_source)
       return []
 
   # 建立 RFU 列表
@@ -442,10 +465,11 @@ def SampleAssessment(APOEDataList):
   # 初始化 Assessment, QC 狀態
   assessment_status = AssessmentStatus.INVALID
   qc_status = QCStatus.PASSED
+  qc_message = ""
 
   # 檢查有沒有 peak_group='error', 如果有, 則回傳 QC_FAILED
   if any(data.peak_group == 'error' for data in APOEDataList):
-    return assessment_status, qc_status, []
+    return assessment_status, qc_status, qc_message, []
 
   # 取得各個 E2, E3, E4 的 normalized_rfu
   e2_apoe_rfu = [data for data in APOEDataList if data.peak_group == 'E2'][0].normalized_rfu
@@ -458,7 +482,8 @@ def SampleAssessment(APOEDataList):
   # 如果 RFUList 為空, 則回傳 INVALID
   if len(RFUList) == 0:
     qc_status = QCStatus.FAILED
-    return assessment_status, qc_status, RFUList
+    qc_message = "該 Sample 沒有任何 peak 通過 RFU Cutoff"
+    return assessment_status, qc_status, qc_message, RFUList
 
   # 取得通過 Cutoff 的 peak_group, 如果該 peak_group 沒有通過 Cutoff, 則他會變成 None
   peak_group_list = [x.peak_group for x in RFUList if x.pass_cutoff]
@@ -466,7 +491,8 @@ def SampleAssessment(APOEDataList):
   # 如果通過 Cutoff 的 peak_group 數量小於 2, 則回傳 INVALID
   if len(peak_group_list) < 2:
     qc_status = QCStatus.FAILED
-    return assessment_status, qc_status, RFUList
+    qc_message = "該 Sample 通過 RFU Cutoff 的 peak 數量小於 2"
+    return assessment_status, qc_status, qc_message, RFUList
 
   # Low Risk 的判斷: (E2, E2) 或 (E2, E3)
   if peak_group_list == ["E2", "E2"] or ("E2" in peak_group_list and "E3" in peak_group_list):
@@ -482,7 +508,7 @@ def SampleAssessment(APOEDataList):
     ("E3" in peak_group_list and "E4" in peak_group_list):
     assessment_status = AssessmentStatus.HIGH_RISK
 
-  return assessment_status, qc_status, RFUList
+  return assessment_status, qc_status, qc_message, RFUList
 
 # 處理 CLI 參數
 def parseParams():
@@ -522,8 +548,8 @@ def parseConfig(config):
   missing_file = [check_list[i] for i in range(len(check_list)) if not file_exist[i]]
   if len(missing_file) > 0:
     for file in missing_file:
-      print(f"找不到檔案: {file}")
-      logger.error(f"找不到檔案: {file}")
+      tmp_source = "apoe.py line. 541"
+      logger.error(f"找不到檔案: {file}", tmp_source)
     return
 
   # 回傳各個參數, 符合 APOE() 的 input 格式
@@ -531,6 +557,9 @@ def parseConfig(config):
 
 # 運行 APOE CLI
 if __name__ == "__main__":
+
+  # 設定 Logger 模式
+  logger = Logger(mode="offline")
 
   # 接收參數, 取得檔案路徑
   args = parseParams()

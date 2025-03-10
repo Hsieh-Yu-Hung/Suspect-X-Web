@@ -21,8 +21,7 @@ npm install
 
 ### Dev mode
 
-* Start the app in development mode (hot-code reloading, error reporting, etc.)
-* 該模式無法使用 firebase function, 適合用於介面開發
+* 執行時使用 `concurrently` 已經可以 Hot-coding 及時進行模擬前後端功能
 
 ```bash
 npm run dev
@@ -41,7 +40,7 @@ npm run emulate:dev  # 用 development 設定開啟模擬
 
 ### Build and Deploy
 
-* Deploy 應用 production 設定
+* Deploy 應用 production 設定, 推送全部的 firebase 功能
 
 ```bash
 npm run deploy

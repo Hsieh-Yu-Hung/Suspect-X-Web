@@ -42,7 +42,7 @@
 
 <script setup>
 // 導入模組
-import { ref, onMounted, watch } from 'vue';
+import { ref, onMounted } from 'vue';
 import { useQuasar, QSpinnerFacebook } from 'quasar';
 import { useStore } from 'vuex';
 import { useRouter } from 'vue-router';
@@ -52,10 +52,14 @@ import { v4 as uuidv4 } from 'uuid';
 import { setAnalysisID } from '@/composables/checkAnalysisStatus';
 import { updateGetUserInfo } from '@/composables/accessStoreUserInfo';
 import { submitWorkflow } from '@/composables/submitWorkflow';
+import { ANALYSIS_RESULT, update_userAnalysisData, simplifyFilePath } from '@/firebase/firebaseDatabase';
 
 // 元件
 import WarningDialog from '@/components/WarningDialog.vue';
 import qPCRImportSection from '@/components/ImportqPCRViews/qPCRImportSection.vue';
+
+// Database Path
+const dbSMAResultPath = "sma_result";
 
 // 取得 quasar, store, router
 const $q = useQuasar();
@@ -84,6 +88,20 @@ const cy5File = ref(null);
 const Ctrlwell = ref(null);
 const NTCwell = ref(null);
 
+// 定義 SMA_RESULT
+const SMA_RESULT = (analyzerVersion,SC1_Data, SC2_Data, NTC_Data, sampleDataList, SMA_parameters, resultList, inputObject) => {
+  return {
+    analyzerVersion,
+    SC1_Data,
+    SC2_Data,
+    NTC_Data,
+    sampleDataList,
+    SMA_parameters,
+    resultList,
+    inputObject,
+  }
+}
+
 // Functions
 
 // 送出按鈕
@@ -97,13 +115,6 @@ async function onSubmit() {
     messageColor: "white",
   });
 
-  // 輸入
-  let checkList = [];
-  if (resultFile.value) checkList.push(resultFile.value);
-  if (famFile.value) checkList.push(famFile.value);
-  if (vicFile.value) checkList.push(vicFile.value);
-  if (cy5File.value) checkList.push(cy5File.value);
-
   // 取得 inputData
   const InputData = {
     file_path: resultFile.value ? resultFile.value.path : null,
@@ -112,20 +123,99 @@ async function onSubmit() {
     FAM_file_path: famFile.value ? famFile.value.path : null,
     VIC_file_path: vicFile.value ? vicFile.value.path : null,
     CY5_file_path: cy5File.value ? cy5File.value.path : null,
+    parameters: null,
   }
 
   // 取得 settingProps
   const currentSettingProps = store.getters["analysis_setting/getSettingProps"];
 
   // 執行 submitWorkflow
-  const analysisResult = await submitWorkflow(checkList, 'SMA', InputData, user_info.value, currentSettingProps);
+  const analysisResult = await submitWorkflow('SMA', InputData, user_info.value, currentSettingProps);
 
   // 檢查有沒有出錯
   if (analysisResult.status == 'success'){
     dialog_error_message.value = "";
 
-    // 印出 analysisResult, 從這裡繼續
-    console.log("analysisResult",analysisResult.result);
+    // 將 result 轉換成 Object
+    const resultV1Obj = JSON.parse(analysisResult.result['v1']);
+    const resultV2Obj = JSON.parse(analysisResult.result['v2']);
+    const resultV3Obj = JSON.parse(analysisResult.result['v3']);
+
+    const SMA_ResultV1 = SMA_RESULT(
+      'v1',
+      resultV1Obj.SC1Data,
+      resultV1Obj.SC2Data,
+      resultV1Obj.NTCData,
+      resultV1Obj.sampleDataList,
+      resultV1Obj.SMAparameters,
+      resultV1Obj.resultList,
+      InputData,
+    )
+
+    const SMA_ResultV2 = SMA_RESULT(
+      'v2',
+      resultV2Obj.SC1Data,
+      resultV2Obj.SC2Data,
+      resultV2Obj.NTCData,
+      resultV2Obj.sampleDataList,
+      resultV2Obj.SMAparameters,
+      resultV2Obj.resultList,
+      InputData,
+    )
+
+    const SMA_ResultV3 = SMA_RESULT(
+      'v3',
+      resultV3Obj.SC1Data,
+      resultV3Obj.SC2Data,
+      resultV3Obj.NTCData,
+      resultV3Obj.sampleDataList,
+      resultV3Obj.SMAparameters,
+      resultV3Obj.resultList,
+      InputData,
+    )
+
+    // 製作 ANALYSIS_RESULT
+    const AnalysisResult = ANALYSIS_RESULT(
+        "SMA",
+        currentAnalysisID.value.analysis_uuid,
+        {
+          V1: resultV1Obj.config,
+          V2: resultV2Obj.config,
+          V3: resultV3Obj.config,
+        },
+        {
+          V1: [simplifyFilePath(InputData.file_path)],
+          V2: [simplifyFilePath(InputData.file_path)],
+          V3: [simplifyFilePath(InputData.file_path)],
+        },
+        {
+          V1: resultV1Obj.qc_status,
+          V2: resultV2Obj.qc_status,
+          V3: resultV3Obj.qc_status,
+        },
+        {
+          V1: resultV1Obj.errMsg,
+          V2: resultV2Obj.errMsg,
+          V3: resultV3Obj.errMsg,
+        },
+        {
+          V1: SMA_ResultV1,
+          V2: SMA_ResultV2,
+          V3: SMA_ResultV3,
+        }
+      );
+
+    // 將結果存到 firestore
+    update_userAnalysisData(user_info.value.uid, dbSMAResultPath, AnalysisResult, currentAnalysisID.value.analysis_uuid);
+
+    // 更新 displaySMNVersion
+    updateDisplaySMNVersion(currentSettingProps.instrument);
+
+    // 更新 currentDisplayAnalysisID
+    store.commit("analysis_setting/updateCurrentDisplayAnalysisID", {
+      analysis_name: "SMA",
+      analysis_uuid: currentAnalysisID.value.analysis_uuid,
+    });
 
     // 更新 currentAnalysisID
     const new_id = `analysis_${uuidv4()}`;
@@ -139,9 +229,11 @@ async function onSubmit() {
     $q.loading.hide();
 
     // 跳轉到分析結果頁面
-    router.push({
-      path: '/page-preview',
-    });
+    setTimeout(()=>{
+      router.push({
+        path: '/page-preview',
+      });
+    }, 500);
   }
   else if (analysisResult.status == 'error'){
     // 通知
@@ -158,6 +250,30 @@ async function onSubmit() {
 
     // 隱藏 loading 視窗
     $q.loading.hide();
+  }
+}
+
+// 更新 displaySMNVersion
+function updateDisplaySMNVersion(instrument) {
+  if (instrument == 'z480') {
+    store.commit("SMA_analysis_data/updateDisplaySMNVersion", {
+      smn1: 'Z480',
+      smn2: 'Z480',
+    });
+    store.commit("SMA_analysis_data/updateDistanceRatio", {
+      smn1: 50,
+      smn2: 50,
+    });
+  }
+  else {
+    store.commit("SMA_analysis_data/updateDisplaySMNVersion", {
+      smn1: 'QS3',
+      smn2: 'QS3L',
+    });
+    store.commit("SMA_analysis_data/updateDistanceRatio", {
+      smn1: 0,
+      smn2: 50,
+    });
   }
 }
 

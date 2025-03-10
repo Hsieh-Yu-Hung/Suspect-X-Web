@@ -6,6 +6,12 @@ import Vuex from 'vuex';
 // 自定義 Modules
 import login_status from './LoginStatus';
 import analysis_setting from './AnalysisSetting';
+import FXS_analysis_data from './FXS_analysis_data';
+import HTD_analysis_data from './HTD_analysis_data';
+import APOE_analysis_data from './APOE_analysis_data';
+import MTHFR_analysis_data from './MTHFR_analysis_data';
+import NUDT15_analysis_data from './NUDT15_analysis_data';
+import SMA_analysis_data from './SMA_analysis_data';
 
 // 從 localStorage 中恢復登入狀態
 const savedState = localStorage.getItem('store');
@@ -28,7 +34,25 @@ export default store(function () {
       login_status: login_status,
 
       // 分析設定
-      analysis_setting: analysis_setting
+      analysis_setting: analysis_setting,
+
+      // FXS 分析結果
+      FXS_analysis_data: FXS_analysis_data,
+
+      // HTD 分析結果
+      HTD_analysis_data: HTD_analysis_data,
+
+      // APOE 分析結果
+      APOE_analysis_data: APOE_analysis_data,
+
+      // MTHFR 分析結果
+      MTHFR_analysis_data: MTHFR_analysis_data,
+
+      // NUDT15 分析結果
+      NUDT15_analysis_data: NUDT15_analysis_data,
+
+      // SMA 分析結果
+      SMA_analysis_data: SMA_analysis_data,
     }
   })
 

@@ -9,6 +9,7 @@ import { connectFunctionsEmulator } from "firebase/functions";
 import { connectStorageEmulator } from "firebase/storage";
 import { createUserWithEmailAndPassword, connectAuthEmulator } from "firebase/auth";
 import { connectFirestoreEmulator } from "firebase/firestore";
+import loggerV2 from "@/composables/loggerV2";
 
 // SDK modules
 import { Auth } from "./firebaseAuth";
@@ -19,9 +20,6 @@ import {
   USER_INFO, EMAIL_INFO, getSoftwareVersionDatabase, getOrganizationDatabase,
   addSoftwareVersionDatabase, addOrganizationDatabase, SOFTWARE_DATA, ORGAN_DATA
 } from "./firebaseDatabase";
-
-// logger
-import logger from "@/utility/logger";
 
 // 登入 admin
 async function create_fake_user(email, password, admin=false) {
@@ -55,13 +53,18 @@ async function create_fake_user(email, password, admin=false) {
       // 將 email 加入到 email_list
       const EmailInfo = EMAIL_INFO(result.user.email, login_method.admin);
       addEmailListDatabase(EmailInfo);
-      logger.info(`Admin login success, Email: ${result.user.email}, UID: ${result.user.uid}`);
+
+      // 紀錄到 logger
+      const message = `Admin login success, Email: ${result.user.email}, UID: ${result.user.uid}`;
+      const source = 'onDevelopment.js line.34';
+      const user = 'admin';
+      loggerV2.info(message, source, user);
     })
     .catch((error) => {
       if (error.code === 'auth/email-already-in-use') {
-        logger.warn(`Admin login failed, error: ${error}`);
+        console.warn(` Admin is already exist, Skip ...`);
       } else {
-        logger.error(`Admin login failed, error: ${error}`);
+        console.error(` Admin login failed, Error: ${error}`);
       }
     });
   }

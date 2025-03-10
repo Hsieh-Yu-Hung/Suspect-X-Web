@@ -92,16 +92,14 @@ import { v4 as uuidv4 } from 'uuid';
 import WarningDialog from '@/components/WarningDialog.vue';
 
 // 導入 composable
-import { upload_files_to_storage } from '@/utility/storageManager';
+import { upload_files_to_storage } from '@/composables/storageManager';
 import { updateGetUserInfo } from '@/composables/accessStoreUserInfo';
 import { submitWorkflow } from '@/composables/submitWorkflow';
-import { CATEGORY_LIST } from '@/utility/storageManager';
+import { CATEGORY_LIST } from '@/composables/storageManager';
 import { setAnalysisID } from '@/composables/checkAnalysisStatus';
-import { ANALYSIS_RESULT } from '@/firebase/firebaseDatabase';
+import { ANALYSIS_RESULT, simplifyFilePath } from '@/firebase/firebaseDatabase';
 import { update_userAnalysisData } from '@/firebase/firebaseDatabase';
-
-// logger
-import logger from '@/utility/logger';
+import loggerV2 from '@/composables/loggerV2';
 
 // consts
 const $q = useQuasar();
@@ -154,8 +152,6 @@ async function onSubmit() {
   });
 
   // 設定輸入
-  const sampleFileAll = sampleFile.value.reduce((acc, val) => acc.concat(val), []);
-  const checkList = [...control1File.value, ...control2File.value, ...sampleFileAll];
   const parsedSampleNameList = sampleFile.value.map((fileList) => { return filenameParser(fileList[0].name); });
   const id_labeled_sample_name_list = sampleFile.value.map((fileList) => {
     return {
@@ -169,11 +165,16 @@ async function onSubmit() {
     samplePathList: id_labeled_sample_name_list
   }
 
+  // 取得 control1 和 control2 的 ID
+  const control1IDs = ApoeInputData.control1PathList.map((path) => {return simplifyFilePath(path)});
+  const control2IDs = ApoeInputData.control2PathList.map((path) => {return simplifyFilePath(path)});
+  const controlIDs = [...control1IDs, ...control2IDs];
+
   // 取得 settingProps
   const currentSettingProps = store.getters["analysis_setting/getSettingProps"];
 
   // 執行 submitWorkflow
-  const analysisResult = await submitWorkflow(checkList, 'APOE', ApoeInputData, user_info.value, currentSettingProps);
+  const analysisResult = await submitWorkflow('APOE', ApoeInputData, user_info.value, currentSettingProps);
 
   // 檢查有沒有出錯
   if (analysisResult.status == 'success'){
@@ -195,12 +196,20 @@ async function onSubmit() {
       currentAnalysisID.value.analysis_name,
       currentAnalysisID.value.analysis_uuid,
       resultObj.config,
+      controlIDs,
       resultObj.qc_status,
+      resultObj.errMsg,
       APOE_Result
     );
 
     // 將結果存到 firestore
     update_userAnalysisData(user_info.value.uid, dbAPOEResultPath, AnalysisResult, currentAnalysisID.value.analysis_uuid);
+
+    // 更新 currentDisplayAnalysisID
+    store.commit("analysis_setting/updateCurrentDisplayAnalysisID", {
+      analysis_name: "APOE",
+      analysis_uuid: currentAnalysisID.value.analysis_uuid,
+    });
 
     // 更新 currentAnalysisID
     const new_id = `analysis_${uuidv4()}`;
@@ -214,9 +223,11 @@ async function onSubmit() {
     $q.loading.hide();
 
     // 跳轉到分析結果頁面
-    router.push({
-      path: '/page-preview',
-    });
+    setTimeout(()=>{
+      router.push({
+        path: '/page-preview',
+      });
+    }, 500);
   }
   else if (analysisResult.status == 'error'){
     // 通知
@@ -281,14 +292,22 @@ async function uploadFile(file_list, analysisID, subDir) {
     const error_file = uploading.filter(res => res.status === 'error');
 
     // 印出 error 的檔案
-    const error_message = error_file.map(res => res.message).join(', \n');
+    let error_message = error_file.map(res => res.message).join(';');
+
+    // 捕抓 timeout 的錯誤
+    if (error_message.includes("Timeout")) {
+      error_message = "由於連線問題檔案上傳逾時, 請重新整理頁面, 稍後再試一次！";
+    }
 
     // 設定 dialog_error_message, 跳出警告視窗
     dialog_error_message.value = error_message;
     warning_dialog.value.open_warning_dialog();
 
     // 印出 error message
-    logger.warn(error_message);
+    const message = error_message;
+    const source = 'ImportApoe.vue line.277';
+    const user = user_info.value.email;
+    loggerV2.error(message, source, user);
   }
 
   // 更新 file_list 中 file 的 path
@@ -338,7 +357,10 @@ async function handleSampleFileUpload(newVal) {
       }
     }))
     .catch((error) => {
-      logger.error(error);
+      const message = error;
+      const source = 'ImportApoe.vue line.342';
+      const user = user_info.value.email;
+      loggerV2.error(message, source, user);
     });
   }
 

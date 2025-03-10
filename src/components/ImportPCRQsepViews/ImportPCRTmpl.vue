@@ -77,13 +77,13 @@ import { useRouter } from 'vue-router';
 // 導入 composable
 import { submitWorkflow } from '@/composables/submitWorkflow';
 import { updateGetUserInfo } from '@/composables/accessStoreUserInfo';
-import { CATEGORY_LIST, upload_files_to_storage } from '@/utility/storageManager';
+import { CATEGORY_LIST, upload_files_to_storage } from '@/composables/storageManager';
 import { setAnalysisID } from '@/composables/checkAnalysisStatus';
-import { ANALYSIS_RESULT, update_userAnalysisData } from '@/firebase/firebaseDatabase';
+import { ANALYSIS_RESULT, update_userAnalysisData, simplifyFilePath } from '@/firebase/firebaseDatabase';
 
 // 元件
 import WarningDialog from '@/components/WarningDialog.vue';
-import logger from '@/utility/logger';
+import loggerV2 from '@/composables/loggerV2';
 
 // 定義 FXS 的 result 格式
 const FXS_RESULT = (control_data, sample_data, control_qc, result) => {
@@ -160,11 +160,6 @@ async function onSubmit() {
     messageColor: "white",
   });
 
-  // 輸入
-  let checkList = [];
-  if (controlSampleFile.value) checkList.push(controlSampleFile.value);
-  if (testingSampleFile.value) checkList.push(...testingSampleFile.value);
-
   // 取得 inputData
   const InputData = {
     controlPath: controlSampleFile.value ? controlSampleFile.value.path : null,
@@ -175,7 +170,7 @@ async function onSubmit() {
   const currentSettingProps = store.getters["analysis_setting/getSettingProps"];
 
   // 執行 submitWorkflow
-  const analysisResult = await submitWorkflow(checkList, props.analysis_name, InputData, user_info.value, currentSettingProps);
+  const analysisResult = await submitWorkflow(props.analysis_name, InputData, user_info.value, currentSettingProps);
 
   // 檢查有沒有出錯
   if (analysisResult.status == 'success'){
@@ -201,12 +196,20 @@ async function onSubmit() {
         currentAnalysisID.value.analysis_name,
         currentAnalysisID.value.analysis_uuid,
         resultObj.config,
+        [simplifyFilePath(controlSampleFile.value.name)],
         resultObj.qc_status,
+        "",
         FXS_Result
       );
 
       // 將結果存到 firestore
       update_userAnalysisData(user_info.value.uid, dbFXSResultPath, AnalysisResult, currentAnalysisID.value.analysis_uuid);
+
+      // 更新 currentDisplayAnalysisID
+      store.commit("analysis_setting/updateCurrentDisplayAnalysisID", {
+        analysis_name: "FXS",
+        analysis_uuid: currentAnalysisID.value.analysis_uuid,
+      });
     }
     else if (props.analysis_name === 'HTD') {
       // 製作 HTD_RESULT
@@ -221,12 +224,20 @@ async function onSubmit() {
         currentAnalysisID.value.analysis_name,
         currentAnalysisID.value.analysis_uuid,
         resultObj.config,
+        [simplifyFilePath(controlSampleFile.value.name)],
         resultObj.qc_status,
+        "",
         HTD_Result
       );
 
       // 將結果存到 firestore
       update_userAnalysisData(user_info.value.uid, dbHTDResultPath, AnalysisResult, currentAnalysisID.value.analysis_uuid);
+
+      // 更新 currentDisplayAnalysisID
+      store.commit("analysis_setting/updateCurrentDisplayAnalysisID", {
+        analysis_name: "HTD",
+        analysis_uuid: currentAnalysisID.value.analysis_uuid,
+      });
     }
 
     // 更新 currentAnalysisID
@@ -241,9 +252,11 @@ async function onSubmit() {
     $q.loading.hide();
 
     // 跳轉到分析結果頁面
-    router.push({
-      path: '/page-preview',
-    });
+    setTimeout(()=>{
+      router.push({
+        path: '/page-preview',
+      });
+    }, 500);
   }
   else if (analysisResult.status == 'error'){
     // 通知
@@ -305,7 +318,10 @@ async function uploadFile(files, type) {
     warning_dialog.value.open_warning_dialog();
 
     // 印出 error message
-    logger.warn(error_message);
+    const message = error_message;
+    const source = 'ImportPCRTmpl.vue line.297';
+    const user = user_info.value.email;
+    loggerV2.error(message, source, user);
   }
 
   // 更新 files 中 file 的 path
