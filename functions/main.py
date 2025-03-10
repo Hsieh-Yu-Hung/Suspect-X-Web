@@ -17,6 +17,7 @@ import json
 from firebase_functions import https_fn, options
 from config_admin import bucket
 from Nucleus import Core
+import traceback
 
 # 載入環境變數
 from config_env import load_env
@@ -63,6 +64,6 @@ def RunAnalysis(req: https_fn.Request):
         response_data = {"data": {"status": "success", "message": "Analysis finished", "result": result}}
 
     except Exception as e:
-        response_data = {"data": {"status": "error", "message": str(e)}}
+        response_data = {"data": {"status": "error", "message": str(e) + " " + str(traceback.format_exc())}}
 
     return https_fn.Response(json.dumps(response_data), content_type="application/json")

@@ -21,18 +21,6 @@ sys.path.append(current_dir)
 from systemLogger import Logger
 logger = Logger()
 
-# 定義 SMA 的 CT 門檻
-TOWER_CT_Threshold_RANGE = Range(15, 30)
-CT_Threshold_SMA = 30
-
-# QS3 QC 的範圍
-SMN1_SC1_SC2_DIFF_Range = Range(0.87, 1.46)
-SMN2_SC1_SC2_DIFF_Range = Range(0.75, 1.44)
-
-# z480 校正數值
-Z480_SMN1_FACTOR = 0.47
-Z480_SMN2_FACTOR = 0.52
-
 # 定義 SMA data object
 @dataclass
 class SMAData:
@@ -146,7 +134,25 @@ class SMAOutput(AnalysisOutput):
   resultList: list[SMAResult] = None
 
 # SMA 分析腳本
-def SMA(input_file_path, FAM_file_path, VIC_file_path, CY5_file_path, SC1_well, SC2_well, NTC_well, SMA_version, user_info):
+def SMA(input_file_path, FAM_file_path, VIC_file_path, CY5_file_path, SC1_well, SC2_well, NTC_well, SMA_version, user_info, parameters = None):
+
+  # 定義 SMA 的 CT 門檻
+  TOWER_CT_Threshold_RANGE = Range(15, 30)
+  CT_Threshold_SMA = 30
+
+  # QS3 QC 的範圍
+  SMN1_SC1_SC2_DIFF_Range = Range(0.87, 1.46)
+  SMN2_SC1_SC2_DIFF_Range = Range(0.75, 1.44)
+
+  # z480 校正數值
+  Z480_SMN1_FACTOR = 0.47
+  Z480_SMN2_FACTOR = 0.52
+
+  if parameters:
+    SMN1_SC1_SC2_DIFF_Range = Range(parameters["SMN1_SC1_SC2_DIFF_Range"]["MIN"], parameters["SMN1_SC1_SC2_DIFF_Range"]["MAX"])
+    SMN2_SC1_SC2_DIFF_Range = Range(parameters["SMN2_SC1_SC2_DIFF_Range"]["MIN"], parameters["SMN2_SC1_SC2_DIFF_Range"]["MAX"])
+    Z480_SMN1_FACTOR = parameters["Z480_SMN1_FACTOR"]
+    Z480_SMN2_FACTOR = parameters["Z480_SMN2_FACTOR"]
 
   # Logger settings
   sender = user_info.organization
@@ -169,16 +175,28 @@ def SMA(input_file_path, FAM_file_path, VIC_file_path, CY5_file_path, SC1_well, 
   # 初始化 SMAOutput
   sma_output = SMAOutput(config=config)
 
+  # 初始化 CT_Limit_Range
+  CT_Limit_Range = Range(0, CT_Threshold_SMA)
+
+  # 如果 parameters 存在, 則使用 parameters 中的 CT_Threshold_Range
+  if parameters:
+    CT_Limit_Range = Range(parameters["CT_Threshold_Range"]["MIN"], parameters["CT_Threshold_Range"]["MAX"])
+
   # 1. 讀取 Qpcr data 並轉換為 QPCRRecord 列表
-  qpcr_record_list = readQPCRData(input_file_path, FAM_file_path, VIC_file_path, user_info.instrument, CT_Threshold_SMA, CY5_file_path)
+  qpcr_record_list = readQPCRData(input_file_path, FAM_file_path, VIC_file_path, user_info.instrument, CT_Limit_Range.MAX, CY5_file_path)
 
   # 將重複的樣本名稱加上後綴
   append_suffix_to_duplicates(qpcr_record_list)
 
   # 如果是 tower, 則在針對 pass cutoff 的 QPCRRecord 檢查 CT 是否小於等於 15, 或大於等於 30, 若超出此範圍 pass_cutoff 設為 False
   if user_info.instrument == "tower":
+    if parameters:
+      CT_Limit_Range = Range(parameters["CT_Threshold_Range"]["MIN"], parameters["CT_Threshold_Range"]["MAX"])
+    else:
+      CT_Limit_Range = TOWER_CT_Threshold_RANGE
+
     for r in qpcr_record_list:
-      if r.pass_cutoff and not TOWER_CT_Threshold_RANGE.inRange(r.ct_value):
+      if r.pass_cutoff and not CT_Limit_Range.inRange(r.ct_value):
         r.pass_cutoff = False
 
   # 紀錄 QPCRRecord 列表
@@ -229,23 +247,28 @@ def SMA(input_file_path, FAM_file_path, VIC_file_path, CY5_file_path, SC1_well, 
   sma_output.sampleDataList = dataMatrix["sample"]
 
   # QC
-  qc_status, qc_message = QC(dataMatrix, user_info.instrument)
+  qc_status, qc_message = QC(dataMatrix, user_info.instrument, SMN1_SC1_SC2_DIFF_Range, SMN2_SC1_SC2_DIFF_Range)
 
   # QC 通過, 進行 Sample Assessment
   if qc_status == QCStatus.PASSED:
 
     # 計算 1N 2N 3N 4N 的 CT 範圍
-    Threshold_Range = calculate_CT_Threshold(dataMatrix["sc1"], dataMatrix["sc2"])
+    Threshold_Range = calculate_CT_Threshold(dataMatrix["sc1"], dataMatrix["sc2"], parameters)
     sma_output.SMAparameters = {
       "Threshold_Range": Threshold_Range,
+      "CT_Limit_Range": CT_Limit_Range,
       "z480_Factors": {
         "Z480_SMN1_FACTOR": Z480_SMN1_FACTOR,
         "Z480_SMN2_FACTOR": Z480_SMN2_FACTOR
+      },
+      "deltaCT_QC_Range": {
+        "smn1": SMN1_SC1_SC2_DIFF_Range,
+        "smn2": SMN2_SC1_SC2_DIFF_Range
       }
     }
 
     # 進行 Sample Assessment
-    sample_assessment_results = [SampleAssessment(data, user_info.instrument, Threshold_Range, SMA_version) for data in dataMatrix["sample"]]
+    sample_assessment_results = [SampleAssessment(data, user_info.instrument, Threshold_Range, SMA_version, Z480_SMN1_FACTOR, Z480_SMN2_FACTOR) for data in dataMatrix["sample"]]
 
     # 輸出 Sample Assessment 結果
     tmp_source = "sma.py line. 250"
@@ -374,7 +397,7 @@ def append_suffix_to_duplicates(input_list):
         item.sample_name = new_sample_name
 
 # QC
-def QC(dataMatrix, instrument):
+def QC(dataMatrix, instrument, SMN1_SC1_SC2_DIFF_Range, SMN2_SC1_SC2_DIFF_Range):
 
   # 初始化 qc_status
   qc_status = QCStatus.NOT_ANALYZED
@@ -455,7 +478,8 @@ def QC(dataMatrix, instrument):
   return qc_status, qc_message
 
 # 計算 1N 2N 3N 4N 的 CT 範圍
-def calculate_CT_Threshold(SC1_data, SC2_data):
+def calculate_CT_Threshold(SC1_data, SC2_data, parameters):
+
   # SMN1 的 CT 範圍
   smn1_1n = SC1_data.normalized_smn1
   smn1_2n = SC2_data.normalized_smn1
@@ -478,9 +502,9 @@ def calculate_CT_Threshold(SC1_data, SC2_data):
       "4n": smn1_4n
     },
     "smn1_restricted": {
-      "1n": (smn1_1n + smn1_2n) / 2,
-      "2n": (smn1_2n + smn1_3n) / 2,
-      "3n": (smn1_3n + smn1_4n) / 2
+      "1n": float(smn1_1n + smn1_2n) / 2,
+      "2n": float(smn1_2n + smn1_3n) / 2,
+      "3n": float(smn1_3n + smn1_4n) / 2
     },
     "smn2": {
       "1n": smn2_1n,
@@ -489,16 +513,30 @@ def calculate_CT_Threshold(SC1_data, SC2_data):
       "4n": smn2_4n
     },
     "smn2_restricted": {
-      "1n": (smn2_1n + smn2_2n) / 2,
-      "2n": (smn2_2n + smn2_3n) / 2,
-      "3n": (smn2_3n + smn2_4n) / 2
+      "1n": float(smn2_1n + smn2_2n) / 2,
+      "2n": float(smn2_2n + smn2_3n) / 2,
+      "3n": float(smn2_3n + smn2_4n) / 2
     }
   }
+
+  if parameters:
+    threshold_range["smn1"]["1n"] = parameters["SMN_Select_Range"]["smn1"]["1n"]
+    threshold_range["smn1"]["2n"] = parameters["SMN_Select_Range"]["smn1"]["2n"]
+    threshold_range["smn1"]["3n"] = parameters["SMN_Select_Range"]["smn1"]["3n"]
+    threshold_range["smn1_restricted"]["1n"] = float((parameters["SMN_Select_Range"]["smn1"]["1n"] + parameters["SMN_Select_Range"]["smn1"]["2n"]) / 2)
+    threshold_range["smn1_restricted"]["2n"] = float((parameters["SMN_Select_Range"]["smn1"]["2n"] + parameters["SMN_Select_Range"]["smn1"]["3n"]) / 2)
+    threshold_range["smn1_restricted"]["3n"] = float((parameters["SMN_Select_Range"]["smn1"]["3n"] + threshold_range["smn1"]["4n"]) / 2)
+    threshold_range["smn2"]["1n"] = parameters["SMN_Select_Range"]["smn2"]["1n"]
+    threshold_range["smn2"]["2n"] = parameters["SMN_Select_Range"]["smn2"]["2n"]
+    threshold_range["smn2"]["3n"] = parameters["SMN_Select_Range"]["smn2"]["3n"]
+    threshold_range["smn2_restricted"]["1n"] = float((parameters["SMN_Select_Range"]["smn2"]["1n"] + parameters["SMN_Select_Range"]["smn2"]["2n"]) / 2)
+    threshold_range["smn2_restricted"]["2n"] = float((parameters["SMN_Select_Range"]["smn2"]["2n"] + parameters["SMN_Select_Range"]["smn2"]["3n"]) / 2)
+    threshold_range["smn2_restricted"]["3n"] = float((parameters["SMN_Select_Range"]["smn2"]["3n"] + threshold_range["smn2"]["4n"]) / 2)
 
   return threshold_range
 
 # 進行 Sample Assessment
-def SampleAssessment(data, instrument, Threshold_Range, SMA_version):
+def SampleAssessment(data, instrument, Threshold_Range, SMA_version, Z480_SMN1_FACTOR, Z480_SMN2_FACTOR):
 
   # 判斷 SMN type
   def get_smn_type(normalized_smn, threshold_range):
@@ -521,8 +559,15 @@ def SampleAssessment(data, instrument, Threshold_Range, SMA_version):
 
   # 如果是 z480 則校正數值
   if instrument == "z480":
-    normalized_smn1 = round(normalized_smn1 - Z480_SMN1_FACTOR, 3)
-    normalized_smn2 = round(normalized_smn2 - Z480_SMN2_FACTOR, 3)
+    if not normalized_smn1:
+      normalized_smn1 = None
+    else:
+      normalized_smn1 = round(normalized_smn1 - Z480_SMN1_FACTOR, 3)
+
+    if not normalized_smn2:
+      normalized_smn2 = None
+    else:
+      normalized_smn2 = round(normalized_smn2 - Z480_SMN2_FACTOR, 3)
 
   # 取得 normalized_smn1 和 normalized_smn2 的 type
   if SMA_version == "v1":

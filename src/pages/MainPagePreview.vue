@@ -20,8 +20,7 @@
 
     <!-- SMA v1-3 devMode 面板 -->
     <div v-if="currentDisplayAnalysis.analysis_name === 'SMA'" class="row justify-between q-mt-lg q-mx-xl">
-      <!-- <SMAReanalysisParamSettings /> -->
-       Params Panel (Developping)
+      <SMAReanalysisParamSettings />
     </div>
 
     <!-- SMA v4 devMode 面板 -->

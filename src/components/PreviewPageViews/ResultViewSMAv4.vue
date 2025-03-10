@@ -1179,25 +1179,25 @@ function convertPeakConditionFormat(peak_condition){
 // 取得 control_ids
 const getControlID = (smav4InputFilesObj) => {
 
-// 取得檔名並且移除附檔名
-const simplifyFilePath = (file_path) => {
-  if (!file_path) return '';
+  // 取得檔名並且移除附檔名
+  const simplifyFilePath = (file_path) => {
+    if (!file_path) return '';
 
-  // 先取得檔案名稱（移除路徑）
-  const fileName = file_path.split('/').pop();
+    // 先取得檔案名稱（移除路徑）
+    const fileName = file_path.split('/').pop();
 
-  // 移除附檔名
-  return fileName.replace(/\.[^.]+$/, '');
-}
+    // 移除附檔名
+    return fileName.replace(/\.[^.]+$/, '');
+  }
 
-return [
-  simplifyFilePath(smav4InputFilesObj.smn1_std1),
-  simplifyFilePath(smav4InputFilesObj.smn1_std2),
-  simplifyFilePath(smav4InputFilesObj.smn1_std3),
-  simplifyFilePath(smav4InputFilesObj.smn2_std1),
-  simplifyFilePath(smav4InputFilesObj.smn2_std2),
-  simplifyFilePath(smav4InputFilesObj.smn2_std3),
-]
+  return [
+    simplifyFilePath(smav4InputFilesObj.smn1_std1),
+    simplifyFilePath(smav4InputFilesObj.smn1_std2),
+    simplifyFilePath(smav4InputFilesObj.smn1_std3),
+    simplifyFilePath(smav4InputFilesObj.smn2_std1),
+    simplifyFilePath(smav4InputFilesObj.smn2_std2),
+    simplifyFilePath(smav4InputFilesObj.smn2_std3),
+  ]
 }
 
 // 重新分析

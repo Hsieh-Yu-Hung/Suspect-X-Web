@@ -124,7 +124,8 @@ class Core:
             SC2_well = sma_parsed_data.sc2_well,
             NTC_well = sma_parsed_data.ntc_well,
             user_info = user_info,
-            SMA_version = sma_version
+            SMA_version = sma_version,
+            parameters = sma_parsed_data.parameters
           )
 
       return sma_result

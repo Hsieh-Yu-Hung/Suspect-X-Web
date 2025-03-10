@@ -89,7 +89,7 @@ const Ctrlwell = ref(null);
 const NTCwell = ref(null);
 
 // 定義 SMA_RESULT
-const SMA_RESULT = (analyzerVersion,SC1_Data, SC2_Data, NTC_Data, sampleDataList, SMA_parameters, resultList) => {
+const SMA_RESULT = (analyzerVersion,SC1_Data, SC2_Data, NTC_Data, sampleDataList, SMA_parameters, resultList, inputObject) => {
   return {
     analyzerVersion,
     SC1_Data,
@@ -98,6 +98,7 @@ const SMA_RESULT = (analyzerVersion,SC1_Data, SC2_Data, NTC_Data, sampleDataList
     sampleDataList,
     SMA_parameters,
     resultList,
+    inputObject,
   }
 }
 
@@ -122,6 +123,7 @@ async function onSubmit() {
     FAM_file_path: famFile.value ? famFile.value.path : null,
     VIC_file_path: vicFile.value ? vicFile.value.path : null,
     CY5_file_path: cy5File.value ? cy5File.value.path : null,
+    parameters: null,
   }
 
   // 取得 settingProps
@@ -147,6 +149,7 @@ async function onSubmit() {
       resultV1Obj.sampleDataList,
       resultV1Obj.SMAparameters,
       resultV1Obj.resultList,
+      InputData,
     )
 
     const SMA_ResultV2 = SMA_RESULT(
@@ -157,6 +160,7 @@ async function onSubmit() {
       resultV2Obj.sampleDataList,
       resultV2Obj.SMAparameters,
       resultV2Obj.resultList,
+      InputData,
     )
 
     const SMA_ResultV3 = SMA_RESULT(
@@ -167,6 +171,7 @@ async function onSubmit() {
       resultV3Obj.sampleDataList,
       resultV3Obj.SMAparameters,
       resultV3Obj.resultList,
+      InputData,
     )
 
     // 製作 ANALYSIS_RESULT
@@ -202,6 +207,9 @@ async function onSubmit() {
 
     // 將結果存到 firestore
     update_userAnalysisData(user_info.value.uid, dbSMAResultPath, AnalysisResult, currentAnalysisID.value.analysis_uuid);
+
+    // 更新 displaySMNVersion
+    updateDisplaySMNVersion(currentSettingProps.instrument);
 
     // 更新 currentDisplayAnalysisID
     store.commit("analysis_setting/updateCurrentDisplayAnalysisID", {
@@ -242,6 +250,30 @@ async function onSubmit() {
 
     // 隱藏 loading 視窗
     $q.loading.hide();
+  }
+}
+
+// 更新 displaySMNVersion
+function updateDisplaySMNVersion(instrument) {
+  if (instrument == 'z480') {
+    store.commit("SMA_analysis_data/updateDisplaySMNVersion", {
+      smn1: 'Z480',
+      smn2: 'Z480',
+    });
+    store.commit("SMA_analysis_data/updateDistanceRatio", {
+      smn1: 50,
+      smn2: 50,
+    });
+  }
+  else {
+    store.commit("SMA_analysis_data/updateDisplaySMNVersion", {
+      smn1: 'QS3',
+      smn2: 'QS3L',
+    });
+    store.commit("SMA_analysis_data/updateDistanceRatio", {
+      smn1: 0,
+      smn2: 50,
+    });
   }
 }
 

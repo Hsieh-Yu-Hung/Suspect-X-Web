@@ -102,11 +102,11 @@ import loggerV2 from '@/composables/loggerV2';
 import { updateGetUserInfo } from '@/composables/accessStoreUserInfo.js';
 
 // 導入元件
-import OrganizationSection from '@/components/OrganizationSection/OrganizationSection.vue';
-import SoftwareSection from '@/components/SoftwareSection/SoftwareSection.vue';
-import UserManageSection from '@/components/UserManageSection/UserManageSection.vue';
-import OtherSection from '@/components/OtherSettingSection/OtherSection.vue';
-import LogSection from '@/components/LogSectionViews/LogSection.vue';
+import OrganizationSection from '@/components/AdminPageViewComp/OrganizationSection/OrganizationSection.vue';
+import SoftwareSection from '@/components/AdminPageViewComp/SoftwareSection/SoftwareSection.vue';
+import UserManageSection from '@/components/AdminPageViewComp/UserManageSection/UserManageSection.vue';
+import OtherSection from '@/components/AdminPageViewComp/OtherSettingSection/OtherSection.vue';
+import LogSection from '@/components/AdminPageViewComp/LogSectionViews/LogSection.vue';
 
 // refs
 const organization_section = ref(null);

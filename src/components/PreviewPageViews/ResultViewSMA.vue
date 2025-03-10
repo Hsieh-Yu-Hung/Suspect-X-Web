@@ -4,7 +4,7 @@
       <div class="row">
 
         <!-- 結果表格區塊 -->
-        <div class="col">
+        <div class="col" style="min-width: 500px;">
 
           <!-- 表格標題 -->
           <div class="col text-h5 text-uppercase text-bold text-blue-grey-7">
@@ -47,7 +47,7 @@
             </q-card-section>
 
             <!-- 表格區域 -->
-            <q-card-section>
+            <q-card-section style="border: 1px solid rgba(200, 200, 200, 0.3);">
               <q-table
                 :rows="resultTableSmaProps"
                 :columns="columns"
@@ -180,15 +180,15 @@
         </div>
 
         <!-- 結果圖表區域 -->
-        <div class="col">
-          <div class="col text-h5 text-uppercase text-bold text-blue-grey-7">
+        <div class="col" style="padding: 1em; min-width: 500px; min-height: 500px;">
+          <div class="text-h5 text-uppercase text-bold text-blue-grey-7">
             SMA Result Figure
           </div>
-          <div class="row">
-            <q-card flat>
-              <q-card-section class="q-pa-none">
-                <div class="q-pa-sm">
-                  <div v-if="qc_status !== 'meet-the-criteria'">
+          <div style="width: 100%; height: 100%; padding: 1.5em;">
+            <q-card :class="showFigureType ? 'filled-figure' : 'empty-figure'" flat style="width: 100%; height: 100%;">
+              <q-card-section class="q-pa-none" style="width: 100%; height: 100%;">
+                <div class="q-pa-sm flex flex-center" style="width: 100%; height: 100%;">
+                  <div class="flex flex-center" v-if="qc_status !== 'meet-the-criteria'">
                     <q-chip
                       color="white"
                       text-color="red-8"
@@ -241,7 +241,7 @@
                       </div>
                     </div>
                   </div>
-                  <div v-else>
+                  <div class="flex flex-center" style="width: 100%; height: 100%;" v-else>
                     <q-chip
                       color="white"
                       text-color="blue-grey-8"
@@ -401,7 +401,7 @@ const columns = [
   {
     name: "assessmentRaw",
     align: "center",
-    label: "Assessment",
+    label: "Assessment-Raw",
     field: (row) => row.assessment.label,
   },
   {
@@ -598,6 +598,10 @@ function updateSmaResult(smaResult) {
   // 取得 sample list
   const sampleList = smaResult.resultObj.V1.sampleDataList.map(item => item.sample_name);
 
+  if (!smaResult.resultObj.V1.resultList) {
+    return;
+  }
+
   // 製作 result list
   let sma_resultList = [];
   sampleList.forEach(sample_name => {
@@ -654,3 +658,14 @@ watch([smn1Version, smn2Version], () => {
 });
 
 </script>
+
+<style scoped>
+.empty-figure {
+  background-color: rgba(200, 200, 200, 0.1);
+  border: 1px dashed grey;
+}
+.filled-figure {
+  background-color: white;
+  border: 1px dashed grey;
+}
+</style>

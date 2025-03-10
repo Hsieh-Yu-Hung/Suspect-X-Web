@@ -74,6 +74,7 @@ class SMAInputData(QPCRInputData):
   sc1_well: WELL
   sc2_well: WELL
   analysis_name: str
+  parameters: dict
 
 # 定義 SMAv4 input 資料格式
 @dataclass
@@ -449,7 +450,8 @@ class InputParser:
       sc1_well = sc1_well,
       sc2_well = sc2_well,
       ntc_well = ntc_well,
-      analysis_name = AnalysisName.SMA
+      analysis_name = AnalysisName.SMA,
+      parameters = sma_input_data['parameters']
     )
 
   # 解析 SMAv4 input 資料

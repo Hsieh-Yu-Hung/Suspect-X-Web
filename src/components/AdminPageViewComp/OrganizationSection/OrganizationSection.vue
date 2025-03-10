@@ -41,7 +41,7 @@ import { ref, onMounted } from 'vue';
 import { useQuasar } from 'quasar';
 
 // 導入元件
-import OrganizationItem from '@/components/OrganizationSection/OrganizationItem.vue';
+import OrganizationItem from '@/components/AdminPageViewComp/OrganizationSection/OrganizationItem.vue';
 import { ORGAN_DATA, dataset_list, deleteData, getOrganizationDatabase, addOrganizationDatabase } from '@/firebase';
 import { load_software_version_for_dropdown, load_organization_from_firestore } from '@/firebase';
 

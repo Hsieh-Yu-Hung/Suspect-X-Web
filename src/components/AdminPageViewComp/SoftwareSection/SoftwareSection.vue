@@ -38,7 +38,7 @@ import { ref, onMounted } from 'vue';
 import { useQuasar } from 'quasar';
 
 // 導入元件
-import SoftwareItem from '@/components/SoftwareSection/SoftwareItem.vue';
+import SoftwareItem from '@/components/AdminPageViewComp/SoftwareSection/SoftwareItem.vue';
 import { deleteData, dataset_list } from '@/firebase';
 import { SOFTWARE_DATA, addSoftwareVersionDatabase, getSoftwareVersionDatabase } from '@/firebase';
 import { load_software_version_from_firestore } from '@/firebase';

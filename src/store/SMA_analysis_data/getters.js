@@ -1,4 +1,4 @@
-// SMA
+// SMA 評估
 function smaAssessment(smn1, smn2) {
   if (smn1.every(s1 => s1 === 1)) {
     return {
@@ -129,4 +129,18 @@ export function exportSmaProps(state) {
       receivingDate: s.receivedDate,
     }
   });
+}
+
+export function displaySMNVersion(state) {
+  return {
+    smn1: state.displaySMN1Version,
+    smn2: state.displaySMN2Version,
+  };
+}
+
+export function distanceRatio(state) {
+  return {
+    smn1: state.distanceRatioSmn1,
+    smn2: state.distanceRatioSmn2,
+  };
 }
