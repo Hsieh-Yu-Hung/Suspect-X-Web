@@ -395,18 +395,6 @@ onMounted(async () => {
 
   // 更新 APOE 分析結果
   updateAPOEAnalysisResult(currentAnalysisResult.value);
-
-  // 更新導出結果
-  const updated = resultTableApoeProps.value.map((row, index) => ({
-    index: index + 1,
-    sampleId: row.sampleId,
-    result: row.type.join(""),
-    resultLabel: [row.apoeType],
-    assessment: row.assessment,
-    assessmentLabel: assessment(row.assessment)
-  }));
-
-  store.commit("APOE_analysis_data/updateExportResults", updated);
 });
 </script>
 

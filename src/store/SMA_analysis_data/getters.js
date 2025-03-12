@@ -144,3 +144,10 @@ export function distanceRatio(state) {
     smn2: state.distanceRatioSmn2,
   };
 }
+
+export function resultSMNVersion(state) {
+  return {
+    smn1: state.resultSMN1Version,
+    smn2: state.resultSMN2Version,
+  };
+}

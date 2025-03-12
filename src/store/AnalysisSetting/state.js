@@ -28,11 +28,7 @@ export default function () {
       analysis_name: null,
       analysis_uuid: null,
     },
-
-    // SMAv4 Reanalyse Selection
-    SMAv4ReanalyseSelection: {
-      reanalyse_selection: [],
-    },
-    SMAv4ReanalysePeakSettings: {}
+    // Exports
+    selectedExport: [],
   }
 }

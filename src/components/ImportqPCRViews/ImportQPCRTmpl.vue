@@ -51,7 +51,7 @@ import { useStore } from 'vuex';
 import { setAnalysisID } from '@/composables/checkAnalysisStatus';
 import { updateGetUserInfo } from '@/composables/accessStoreUserInfo';
 import { submitWorkflow } from '@/composables/submitWorkflow';
-import { ANALYSIS_RESULT, update_userAnalysisData } from '@/firebase/firebaseDatabase';
+import { ANALYSIS_RESULT, EXPORT_RESULT, update_userAnalysisData } from '@/firebase/firebaseDatabase';
 
 // 元件
 import WarningDialog from '@/components/WarningDialog.vue';
@@ -93,6 +93,45 @@ const props = defineProps({
     required: true,
   },
 });
+
+// MTHFR 評估結果
+const mthfrAssessment = (value) => {
+  if (value === 'low-risk') {
+    return "Low risk";
+  } else if (value === 'normal-risk') {
+    return "Normal risk";
+  } else if (value === 'high-risk') {
+    return "High risk";
+  } else if (value === 'inconclusive') {
+    return "Inconclusive";
+  } else {
+    return "Invalid";
+  }
+};
+
+const mthfrParseResult = (reagent, result) => {
+  if (reagent == "accuinMTHFR2") {
+    return [`c.677 [${result[0]}/${result[1]}]`, `c.1298 [${result[2]}/${result[3]}]`]
+  }
+  else {
+    return [`c.677 [${result[0]}/${result[1]}]`]
+  }
+}
+
+// NUDT15 評估結果
+const nudt15Assessment = (value) => {
+  if (value === 'low-risk') {
+    return "Low risk";
+  } else if (value === 'normal-risk') {
+    return "Normal risk";
+  } else if (value === 'high-risk') {
+    return "High risk";
+  } else if (value === 'inconclusive') {
+    return "Inconclusive";
+  } else {
+    return "Invalid";
+  }
+};
 
 // 取得 instrument 和 reagent
 const getCurrentInstrument = () => {
@@ -172,6 +211,20 @@ async function onSubmit() {
         resultObj.resultList,
       );
 
+      // 製作 EXPORT_RESULT
+      const exportResult = MTHFR_Result.resultList.map((result, index) => {
+        const wellPosition = resultObj.sampleDataList[index].well_position;
+        return EXPORT_RESULT(
+          index+1,
+          result.sample_name,
+          result.sample_type,
+          mthfrParseResult(resultObj.config.reagent, result.sample_type),
+          result.assessment,
+          mthfrAssessment(result.assessment),
+          wellPosition.X + wellPosition.Y
+        );
+      });
+
       // 製作 ANALYSIS_RESULT
       const AnalysisResult = ANALYSIS_RESULT(
         currentAnalysisID.value.analysis_name,
@@ -180,7 +233,8 @@ async function onSubmit() {
         [resultObj.controlData.sample_name],
         resultObj.qc_status,
         resultObj.errMsg,
-        MTHFR_Result
+        MTHFR_Result,
+        exportResult
       );
 
       // 將結果存到 firestore
@@ -201,6 +255,18 @@ async function onSubmit() {
         resultObj.resultList,
       );
 
+      // 製作 EXPORT_RESULT
+      const exportResult = NUDT15_Result.resultList.map((result, index) => {
+        return EXPORT_RESULT(
+          index+1,
+          result.sample_name,
+          result.sample_type,
+          [result.sample_type.join("/")],
+          result.assessment,
+          nudt15Assessment(result.assessment),
+        );
+      });
+
       // 製作 ANALYSIS_RESULT
       const AnalysisResult = ANALYSIS_RESULT(
         currentAnalysisID.value.analysis_name,
@@ -209,7 +275,8 @@ async function onSubmit() {
         [resultObj.controlData.sample_name],
         resultObj.qc_status,
         resultObj.errMsg,
-        NUDT15_Result
+        NUDT15_Result,
+        exportResult
       );
 
       // 將結果存到 firestore
@@ -229,6 +296,9 @@ async function onSubmit() {
       analysis_uuid: new_id,
     });
     currentAnalysisID.value = store.getters['analysis_setting/getCurrentAnalysisID'];
+
+    // 初始化 inputResults (葉酸輸入)
+    store.commit('MTHFR_analysis_data/initInputResults');
 
     // 隱藏 loading 視窗
     $q.loading.hide();

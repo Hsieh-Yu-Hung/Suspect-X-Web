@@ -52,7 +52,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { setAnalysisID } from '@/composables/checkAnalysisStatus';
 import { updateGetUserInfo } from '@/composables/accessStoreUserInfo';
 import { submitWorkflow } from '@/composables/submitWorkflow';
-import { ANALYSIS_RESULT, update_userAnalysisData, simplifyFilePath } from '@/firebase/firebaseDatabase';
+import { ANALYSIS_RESULT, EXPORT_RESULT, update_userAnalysisData, simplifyFilePath } from '@/firebase/firebaseDatabase';
 
 // 元件
 import WarningDialog from '@/components/WarningDialog.vue';
@@ -149,7 +149,7 @@ async function onSubmit() {
       resultV1Obj.sampleDataList,
       resultV1Obj.SMAparameters,
       resultV1Obj.resultList,
-      InputData,
+      InputData
     )
 
     const SMA_ResultV2 = SMA_RESULT(
@@ -160,7 +160,7 @@ async function onSubmit() {
       resultV2Obj.sampleDataList,
       resultV2Obj.SMAparameters,
       resultV2Obj.resultList,
-      InputData,
+      InputData
     )
 
     const SMA_ResultV3 = SMA_RESULT(
@@ -171,8 +171,26 @@ async function onSubmit() {
       resultV3Obj.sampleDataList,
       resultV3Obj.SMAparameters,
       resultV3Obj.resultList,
-      InputData,
+      InputData
     )
+
+    // 製作 EXPORT_RESULT
+    const current_instrument = currentSettingProps.instrument;
+    const current_reagent = currentSettingProps.reagent;
+    const used_SMA_Result = current_instrument == 'z480' ? SMA_ResultV3 :
+                            current_instrument == 'qs3' && current_reagent == 'accuinSma2' ? SMA_ResultV2 :
+                            SMA_ResultV1;
+    const sample_list = used_SMA_Result.resultList.map(result=>result.sample_name);
+    const exportResult = sample_list.map((sample_name, index)=>{
+      return EXPORT_RESULT(
+        index+1,
+        sample_name,
+        '',
+        [],
+        'not-set',
+        'not-set'
+      )
+    })
 
     // 製作 ANALYSIS_RESULT
     const AnalysisResult = ANALYSIS_RESULT(
@@ -202,7 +220,8 @@ async function onSubmit() {
           V1: SMA_ResultV1,
           V2: SMA_ResultV2,
           V3: SMA_ResultV3,
-        }
+        },
+        exportResult
       );
 
     // 將結果存到 firestore

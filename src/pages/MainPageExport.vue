@@ -1,20 +1,32 @@
 <template>
-  <q-page class="flex flex-center">
-    <div class="text-h1">
-      Export Page!
+  <q-page>
+    <div class="row justify-between q-mt-lg q-mx-xl">
+      <div class="col">
+        <ReportPreview />
+      </div>
+    </div>
+    <div class="row justify-between q-mt-lg q-mx-xl q-pb-lg">
+      <div class="col">
+        Report Export
+      </div>
     </div>
   </q-page>
 </template>
 
 <script setup>
-
-import { onMounted } from 'vue';
+// 導入模組
+import { onMounted, computed } from 'vue';
 import { useQuasar } from 'quasar';
 import { useRouter } from 'vue-router';
 import { useStore } from 'vuex';
 
 // 導入模組 composable
 import { useValidateAccountStatus } from '@/composables/accessStoreUserInfo.js';
+
+// 元件
+import ReportPreview from '@/components/ExportPageViews/ReportPreview.vue';
+// import ReportExport from '@/components/ExportPageViews/ReportExport.vue';
+
 
 // 取得 Quasar 和 Router 和 store
 const $q = useQuasar();
@@ -27,4 +39,11 @@ onMounted(() => {
   useValidateAccountStatus($q, router, store);
 });
 
+const settingProps = computed(() => {
+  return store.state.data.settingProps;
+});
+
+const qualityControlProps = computed(() => {
+  return store.state.data.qualityControlProps;
+});
 </script>

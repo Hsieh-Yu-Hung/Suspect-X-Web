@@ -430,19 +430,6 @@ onMounted(async () => {
 
   // 更新圖表
   updateFxChart();
-
-  // 更新導出結果
-  const updated = resultTableFxProps.value.map((row, index) => ({
-    index: index + 1,
-    sampleId: row.sampleId,
-    result: row.position,
-    resultLabel: [row.repeats],
-    assessment: interpretation(row.assessment),
-    assessmentLabel: row.assessment
-  }));
-
-  store.commit("FXS_analysis_data/updateExportResults", updated);
-
 });
 
 // 組件卸載時移除事件監聽器
