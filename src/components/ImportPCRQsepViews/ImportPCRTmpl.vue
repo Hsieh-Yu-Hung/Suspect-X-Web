@@ -362,14 +362,12 @@ async function onSubmit() {
     // 隱藏 loading 視窗
     $q.loading.hide();
 
-    /*
     // 跳轉到分析結果頁面
     setTimeout(()=>{
       router.push({
         path: '/page-preview',
       });
     }, 500);
-    */
   }
   else if (analysisResult.status == 'error'){
     // 通知

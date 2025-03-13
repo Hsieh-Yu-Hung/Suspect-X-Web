@@ -185,6 +185,7 @@
               v-model="editSubjectInfo[props.key].idNumber"
               @update:model-value="(val) => editSubjectInfo = {index: props.key, col: 'idNumber', update: val}"
               color="deep-orange"
+              dense
               :disable="!editSubjectInfo[props.key].edit"
             />
           </q-td>
@@ -852,7 +853,6 @@ onMounted(async () => {
 
   // 如果當前分析結果不存在, 則跳出
   if (!currentAnalysisResult.value) {
-    showResult.value = false;
     return;
   }
 
@@ -863,6 +863,11 @@ onMounted(async () => {
   const used_analysis_name = currentAnalysisResult.value.analysis_name;
   const used_reagent = used_analysis_name !== 'SMA' ? currentAnalysisResult.value.config.reagent : currentAnalysisResult.value.config.V1.reagent;
   getVisibleColumns(used_analysis_name, used_reagent);
+
+  // 取得 current_Selected_index
+  const current_Selected_index = selectedExport.value.map(selected => selected.index);
+  const current_Selected_export = exportSampleInfo.value.filter(selected => current_Selected_index.includes(selected.index));
+  store.commit("analysis_setting/updateSelectedExport", current_Selected_export);
 });
 
 // 監聽 subjectFile
@@ -870,6 +875,9 @@ watch(subjectFile, async (newVal, oldVal) => {
   // 如果 newVal 和 oldVal 不同, 則上傳檔案
   if (newVal && newVal !== oldVal) {
     subjectInfo.value = await uploadAndParseSubjectInfo(newVal);
+
+    // 清空 selectedExport
+    selectedExport.value = [];
   }
 });
 

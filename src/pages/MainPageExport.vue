@@ -7,7 +7,7 @@
     </div>
     <div class="row justify-between q-mt-lg q-mx-xl q-pb-lg">
       <div class="col">
-        Report Export
+        <ReportExport />
       </div>
     </div>
   </q-page>
@@ -25,7 +25,7 @@ import { useValidateAccountStatus } from '@/composables/accessStoreUserInfo.js';
 
 // 元件
 import ReportPreview from '@/components/ExportPageViews/ReportPreview.vue';
-// import ReportExport from '@/components/ExportPageViews/ReportExport.vue';
+import ReportExport from '@/components/ExportPageViews/ReportExport.vue';
 
 
 // 取得 Quasar 和 Router 和 store
