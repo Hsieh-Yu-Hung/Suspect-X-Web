@@ -207,18 +207,5 @@ onMounted(async () => {
   if (!resultTableNudt15Props.value) {
     return;
   }
-
-  // 更新導出結果
-  const updated = resultTableNudt15Props.value.map((row, index) => ({
-    index: index + 1,
-    sampleId: row.sampleId,
-    result: row.type,
-    resultLabel: row.nudt15Type,
-    assessment: row.assessment,
-    assessmentLabel: assessment(row.assessment),
-    well: row.well
-  }));
-
-  store.commit("NUDT15_analysis_data/updateExportResults", updated);
 });
 </script>

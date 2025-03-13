@@ -265,10 +265,15 @@
 import { ref, computed, watch, onMounted } from "vue";
 import { useStore } from "vuex";
 import { updateGetUserInfo } from '@/composables/accessStoreUserInfo';
+import { update_userAnalysisData } from '@/firebase/firebaseDatabase';
 import { getCurrentDisplayAnalysisID, getCurrentAnalysisResult } from '@/composables/checkAnalysisStatus.js';
 
 // 定義 store
 const store = useStore();
+
+// 使用者身份
+const is_login = ref(false);
+const user_info = ref(null);
 
 // 保存當前分析結果
 const showResult = ref(true);
@@ -566,30 +571,39 @@ const showFigure = (well, smn1, smn2) => {
 
 // 更新導出結果
 const updateExportResults = () => {
-  const updated = resultTableSmaProps.value.map((row, index) => {
-    const smn1 = row.smn1Type[smn1Version.value];
-    const smn2 = row.smn2Type[smn2Version.value];
-    const smnInterpretation = qc_status.value === 'meet-the-criteria'
-      ? smnTypeInterpretation(smn1, smn2)
-      : { value: 'inconclusive', label: 'Inconclusive' };
 
-    return {
-      index: index + 1,
-      sampleId: row.sampleId,
-      result: qc_status.value === 'meet-the-criteria'
-        ? `${smn1}:${smn2}`
-        : '-',
-      resultLabel: qc_status.value === 'meet-the-criteria'
-        ? [`${smn1}:${smn2}`]
-        : ['-'],
-      assessment: smnInterpretation.value.includes("affected")
-        ? "affected"
-        : smnInterpretation.value,
-      assessmentLabel: smnInterpretation.label
-    };
+  const ResultData = Object.values(currentAnalysisResult.value.resultObj);
+  let export_result = JSON.parse(JSON.stringify(currentAnalysisResult.value.exportResult));
+  export_result.forEach(item => {
+
+    // 取得 sample_name
+    const sample_name = item.sampleId;
+
+    // 取得 smn1Type 和 smn2Type
+    const smn1Type = ResultData[smn1Version.value].resultList.find(item => item.sample_name === sample_name).smn1_Type;
+    const smn2Type = ResultData[smn2Version.value].resultList.find(item => item.sample_name === sample_name).smn2_Type;
+
+    // 更新 result
+    item.result = `${smn1Type}:${smn2Type}`;
+    item.resultLabel = [`${smn1Type}:${smn2Type}`];
+
+    // 取得 QC 狀態
+    const qc_status = currentAnalysisResult.value.qc_status.V1;
+
+    // 取得 assessment 和 assessmentLabel
+    const smnInterpretation = qc_status === 'meet-the-criteria'
+      ? smnTypeInterpretation(smn1Type, smn2Type)
+      : { value: 'inconclusive', label: 'Inconclusive' };
+    item.assessment = smnInterpretation.value;
+    item.assessmentLabel = smnInterpretation.label;
   });
 
-  store.commit("SMA_analysis_data/updateExportResults", updated);
+  // 更新 export results
+  currentAnalysisResult.value.exportResult = export_result;
+
+  // 更新至 firestore
+  const dbSMAResultPath = 'sma_result';
+  update_userAnalysisData(user_info.value.uid, dbSMAResultPath, currentAnalysisResult.value, currentAnalysisResult.value.analysis_id);
 };
 
 // 更新 SMA 結果
@@ -630,6 +644,11 @@ function updateSmaResult(smaResult) {
 // 生命週期鉤子
 onMounted(async () => {
 
+  // 取得使用者身份
+  const { login_status } = updateGetUserInfo();
+  is_login.value = login_status.value.is_login;
+  user_info.value = login_status.value.user_info;
+
   // 取得 currentDisplayAnalysisID
   currentDisplayAnalysis.value = getCurrentDisplayAnalysisID();
 
@@ -645,6 +664,12 @@ onMounted(async () => {
     return;
   }
 
+  /* TODO: 用 dev mode 開關控制*/
+  // 取得 resultSMNVersion
+  const getSMAVersion = store.getters["SMA_analysis_data/resultSMNVersion"];
+  smn1Version.value = getSMAVersion.smn1;
+  smn2Version.value = getSMAVersion.smn2;
+
   // 更新 SMA 結果
   updateSmaResult(currentAnalysisResult.value);
 
@@ -654,7 +679,16 @@ onMounted(async () => {
 
 // 監聽器
 watch([smn1Version, smn2Version], () => {
+
+  // 更新 export results
   updateExportResults();
+
+  // 更新 resultSMNVersion
+  store.commit("SMA_analysis_data/updateResultSMNVersion", {
+    smn1: smn1Version.value,
+    smn2: smn2Version.value,
+  });
+
 });
 
 </script>

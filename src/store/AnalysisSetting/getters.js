@@ -14,10 +14,6 @@ export const getCurrentDisplayAnalysisID = (state) => {
   return state.currentDisplayAnalysisID;
 };
 
-export const getSMAv4ReanalyseSelection = (state) => {
-  return state.SMAv4ReanalyseSelection;
-};
-
-export const getSMAv4ReanalysePeakSettings = (state) => {
-  return state.SMAv4ReanalysePeakSettings;
+export const getSelectedExport = (state) => {
+  return state.selectedExport;
 };

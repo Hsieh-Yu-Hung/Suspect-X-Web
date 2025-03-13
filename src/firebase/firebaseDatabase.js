@@ -86,7 +86,7 @@ export const LOG_DATA = (id, log_level, log_message, log_time, log_source, log_u
 }
 
 // 定義分析結果資料結構
-export const ANALYSIS_RESULT = (analysis_name, analysis_id, config, control_ids, qc_status, qc_message, resultObj) => {
+export const ANALYSIS_RESULT = (analysis_name, analysis_id, config, control_ids, qc_status, qc_message, resultObj, exportResult) => {
   const current_time = moment().format('YYYY-MM-DD HH:mm:ss');
   const analysisRes = {
     analysis_name: analysis_name,
@@ -96,9 +96,23 @@ export const ANALYSIS_RESULT = (analysis_name, analysis_id, config, control_ids,
     qc_status: qc_status,
     qc_message: qc_message,
     resultObj: resultObj,
+    exportResult: exportResult,
     analysis_time: current_time
   }
   return analysisRes;
+}
+
+// 定義 Export Page Result 資料結構
+export const EXPORT_RESULT = (index, sampleId, result, resultLabel, assessment, assessmentLabel, well=null) => {
+  return {
+    index: index,
+    sampleId: sampleId,
+    result: result,
+    resultLabel: resultLabel,
+    assessment: assessment,
+    assessmentLabel: assessmentLabel,
+    well: well
+  }
 }
 
 // 取得 firestore

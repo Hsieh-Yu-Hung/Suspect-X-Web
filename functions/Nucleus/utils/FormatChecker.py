@@ -184,7 +184,7 @@ class FileFormatChecker:
         # 如果所有關鍵字都存在，返回 True
         if not all(check):
           self.check_status = CheckStatus.problem
-          self.error_message = f"找不到其中一些關鍵字：{keywords} 檔案：{file_path}"
+          self.error_message = f"找不到其中一些關鍵字：{keywords} 檔案：{os.path.basename(file_path)}"
           return False
         else:
           self.check_status = CheckStatus.fine

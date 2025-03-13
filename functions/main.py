@@ -14,10 +14,11 @@
 
 # 導入模組
 import json
+import traceback
 from firebase_functions import https_fn, options
 from config_admin import bucket
 from Nucleus import Core
-import traceback
+from subjectInfo import *
 
 # 載入環境變數
 from config_env import load_env
@@ -64,6 +65,36 @@ def RunAnalysis(req: https_fn.Request):
         response_data = {"data": {"status": "success", "message": "Analysis finished", "result": result}}
 
     except Exception as e:
-        response_data = {"data": {"status": "error", "message": str(e) + " " + str(traceback.format_exc())}}
+        response_data = {"data": {"status": "error", "message": str(e)}}
+
+    return https_fn.Response(json.dumps(response_data), content_type="application/json")
+
+# 處理 subject info 的解析
+@https_fn.on_request(region="asia-east1", cors=options.CorsOptions(cors_origins="*", cors_methods=["get", "post"]), memory=1024)
+def ParseSubjectInfo(req: https_fn.Request):
+
+    # 回傳 message
+    response_data = {"data": {"status": "pending","message": "Waiting to start parsing subject info..."}}
+
+    # 開始解析
+    try:
+
+        # 取得 input data
+        input_data = json.loads(req.data.decode("utf-8"))["data"]
+
+        # storage path
+        storage_path = input_data["file_path"]
+
+        # 下載檔案
+        local_file_path = download_file_from_storage(bucket, storage_path)
+
+        # 解析檔案
+        subject_info = parse_subject_info(local_file_path)
+
+        # 回傳 response
+        response_data = {"data": {"status": "success", "message": "Subject info parsed", "result": subject_info}}
+
+    except Exception as e:
+        response_data = {"data": {"status": "error", "message": str(e) + "\n" + traceback.format_exc()}}
 
     return https_fn.Response(json.dumps(response_data), content_type="application/json")

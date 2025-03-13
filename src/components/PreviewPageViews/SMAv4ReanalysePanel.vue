@@ -75,7 +75,7 @@ async function reAnalysis() {
 // 將 re_analyse_selection 存到 store
 function saveReAnalyseSelection() {
   const copy_of_re_analyse_selection = JSON.parse(JSON.stringify(re_analyse_selection.value));
-  store.commit("analysis_setting/saveReAnalyseSelection", copy_of_re_analyse_selection);
+  store.commit("SMAv4_analysis_data/saveReAnalyseSelection", copy_of_re_analyse_selection);
 }
 
 // 更新 Peak 選擇範圍

@@ -97,8 +97,7 @@ import { updateGetUserInfo } from '@/composables/accessStoreUserInfo';
 import { submitWorkflow } from '@/composables/submitWorkflow';
 import { CATEGORY_LIST } from '@/composables/storageManager';
 import { setAnalysisID } from '@/composables/checkAnalysisStatus';
-import { ANALYSIS_RESULT, simplifyFilePath } from '@/firebase/firebaseDatabase';
-import { update_userAnalysisData } from '@/firebase/firebaseDatabase';
+import { ANALYSIS_RESULT, simplifyFilePath, EXPORT_RESULT, update_userAnalysisData } from '@/firebase/firebaseDatabase';
 import loggerV2 from '@/composables/loggerV2';
 
 // consts
@@ -139,6 +138,21 @@ const APOE_RESULT = (control1List, control2List, sampleObjList, resultObj) => {
     assessmentResult: resultObj
   }
 }
+
+// 評估結果
+const assessment = (value) => {
+  if (value === 'low-risk') {
+    return "Low risk";
+  } else if (value === 'normal-risk') {
+    return "Normal risk";
+  } else if (value === 'high-risk') {
+    return "High risk";
+  } else if (value === 'inconclusive') {
+    return "Inconclusive";
+  } else {
+    return "Invalid";
+  }
+};
 
 // 送出表單
 async function onSubmit() {
@@ -191,6 +205,21 @@ async function onSubmit() {
       resultObj.result
     );
 
+    // Export Result
+    const sample_ids = Object.keys(resultObj.result);
+    const exportResult = sample_ids.map((sample_id, index) => {
+      const resultList = resultObj.result[sample_id].rfu_status.map((rfu) => {return rfu.peak_group})
+      const sortedResultList = resultList.sort((a, b) => {return a.localeCompare(b)});
+      return EXPORT_RESULT(
+        index+1,
+        sample_id,
+        sortedResultList.join(""),
+        [sortedResultList.join("/")],
+        resultObj.result[sample_id].assessment,
+        assessment(resultObj.result[sample_id].assessment)
+      );
+    });
+
     // 製作 ANALYSIS_RESULT
     const AnalysisResult = ANALYSIS_RESULT(
       currentAnalysisID.value.analysis_name,
@@ -199,7 +228,8 @@ async function onSubmit() {
       controlIDs,
       resultObj.qc_status,
       resultObj.errMsg,
-      APOE_Result
+      APOE_Result,
+      exportResult
     );
 
     // 將結果存到 firestore

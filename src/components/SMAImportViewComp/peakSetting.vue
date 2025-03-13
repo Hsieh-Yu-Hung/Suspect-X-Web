@@ -268,7 +268,7 @@ export default {
     // 將 current settings 存到 store
     function saveCurrentPeakSettings() {
       const copy_of_currentSettings = JSON.parse(JSON.stringify(currentSettings.value));
-      $store.commit("analysis_setting/saveSMAv4ReanalysePeakSettings", copy_of_currentSettings);
+      $store.commit("SMAv4_analysis_data/saveSMAv4ReanalysePeakSettings", copy_of_currentSettings);
     }
 
     // 更新 SMN1 的 Peak 選擇範圍

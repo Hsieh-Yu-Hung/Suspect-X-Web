@@ -6,301 +6,305 @@
     :error_message="dialog_error_message"
   />
 
-  <!-- 結果評估版面 -->
-  <q-card bordered>
-    <q-card-section>
+  <div v-if="showResult">
 
-      <!-- 標題 -->
-      <div class="row justify-center" style="display: flex; flex-direction: column; justify-content: center; align-items: center;">
-        <span class="text-h5 text-bold text-blue-grey-7 text-uppercase">Screening results</span>
-      </div>
-
-      <!-- 評估結果內容 -->
-      <div class="row" style="margin-top: 30px;">
-
-        <!-- 評估結果 -->
-        <div class="col result-box">
-          <span class="row text-h6 text-bold text-blue-grey-7 text-uppercase justify-center">Assessment</span>
-          <div class="col" style="margin-top: 20px; width: 100%;">
-            <SMAv4AssessmentTable ref="assessment_table" :result_table_row="screening_table_rows" />
-          </div>
-        </div>
-
-        <!-- 示意圖 -->
-        <div class="col result-box">
-          <span class="row text-h6 text-bold text-blue-grey-7 text-uppercase justify-center">Result Diagram</span>
-
-          <!-- 分頁 -->
-          <div class="q-pa-md">
-            <q-carousel
-              v-model="slide"
-              transition-prev="slide-right"
-              transition-next="slide-left"
-              animated
-              control-color="primary"
-              class="rounded-borders"
-            >
-
-              <!-- Sample 頁面 -->
-              <q-carousel-slide v-for="(option, index) in diagram_options" :key="index" :name="option.value" class="column no-wrap flex-center">
-                <div class="q-mt-md text-center">
-                  <!-- 示意圖 -->
-                  <div class="col" style="display: flex; justify-content: center; align-items: center; width: 100%;">
-                    <img
-                      v-if="option.smn1 > 0 && option.smn2 > 0"
-                      :src="`diagram/${option.smn1}_${option.smn2}-1.svg`"
-                      :alt="`${option.smn1}_${option.smn2}-1.svg`"
-                      style="width: 100%; height: auto;">
-                    <div v-else>
-                      <span class="text-h6 text-bold text-red-8">Invalid Assessment</span>
-                    </div>
-                  </div>
-                  <!-- 說明文字 -->
-                  <div class="col" style="display: flex; justify-content: flex-start; align-items: center; width: 100%; margin-top: 30px;">
-                    <span class="text-h6 text-bold text-grey-8">Sample: {{ option.value }}</span>
-                  </div>
-                </div>
-              </q-carousel-slide>
-            </q-carousel>
-
-            <!-- 頁面切換 -->
-            <div class="row justify-center">
-              <q-btn-toggle
-                glossy
-                v-model="slide"
-                :options="diagram_options"
-              />
-            </div>
-
-          </div>
-
-        </div>
-
-      </div>
-    </q-card-section>
-  </q-card>
-
-    <!-- 結果表 -->
-  <q-card bordered style="margin-top: 25px; width: fit-content;">
-
-    <!-- 結果圖表版面 -->
-    <q-card-section>
-      <div class="row" style="display: flex; flex-direction: row; justify-content: center; width: fit-content;">
+    <!-- 結果評估版面 -->
+    <q-card bordered>
+      <q-card-section>
 
         <!-- 標題 -->
-        <div class="result-box" style="border: none;">
-          <span class="text-h5 text-bold text-blue-grey-7 text-uppercase">Summary Data</span>
+        <div class="row justify-center" style="display: flex; flex-direction: column; justify-content: center; align-items: center;">
+          <span class="text-h5 text-bold text-blue-grey-7 text-uppercase">Screening results</span>
         </div>
 
-        <!-- 結果內容 -->
-        <div style="width: 100%; display: flex; flex-direction: row; flex-wrap: wrap; justify-content: center; align-items: center;">
+        <!-- 評估結果內容 -->
+        <div class="row" style="margin-top: 30px;">
 
-          <!-- 數值表格 -->
-          <div class="row q-pa-md" style="height: 720px;">
-
-            <!-- 開發工具 -->
-            <div :style="{ 'display': devPanelDisplay, 'width': '700px'}">
-              <SMAv4DevlopPanel
-                :range_table="range_table"
-                ref="devPanel"
-                @update-range-table="updatePlotlyChart(line_display_selection)"/>
-            </div>
-
-            <!-- 數值表格 -->
-            <div :style="{ 'display': dataPanelDisplay, 'min-width': '700px'}">
-              <q-table
-                class="my-sticky-dynamic"
-                flat
-                bordered
-                :rows="screening_table_rows"
-                :columns="screening_table_columns"
-                row-key="no"
-                :visible-columns="visibleColumns"
-                :rows-per-page-options="[0, 10, 20]"
-                style="height: 680px; width: 700px;"
-                virtual-scroll
-              >
-
-                <!-- 標題區域 -->
-                <template v-slot:top>
-                  <div class="q-mg-md row" style="align-items: center;margin-top: 10px;">
-                    <div class="row text-h6 text-bold text-blue-grey-7">
-                      Summary Data
-                    </div>
-                    <div class="row">
-                      <div class="q-ml-md row">
-                        <q-btn
-                          v-if="true"
-                          class="row q-ma-sm"
-                          color="purple"
-                          padding="xs"
-                          flat
-                          icon="restart_alt"
-                          label="Reset"
-                          @click="reset_table_value"/>
-                      </div>
-                      <q-toggle
-                        style="margin-right: 10px;"
-                        v-model="show_standard_data"
-                        label="Std."
-                        color="red"
-                      />
-                      <q-toggle
-                        style="margin-right: 20px;"
-                        v-model="show_sample_data"
-                        label="Sample"
-                        color="teal"
-                      />
-                      <q-select
-                        v-model="current_smn_options"
-                        :options="smn_options"
-                        :display-value="current_smn_options.toUpperCase()"
-                        option-value="value"
-                        options-cover
-                        outlined
-                        dense
-                        options-dense
-                        emit-value
-                        map-options
-                        style="min-width: 120px; margin-top: 5px; margin-inline: 10px;"
-                      />
-                      <q-select
-                        v-model="visibleColumns"
-                        multiple
-                        outlined
-                        dense
-                        options-dense
-                        :display-value="$q.lang.table.columns"
-                        emit-value
-                        map-options
-                        :options="screening_table_columns"
-                        option-value="name"
-                        options-cover
-                        style="min-width: 120px; margin-top: 5px;"
-                      />
-                    </div>
-                  </div>
-                </template>
-
-                <!-- 表格標題-->
-                <template v-slot:header="props">
-                  <q-tr>
-                    <q-th key="no" :props="props"><div class="table-header"><span>No.</span></div></q-th>
-                    <q-th key="sample" :props="props"><div class="table-header"><span>Sample</span></div></q-th>
-                    <q-th key="smn" :props="props"><div class="table-header"><span>SMN</span></div></q-th>
-                    <q-th key="ic" :props="props"><div class="table-header"><span>Internal Control</span></div></q-th>
-                    <q-th key="tg" :props="props"><div class="table-header"><span>Target</span></div></q-th>
-                    <q-th key="diff" :props="props"><div class="table-header"><span>delta T/C</span></div></q-th>
-                    <q-th key="num" :props="props"><div class="table-header"><span>Copy Number</span></div></q-th>
-                    <q-th key="type" :props="props"><div class="table-header"><span>Sample Type</span></div></q-th>
-                  </q-tr>
-                </template>
-
-                <!-- 表格內容 -->
-                <template v-slot:body="props">
-                  <q-tr
-                    :props="props"
-                    class="text-center"
-                    v-show="((show_standard_data && props.row.type === 'standard') && (current_smn_options === 'SMN1/2' || props.row.smn === current_smn_options)) ||
-                    ((show_sample_data && props.row.type === 'sample') && (current_smn_options === 'SMN1/2' || props.row.smn === current_smn_options))"
-                  >
-                    <q-td key="no" :props="props">
-                      {{ props.row.no }}
-                    </q-td>
-                    <q-td key="sample" :props="props">
-                      {{ props.row.sample_name }}
-                    </q-td>
-                    <q-td key="smn" :props="props">
-                      {{ props.row.smn }}
-                    </q-td>
-                    <q-td key="ic" :props="props">
-                      {{ props.row.ic }}
-                    </q-td>
-                    <q-td key="tg" :props="props">
-                      {{ props.row.tg }}
-                    </q-td>
-                    <q-td key="diff" :props="props" style="min-width: 100px;">
-                      <q-input
-                        v-model.number="props.row.diff"
-                        type="number"
-                        dense
-                        borderless
-                        filled
-                        step="0.01"
-                        input-style="text-align: center;"
-                        v-if="true"
-                      />
-                      <span v-else>{{ props.row.diff }}</span>
-                    </q-td>
-                    <q-td key="num" :props="props">
-                      {{ props.row.num }}
-                    </q-td>
-                    <q-td key="type" :props="props">
-                      {{ props.row.type }}
-                    </q-td>
-                  </q-tr>
-                </template>
-
-              </q-table>
+          <!-- 評估結果 -->
+          <div class="col result-box">
+            <span class="row text-h6 text-bold text-blue-grey-7 text-uppercase justify-center">Assessment</span>
+            <div class="col" style="margin-top: 20px; width: 100%;">
+              <SMAv4AssessmentTable ref="assessment_table" :result_table_row="screening_table_rows" />
             </div>
           </div>
 
-          <!-- 圖表版面 -->
-          <div class="col q-pa-md std-curve-box">
+          <!-- 示意圖 -->
+          <div class="col result-box">
+            <span class="row text-h6 text-bold text-blue-grey-7 text-uppercase justify-center">Result Diagram</span>
 
-            <!-- 標題列 -->
-            <div class="row">
-              <div class="row q-pa-md text-h6 text-bold text-blue-grey-7 center-content">
-                <span>Standard Curve Plot</span>
-              </div>
-              <q-btn
-                v-if="true"
-                class="row q-ma-sm"
-                color="teal"
-                padding="xs"
-                flat
-                icon="table_view"
-                label="Re-cal"
-                @click="calculateNewSmaRange"
-              />
-              <q-btn
-                v-if="true"
-                class="row q-ma-sm"
-                color="indigo"
-                padding="xs"
-                flat
-                icon="table_view"
-                label="Adjust"
-                @click="show_Range_control_panel"
-              />
-              <div class="q-mg-sm center-content">
-                <q-radio
-                  keep-color
-                  v-model="line_display_selection"
-                  val="smn1"
-                  label="SMN1"
-                  color="red"
+            <!-- 分頁 -->
+            <div class="q-pa-md">
+              <q-carousel
+                v-model="slide"
+                transition-prev="slide-right"
+                transition-next="slide-left"
+                animated
+                control-color="primary"
+                class="rounded-borders"
+              >
+
+                <!-- Sample 頁面 -->
+                <q-carousel-slide v-for="(option, index) in diagram_options" :key="index" :name="option.value" class="column no-wrap flex-center">
+                  <div class="q-mt-md text-center">
+                    <!-- 示意圖 -->
+                    <div class="col" style="display: flex; justify-content: center; align-items: center; width: 100%;">
+                      <img
+                        v-if="option.smn1 > 0 && option.smn2 > 0"
+                        :src="`diagram/${option.smn1}_${option.smn2}-1.svg`"
+                        :alt="`${option.smn1}_${option.smn2}-1.svg`"
+                        style="width: 100%; height: auto;">
+                      <div v-else>
+                        <span class="text-h6 text-bold text-red-8">Invalid Assessment</span>
+                      </div>
+                    </div>
+                    <!-- 說明文字 -->
+                    <div class="col" style="display: flex; justify-content: flex-start; align-items: center; width: 100%; margin-top: 30px;">
+                      <span class="text-h6 text-bold text-grey-8">Sample: {{ option.value }}</span>
+                    </div>
+                  </div>
+                </q-carousel-slide>
+              </q-carousel>
+
+              <!-- 頁面切換 -->
+              <div class="row justify-center">
+                <q-btn-toggle
+                  glossy
+                  v-model="slide"
+                  :options="diagram_options"
                 />
-                <q-radio
-                  keep-color
-                  v-model="line_display_selection"
-                  val="smn2"
-                  label="SMN2"
-                  color="blue"
-                />
               </div>
+
             </div>
 
-            <!-- 互動式圖表 -->
-            <div ref="plotlyChart" style="width: 100%; height: 90%;"></div>
-            </div>
+          </div>
 
         </div>
+      </q-card-section>
+    </q-card>
 
-      </div>
-    </q-card-section>
+      <!-- 結果表 -->
+    <q-card bordered style="margin-top: 25px; width: fit-content;">
 
-  </q-card>
+      <!-- 結果圖表版面 -->
+      <q-card-section>
+        <div class="row" style="display: flex; flex-direction: row; justify-content: center; width: fit-content;">
+
+          <!-- 標題 -->
+          <div class="result-box" style="border: none;">
+            <span class="text-h5 text-bold text-blue-grey-7 text-uppercase">Summary Data</span>
+          </div>
+
+          <!-- 結果內容 -->
+          <div style="width: 100%; display: flex; flex-direction: row; flex-wrap: wrap; justify-content: center; align-items: center;">
+
+            <!-- 數值表格 -->
+            <div class="row q-pa-md" style="height: 720px;">
+
+              <!-- 開發工具 -->
+              <div :style="{ 'display': devPanelDisplay, 'width': '700px'}">
+                <SMAv4DevlopPanel
+                  :range_table="range_table"
+                  ref="devPanel"
+                  @update-range-table="updatePlotlyChart(line_display_selection)"/>
+              </div>
+
+              <!-- 數值表格 -->
+              <div :style="{ 'display': dataPanelDisplay, 'min-width': '700px'}">
+                <q-table
+                  class="my-sticky-dynamic"
+                  flat
+                  bordered
+                  :rows="screening_table_rows"
+                  :columns="screening_table_columns"
+                  row-key="no"
+                  :visible-columns="visibleColumns"
+                  :rows-per-page-options="[0, 10, 20]"
+                  style="height: 680px; width: 700px;"
+                  virtual-scroll
+                >
+
+                  <!-- 標題區域 -->
+                  <template v-slot:top>
+                    <div class="q-mg-md row" style="align-items: center;margin-top: 10px;">
+                      <div class="row text-h6 text-bold text-blue-grey-7">
+                        Summary Data
+                      </div>
+                      <div class="row">
+                        <div class="q-ml-md row">
+                          <q-btn
+                            v-if="true"
+                            class="row q-ma-sm"
+                            color="purple"
+                            padding="xs"
+                            flat
+                            icon="restart_alt"
+                            label="Reset"
+                            @click="reset_table_value"/>
+                        </div>
+                        <q-toggle
+                          style="margin-right: 10px;"
+                          v-model="show_standard_data"
+                          label="Std."
+                          color="red"
+                        />
+                        <q-toggle
+                          style="margin-right: 20px;"
+                          v-model="show_sample_data"
+                          label="Sample"
+                          color="teal"
+                        />
+                        <q-select
+                          v-model="current_smn_options"
+                          :options="smn_options"
+                          :display-value="current_smn_options.toUpperCase()"
+                          option-value="value"
+                          options-cover
+                          outlined
+                          dense
+                          options-dense
+                          emit-value
+                          map-options
+                          style="min-width: 120px; margin-top: 5px; margin-inline: 10px;"
+                        />
+                        <q-select
+                          v-model="visibleColumns"
+                          multiple
+                          outlined
+                          dense
+                          options-dense
+                          :display-value="$q.lang.table.columns"
+                          emit-value
+                          map-options
+                          :options="screening_table_columns"
+                          option-value="name"
+                          options-cover
+                          style="min-width: 120px; margin-top: 5px;"
+                        />
+                      </div>
+                    </div>
+                  </template>
+
+                  <!-- 表格標題-->
+                  <template v-slot:header="props">
+                    <q-tr>
+                      <q-th key="no" :props="props"><div class="table-header"><span>No.</span></div></q-th>
+                      <q-th key="sample" :props="props"><div class="table-header"><span>Sample</span></div></q-th>
+                      <q-th key="smn" :props="props"><div class="table-header"><span>SMN</span></div></q-th>
+                      <q-th key="ic" :props="props"><div class="table-header"><span>Internal Control</span></div></q-th>
+                      <q-th key="tg" :props="props"><div class="table-header"><span>Target</span></div></q-th>
+                      <q-th key="diff" :props="props"><div class="table-header"><span>delta T/C</span></div></q-th>
+                      <q-th key="num" :props="props"><div class="table-header"><span>Copy Number</span></div></q-th>
+                      <q-th key="type" :props="props"><div class="table-header"><span>Sample Type</span></div></q-th>
+                    </q-tr>
+                  </template>
+
+                  <!-- 表格內容 -->
+                  <template v-slot:body="props">
+                    <q-tr
+                      :props="props"
+                      class="text-center"
+                      v-show="((show_standard_data && props.row.type === 'standard') && (current_smn_options === 'SMN1/2' || props.row.smn === current_smn_options)) ||
+                      ((show_sample_data && props.row.type === 'sample') && (current_smn_options === 'SMN1/2' || props.row.smn === current_smn_options))"
+                    >
+                      <q-td key="no" :props="props">
+                        {{ props.row.no }}
+                      </q-td>
+                      <q-td key="sample" :props="props">
+                        {{ props.row.sample_name }}
+                      </q-td>
+                      <q-td key="smn" :props="props">
+                        {{ props.row.smn }}
+                      </q-td>
+                      <q-td key="ic" :props="props">
+                        {{ props.row.ic }}
+                      </q-td>
+                      <q-td key="tg" :props="props">
+                        {{ props.row.tg }}
+                      </q-td>
+                      <q-td key="diff" :props="props" style="min-width: 100px;">
+                        <q-input
+                          v-model.number="props.row.diff"
+                          type="number"
+                          dense
+                          borderless
+                          filled
+                          step="0.01"
+                          input-style="text-align: center;"
+                          v-if="true"
+                        />
+                        <span v-else>{{ props.row.diff }}</span>
+                      </q-td>
+                      <q-td key="num" :props="props">
+                        {{ props.row.num }}
+                      </q-td>
+                      <q-td key="type" :props="props">
+                        {{ props.row.type }}
+                      </q-td>
+                    </q-tr>
+                  </template>
+
+                </q-table>
+              </div>
+            </div>
+
+            <!-- 圖表版面 -->
+            <div class="col q-pa-md std-curve-box">
+
+              <!-- 標題列 -->
+              <div class="row">
+                <div class="row q-pa-md text-h6 text-bold text-blue-grey-7 center-content">
+                  <span>Standard Curve Plot</span>
+                </div>
+                <q-btn
+                  v-if="true"
+                  class="row q-ma-sm"
+                  color="teal"
+                  padding="xs"
+                  flat
+                  icon="table_view"
+                  label="Re-cal"
+                  @click="calculateNewSmaRange"
+                />
+                <q-btn
+                  v-if="true"
+                  class="row q-ma-sm"
+                  color="indigo"
+                  padding="xs"
+                  flat
+                  icon="table_view"
+                  label="Adjust"
+                  @click="show_Range_control_panel"
+                />
+                <div class="q-mg-sm center-content">
+                  <q-radio
+                    keep-color
+                    v-model="line_display_selection"
+                    val="smn1"
+                    label="SMN1"
+                    color="red"
+                  />
+                  <q-radio
+                    keep-color
+                    v-model="line_display_selection"
+                    val="smn2"
+                    label="SMN2"
+                    color="blue"
+                  />
+                </div>
+              </div>
+
+              <!-- 互動式圖表 -->
+              <div ref="plotlyChart" style="width: 100%; height: 90%;"></div>
+              </div>
+
+          </div>
+
+        </div>
+      </q-card-section>
+
+    </q-card>
+
+  </div>
 
 </template>
 
@@ -317,7 +321,7 @@ import { v4 as uuidv4 } from 'uuid';
 // 導入 composable
 import { submitWorkflow } from '@/composables/submitWorkflow';
 import { updateGetUserInfo } from '@/composables/accessStoreUserInfo';
-import { update_userAnalysisData, ANALYSIS_RESULT } from '@/firebase/firebaseDatabase';
+import { update_userAnalysisData, ANALYSIS_RESULT, EXPORT_RESULT } from '@/firebase/firebaseDatabase';
 import { getCurrentDisplayAnalysisID, getCurrentAnalysisResult } from '@/composables/checkAnalysisStatus.js';
 import { setAnalysisID } from '@/composables/checkAnalysisStatus';
 
@@ -546,6 +550,9 @@ const range_table = ref({});
 
 // 定義 Database 路徑
 const dbSMAv4ResultPath = 'sma_v4_result';
+
+// 控制 ResultViewSMAv4 的顯示
+const showResult = ref(true);
 
 /* Functions */
 
@@ -1021,7 +1028,7 @@ function show_Range_control_panel(){
 
 // 更新current_peak_condition
 function update_current_peak_condition(){
-  const current_peak_settings = store.getters['analysis_setting/getSMAv4ReanalysePeakSettings']
+  const current_peak_settings = store.getters['SMAv4_analysis_data/getSMAv4ReanalysePeakSettings']
   const new_smn1_IC_range = current_peak_settings.smn1.internalControlPeak.peak_select_range
   const new_smn1_TG_range = current_peak_settings.smn1.targetPeak.peak_select_range
   const new_smn2_range = current_peak_settings.smn2.peak_condition.peak_select_range
@@ -1200,6 +1207,30 @@ const getControlID = (smav4InputFilesObj) => {
   ]
 }
 
+// 轉換 smn 的格式
+const smnTypeInterpretation = (smn1, smn2) => {
+  const type = String(smn1) + String(smn2);
+
+  const isNormal = (typeArray) => [
+    "20", "21", "22", "23", "24",
+    "30", "31", "32", "33", "34",
+    "41", "42", "43", "44"
+  ].includes(typeArray);
+
+  const isCarrier = (typeArray) => ["10", "11", "12", "13", "14"].includes(typeArray);
+  const isAffected = (typeArray) => ["01", "02", "03", "04"].includes(typeArray);
+
+  if (isNormal(type)) {
+    return { value: "normal", label: "Normal" };
+  } else if (isCarrier(type)) {
+    return { value: "carrier", label: "SMA carrier" };
+  } else if (isAffected(type)) {
+    return { value: "affected", label: "SMA affected" };
+  } else {
+    return { value: "invalid", label: "Invalid" };
+  }
+};
+
 // 重新分析
 async function reAnalysisSMAv4(){
   $q.loading.show({
@@ -1211,7 +1242,7 @@ async function reAnalysisSMAv4(){
   });
 
   // 取得 re_analyse_selection
-  const re_analyse_selection = Object.values(store.getters['analysis_setting/getSMAv4ReanalyseSelection'])
+  const re_analyse_selection = Object.values(store.getters['SMAv4_analysis_data/getSMAv4ReanalyseSelection'])
 
   // 更新 current_peak_condition
   if (re_analyse_selection.includes('new_peak')){
@@ -1265,6 +1296,22 @@ async function reAnalysisSMAv4(){
       currentAnalysisResult.value.resultObj.USE_CONFIG_NAME
     );
 
+    // 製作 EXPORT_RESULT
+    const sample_list = Object.keys(SMAv4_Result.RESULT_LIST);
+    const exportResult = sample_list.map((sample_name, index)=>{
+      const smn1 = SMAv4_Result.RESULT_LIST[sample_name].smn1_copy_number;
+      const smn2 = SMAv4_Result.RESULT_LIST[sample_name].smn2_copy_number;
+      const smnAssessment = smnTypeInterpretation(smn1, smn2);
+      return EXPORT_RESULT(
+        index+1,
+        sample_name,
+        SMAv4_Result.RESULT_LIST[sample_name].typeStr,
+        [SMAv4_Result.RESULT_LIST[sample_name].typeStr],
+        smnAssessment.value,
+        smnAssessment.label
+      )
+    })
+
     // 製作 ANALYSIS_RESULT
     const AnalysisResult = ANALYSIS_RESULT(
       "SMAv4",
@@ -1273,7 +1320,8 @@ async function reAnalysisSMAv4(){
       control_ids,
       resultObj.qc_status,
       resultObj.errMsg,
-      SMAv4_Result
+      SMAv4_Result,
+      exportResult
     );
 
     // 將結果存到 firestore
@@ -1341,6 +1389,12 @@ onMounted(async () => {
 
   // 取得當前分析結果 by 使用者 id, 分析名稱, 分析 id
   currentAnalysisResult.value = await getCurrentAnalysisResult(login_status, currentSettingProps);
+
+  // 如果當前分析結果不存在, 則跳出
+  if (!currentAnalysisResult.value) {
+    showResult.value = false;
+    return;
+  }
 
   // 更新 peak_condition
   const inputPeakCondition = convertPeakConditionFormat(currentAnalysisResult.value.resultObj.PARAMETERS)

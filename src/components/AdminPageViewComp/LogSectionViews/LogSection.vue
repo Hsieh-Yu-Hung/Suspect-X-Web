@@ -63,10 +63,14 @@ import LogMessage from './LogMessage.vue';
 // 導入模組
 import { ref, onMounted, watch, computed } from 'vue';
 import { dataset_list, getData, LOG_DATA } from 'src/firebase/firebaseDatabase';
+import { useQuasar } from 'quasar';
 
 // 定義 logs
 const all_logs = ref([]);
 const loaded_logs = ref([]);
+
+// 定義 quasar
+const $q = useQuasar();
 
 // 定義搜尋用戶
 const user_to_filter = ref('');
@@ -97,6 +101,13 @@ const category_to_filter = ref([]);
 
 // 更新 loaded_logs
 async function update_loaded_logs() {
+
+  // 顯示 loading
+  $q.loading.show({
+    message: "取得 logs 中...",
+    messageColor: "white",
+  });
+
   // 清除 loaded_logs
   loaded_logs.value = [];
 
@@ -116,6 +127,11 @@ async function update_loaded_logs() {
 
   // 將 all_logs 設為 loaded_logs
   all_logs.value = loaded_logs.value;
+
+  // 隱藏 loading
+  setTimeout(() => {
+    $q.loading.hide();
+  }, 500);
 }
 
 // 過濾訊息

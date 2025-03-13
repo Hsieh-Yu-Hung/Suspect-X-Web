@@ -367,7 +367,7 @@ import CustomSlider from '@/components/CustomSlider.vue';
 import { submitWorkflow } from '@/composables/submitWorkflow';
 import { setAnalysisID } from '@/composables/checkAnalysisStatus';
 import { updateGetUserInfo } from '@/composables/accessStoreUserInfo.js';
-import { ANALYSIS_RESULT, update_userAnalysisData, simplifyFilePath } from '@/firebase/firebaseDatabase';
+import { ANALYSIS_RESULT, EXPORT_RESULT, update_userAnalysisData, simplifyFilePath } from '@/firebase/firebaseDatabase';
 import { getCurrentDisplayAnalysisID, getCurrentAnalysisResult } from '@/composables/checkAnalysisStatus.js';
 
 // 使用者身份
@@ -761,6 +761,24 @@ async function reAnalysis() {
       InputData,
     )
 
+    // 製作 EXPORT_RESULT
+    const current_instrument = currentSettingProps.instrument;
+    const current_reagent = currentSettingProps.reagent;
+    const used_SMA_Result = current_instrument == 'z480' ? SMA_ResultV3 :
+                            current_instrument == 'qs3' && current_reagent == 'accuinSma2' ? SMA_ResultV2 :
+                            SMA_ResultV1;
+    const sample_list = used_SMA_Result.resultList.map(result=>result.sample_name);
+    const exportResult = sample_list.map((sample_name, index)=>{
+      return EXPORT_RESULT(
+        index+1,
+        sample_name,
+        '',
+        [],
+        'not-set',
+        'not-set'
+      )
+    })
+
     // 製作 ANALYSIS_RESULT
     const AnalysisResult = ANALYSIS_RESULT(
         "SMA",
@@ -789,7 +807,8 @@ async function reAnalysis() {
           V1: SMA_ResultV1,
           V2: SMA_ResultV2,
           V3: SMA_ResultV3,
-        }
+        },
+        exportResult
       );
 
     // 將結果存到 firestore
@@ -1018,6 +1037,11 @@ onMounted(async () => {
     updateSMA_Parameters();
   }
 
+  // 取得 updateDisplaySMNVersion
+  const getSMAVersion = store.getters["SMA_analysis_data/displaySMNVersion"];
+  smn1_analyzer_version.value = getSMAVersion.smn1;
+  smn2_analyzer_version.value = getSMAVersion.smn2;
+
   nextTick(() => {
 
     // 重置分析版本
@@ -1032,11 +1056,23 @@ onMounted(async () => {
 // 監測 smn1_analyzer_version
 watch(smn1_analyzer_version, (newVal) => {
   updateSliderData(newVal, smn1_slider, used_SMN1_SLIDER_DATA.value);
+
+  // 更新 currentSelectedSMAVersion
+  store.commit("SMA_analysis_data/updateDisplaySMNVersion", {
+    smn1: newVal,
+    smn2: smn2_analyzer_version.value,
+  });
 });
 
 // 監測 smn2_analyzer_version
 watch(smn2_analyzer_version, (newVal) => {
   updateSliderData(newVal, smn2_slider, used_SMN2_SLIDER_DATA.value);
+
+  // 更新 currentSelectedSMAVersion
+  store.commit("SMA_analysis_data/updateDisplaySMNVersion", {
+    smn1: smn1_analyzer_version.value,
+    smn2: newVal,
+  });
 });
 
 // 監測 current_SMN1_Slider_data

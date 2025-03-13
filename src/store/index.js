@@ -12,6 +12,7 @@ import APOE_analysis_data from './APOE_analysis_data';
 import MTHFR_analysis_data from './MTHFR_analysis_data';
 import NUDT15_analysis_data from './NUDT15_analysis_data';
 import SMA_analysis_data from './SMA_analysis_data';
+import SMAv4_analysis_data from './SMAv4_analysis_data';
 
 // 從 localStorage 中恢復登入狀態
 const savedState = localStorage.getItem('store');
@@ -53,6 +54,9 @@ export default store(function () {
 
       // SMA 分析結果
       SMA_analysis_data: SMA_analysis_data,
+
+      // SMAv4 分析結果
+      SMAv4_analysis_data: SMAv4_analysis_data,
     }
   })
 
