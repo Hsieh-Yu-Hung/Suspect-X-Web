@@ -107,6 +107,8 @@ const getProductExportInfo = (product, reagent) => {
   let exportSample;
   let productExport;
 
+  const inputData = store.getters["export_page_setting/getExportResults"];
+
   switch (product) {
     case 'fx':
       exportSample = parseExportData.exportFxProps(currentAnalysisResult.value, selectedExport.value);
@@ -117,6 +119,9 @@ const getProductExportInfo = (product, reagent) => {
       productExport = 'HTD';
       break;
     case 'apoe':
+      exportSample = parseInputExport.exportApoeProps(inputData);
+      productExport = 'APOE_AD';
+      break;
     case 'apoe-import':
       exportSample = parseExportData.exportApoeProps(currentAnalysisResult.value, selectedExport.value);
       productExport = 'APOE_AD';
@@ -149,7 +154,7 @@ const getProductExportInfo = (product, reagent) => {
       productExport = 'DQ2_DQ8';
       break;
     case 'alcohol':
-      exportSample =  [];
+      exportSample = parseInputExport.exportAlcoholProps(inputData);
       productExport = 'ADH1B_ALDH2';
       break;
     case 'cvd':
@@ -185,7 +190,6 @@ const getProductExportInfo = (product, reagent) => {
       productExport = 'HFE';
       break;
     case 'thal':
-      let inputData = store.getters["export_page_setting/getExportResults"];
       exportSample = parseInputExport.exportThalProps(inputData);
       productExport = 'THAL';
       break;

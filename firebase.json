@@ -37,9 +37,6 @@
     "functions": {
       "port": 5001
     },
-    "pubsub": {
-      "port": 8086
-    },
     "firestore": {
       "port": 8085
     },

@@ -712,7 +712,7 @@ watch(inputRows, (newVal) => {
   store.commit("export_page_setting/updateExportResults", updated);
 
   // 更新產品資訊
-  const currentProduct = currentSettingProps.value.product;
+  const currentProduct = currentSettingProps.value ? currentSettingProps.value.product : '';
   store.commit("export_page_setting/updateExportedProduct", currentProduct);
 }, { deep: true });
 
@@ -723,6 +723,9 @@ onMounted(async () => {
   const { login_status } = updateGetUserInfo();
   is_login.value = login_status.value.is_login;
   user_info.value = login_status.value.user_info;
+
+  // 取得 setting props
+  currentSettingProps.value = store.getters["analysis_setting/getSettingProps"];
 
   // 取得 α/β Thal database 資料
   alphaRawLst.value = await getThalassemia('alpha');
@@ -753,15 +756,42 @@ onMounted(async () => {
 
   // 若 store 有資料則載入
   const storeData = store.getters["export_page_setting/getExportResults"];
+  const default_result = {
+    alpha: [
+      {
+        chr: "",
+        common: true,
+        disease: "-",
+        end: null,
+        gene: "-",
+        label: "α2",
+        start: null,
+        type: "Wild Type",
+        value: "α2",
+        zygosity: "hetro"
+      }
+    ],
+    beta: []
+  }
+  const default_result_label = {
+    alpha: {
+      type: ['α2', 'α2'],
+      category: "negative",
+    },
+    beta: {
+      type: [],
+      category: "negative",
+    }
+  }
   if (storeData.length > 0) {
     inputRows.value = storeData.map(p => {
       return {
         index: p.index,
         sampleId: p.sampleId,
-        alpha: p.result.alpha,
-        beta: p.result.beta,
-        result: [[...new Set(p.resultLabel.alpha.type)], p.resultLabel.beta.type],
-        resultLabel: [[...new Set(p.resultLabel.alpha.type)], p.resultLabel.beta.type],
+        alpha: p.result.alpha ? p.result.alpha : default_result.alpha,
+        beta: p.result.beta ? p.result.beta : default_result.beta,
+        result: p.result.alpha ? [[...new Set(p.resultLabel.alpha.type)], p.resultLabel.beta.type] : default_result,
+        resultLabel: p.result.alpha ? [[...new Set(p.resultLabel.alpha.type)], p.resultLabel.beta.type] : default_result_label,
         assessment: p.assessment,
         assessmentLabel: p.assessmentLabel,
       }
@@ -772,8 +802,5 @@ onMounted(async () => {
   inputRows.value.forEach((row, index) => {
     row.index = index + 1;
   });
-
-  // 取得 setting props
-  currentSettingProps.value = store.getters["analysis_setting/getSettingProps"];
 });
 </script>

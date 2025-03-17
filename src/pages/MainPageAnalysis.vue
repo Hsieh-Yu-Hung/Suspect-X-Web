@@ -50,6 +50,16 @@
         <InputThal />
       </div>
 
+      <!-- Alcohol -->
+      <div class="col " v-else-if="currentProduct() == 'alcohol'">
+        <InputAlcohol />
+      </div>
+
+      <!-- APOE -->
+      <div class="col " v-else-if="currentProduct() == 'apoe'">
+        <InputApoe />
+      </div>
+
     </div>
 
   </q-page>
@@ -79,6 +89,8 @@ import ImportSMA from '@/components/ImportViews/ImportSMA.vue';
 
 // Input views
 import InputThal from '@/components/InputViews/InputThal.vue';
+import InputAlcohol from '@/components/InputViews/InputAlcohol.vue';
+import InputApoe from '@/components/InputViews/InputApoe.vue';
 
 // 取得 Quasar 和 Router 和 store
 const $q = useQuasar();
@@ -94,6 +106,9 @@ const currentProduct = () => {
 onMounted(() => {
   // 檢查帳號狀態, 若未開通則跳轉到 not-active
   useValidateAccountStatus($q, router, store);
+
+  // console.log("currentProduct", currentProduct());
+  // console.log("currentSettingProps", store.getters['analysis_setting/getSettingProps']);
 });
 
 // 監聽 Product
