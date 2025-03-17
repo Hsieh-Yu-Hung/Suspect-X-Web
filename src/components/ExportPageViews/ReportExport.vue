@@ -52,13 +52,14 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from "vue";
+import { ref, computed, onMounted, watch } from "vue";
 import { useStore } from "vuex";
 import { useQuasar, QSpinnerDots } from "quasar";
 import moment from "moment";
 import { getCurrentDisplayAnalysisID, getCurrentAnalysisResult } from '@/composables/checkAnalysisStatus.js';
 import { updateGetUserInfo } from '@/composables/accessStoreUserInfo';
 import parseExportData from '@/composables/parseExportData.js';
+import parseInputExport from '@/composables/parseInputExport.js';
 import ExcelJS from 'exceljs';
 
 // 使用者身份
@@ -70,7 +71,7 @@ const $q = useQuasar();
 const store = useStore();
 
 // 選取樣本
-const selectedSample = computed(() => store.getters["analysis_setting/getSelectedExport"]);
+const selectedSample = computed(() => store.getters["export_page_setting/getSelectedExport"]);
 
 // 匯出格式
 const exportOption = ref(null);
@@ -89,7 +90,7 @@ const currentDisplayAnalysis = ref({
 });
 
 // 更新 selectedExport
-const selectedExport = computed({ get: () => store.getters["analysis_setting/getSelectedExport"] });
+const selectedExport = computed({ get: () => store.getters["export_page_setting/getSelectedExport"] });
 
 // 下拉式選單選項
 const exportOptions = [
@@ -184,7 +185,8 @@ const getProductExportInfo = (product, reagent) => {
       productExport = 'HFE';
       break;
     case 'thal':
-      exportSample = [];
+      let inputData = store.getters["export_page_setting/getExportResults"];
+      exportSample = parseInputExport.exportThalProps(inputData);
       productExport = 'THAL';
       break;
     default:
@@ -395,6 +397,7 @@ async function downloadReportFile(data) {
 
 // Export
 const onExport = async () => {
+
   if (selectedSample.value.length > 0) {
     $q.loading.show({
       spinner: QSpinnerDots,
@@ -405,6 +408,18 @@ const onExport = async () => {
 
     const lang = exportOption.value.value.split('_')[1];
     const format = exportOption.value.value.split('_')[0];
+
+    // 備份 selectedSample
+    let selectedSample_backup = JSON.parse(JSON.stringify(selectedSample.value));
+
+    // 特殊處理 Thal 的 export
+    if (currentSettingProps.value.product === 'thal') {
+      selectedSample_backup.forEach(sample => {
+        const alpha_result_label = `Alpha: ${sample.result.label.alpha.type.join('/')}`;
+        const beta_result_label = `Beta: ${sample.result.label.beta.type.join(';')}`;
+        sample.result.label = [alpha_result_label, beta_result_label];
+      });
+    }
 
     try {
       const { exportSample, productExport } = getProductExportInfo(
@@ -475,14 +490,17 @@ const onExport = async () => {
           spinnerColor: 'deep-orange-6',
         });
 
+        const usedSelectedSample = currentSettingProps.value.product === 'thal' ? selectedSample_backup : selectedSample.value;
+
         const saveExcel = await downloadReportFile([
           defaultFilename,
-          selectedSample.value.map((s) => {
+          usedSelectedSample.map((s) => {
             return {
               sampleId: s.sampleId,
               well: s.well ? s.well : '-',
               results: s.assessment.value === 'invalid' || s.assessment.value === 'inconclusive'
                 ? '-'
+                : currentSettingProps.value.product === 'thal' ? s.result.label.join(' ; ')
                 : s.result.label.join(' / '),
               assessment: s.assessment.label,
               qc: s.assessment.value === 'inconclusive' ? 'Fail' : 'Pass',
@@ -512,6 +530,7 @@ const onExport = async () => {
             analysisPackage: process.env.VUE_APP_ANALYSIS_PACKAGE,
           },
         ]);
+
         $q.notify(`${saveExcel} is exported`);
       } else {
         $q.notify({
@@ -560,6 +579,33 @@ onMounted(async () => {
   if (!currentAnalysisResult.value) {
     return;
   }
+
+  // 載入 LAB information
+  const labInfo = store.getters["export_page_setting/getLabInfomation"];
+  subjectOrder.value.labName = labInfo.laboratory;
+  subjectOrder.value.issuedPhysician = labInfo.authorized;
+  subjectOrder.value.issuedContact = labInfo.contact;
+
+  // 載入 exportOption
+  const storeExportOption = store.getters["export_page_setting/getExportOption"];
+  exportOption.value = storeExportOption;
 })
+
+// 監聽 subjectOrder
+watch(subjectOrder, (newVal) => {
+  store.commit("export_page_setting/updateLabInfomation", {
+    laboratory: newVal.labName,
+    authorized: newVal.issuedPhysician,
+    contact: newVal.issuedContact,
+  });
+}, { deep: true });
+
+// 監聽 exportOption
+watch(exportOption, (newVal) => {
+  store.commit("export_page_setting/updateExportOption", {
+    label: newVal.label,
+    value: newVal.value,
+  });
+});
 
 </script>

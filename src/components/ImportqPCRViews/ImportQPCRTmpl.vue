@@ -300,6 +300,9 @@ async function onSubmit() {
     // 初始化 inputResults (葉酸輸入)
     store.commit('MTHFR_analysis_data/initInputResults');
 
+    // 清除 store 的 subjectInfoTable 和 LabInfomation
+    store.commit("export_page_setting/initExportPageSetting");
+
     // 隱藏 loading 視窗
     $q.loading.hide();
 

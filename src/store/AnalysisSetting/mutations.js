@@ -16,7 +16,3 @@ export const updateCurrentAnalysisID = (state, newAnalysisID) => {
 export const updateCurrentDisplayAnalysisID = (state, newAnalysisID) => {
   state.currentDisplayAnalysisID = newAnalysisID;
 };
-
-export const updateSelectedExport = (state, val) => {
-  state.selectedExport = val;
-};

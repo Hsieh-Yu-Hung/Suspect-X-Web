@@ -244,6 +244,9 @@ async function onSubmit() {
     });
     currentAnalysisID.value = store.getters['analysis_setting/getCurrentAnalysisID'];
 
+    // 清除 store 的 subjectInfoTable 和 LabInfomation
+    store.commit("export_page_setting/initExportPageSetting");
+
     // 隱藏 loading 視窗
     $q.loading.hide();
 

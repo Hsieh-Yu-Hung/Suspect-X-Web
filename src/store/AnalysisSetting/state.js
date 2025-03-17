@@ -28,7 +28,5 @@ export default function () {
       analysis_name: null,
       analysis_uuid: null,
     },
-    // Exports
-    selectedExport: [],
   }
 }

@@ -717,10 +717,8 @@ export function exportNudt15Props(resultObj, selectedExport) {
 
 }
 
-
 // SMA 導出結果
 export function exportSmaProps(resultObj, selectedExport) {
-  console.log("B");
   function standardInfoExport() {
     const expectCopy = resultObj.config.V1.reagent === "accuinSma1"
       ? [ "1:1", "2:2" ]
@@ -772,9 +770,6 @@ export function exportSmaProps(resultObj, selectedExport) {
 
 // SMA v4 導出結果
 export function exportSmaV4Props(resultObj, selectedExport) {
-
-  console.log("A");
-
   function standardInfoExport() {
     const expectCopy = [ "1:1", "2:2", "3:3" ];
 

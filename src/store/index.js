@@ -13,6 +13,7 @@ import MTHFR_analysis_data from './MTHFR_analysis_data';
 import NUDT15_analysis_data from './NUDT15_analysis_data';
 import SMA_analysis_data from './SMA_analysis_data';
 import SMAv4_analysis_data from './SMAv4_analysis_data';
+import export_page_setting from './ExportPageSetting';
 
 // 從 localStorage 中恢復登入狀態
 const savedState = localStorage.getItem('store');
@@ -36,6 +37,9 @@ export default store(function () {
 
       // 分析設定
       analysis_setting: analysis_setting,
+
+      // 匯出頁面設定
+      export_page_setting: export_page_setting,
 
       // FXS 分析結果
       FXS_analysis_data: FXS_analysis_data,

@@ -13,7 +13,3 @@ export const getCurrentAnalysisID = (state) => {
 export const getCurrentDisplayAnalysisID = (state) => {
   return state.currentDisplayAnalysisID;
 };
-
-export const getSelectedExport = (state) => {
-  return state.selectedExport;
-};

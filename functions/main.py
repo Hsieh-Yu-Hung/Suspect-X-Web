@@ -98,3 +98,34 @@ def ParseSubjectInfo(req: https_fn.Request):
         response_data = {"data": {"status": "error", "message": str(e) + "\n" + traceback.format_exc()}}
 
     return https_fn.Response(json.dumps(response_data), content_type="application/json")
+
+# 處理 Input 分析 LIMS 檔案的解析
+@https_fn.on_request(region="asia-east1", cors=options.CorsOptions(cors_origins="*", cors_methods=["get", "post"]), memory=1024)
+def ParseInputAnalysisLims(req: https_fn.Request):
+
+    # 回傳 message
+    response_data = {"data": {"status": "pending","message": "Waiting to start parsing input analysis lims..."}}
+
+    # 開始解析
+    try:
+
+        # 取得 input data
+        input_data = json.loads(req.data.decode("utf-8"))["data"]
+
+        # storage path
+        storage_path = input_data["file_path"]
+
+        # 下載檔案
+        local_file_path = download_file_from_storage(bucket, storage_path)
+
+        # 解析檔案
+        input_analysis_lims = parse_input_analysis_lims(local_file_path)
+
+        # 回傳 response
+        response_data = {"data": {"status": "success", "message": "Input analysis lims parsed", "result": input_analysis_lims}}
+
+    except Exception as e:
+        response_data = {"data": {"status": "error", "message": str(e) + "\n" + traceback.format_exc()}}
+
+    return https_fn.Response(json.dumps(response_data), content_type="application/json")
+

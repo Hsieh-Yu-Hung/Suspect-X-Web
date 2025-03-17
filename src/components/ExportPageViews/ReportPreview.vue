@@ -13,8 +13,15 @@
       <div class="col">
 
         <!-- 標題 -->
-        <div class="row text-h5 text-uppercase text-bold text-blue-grey-7">
-          Subject Information
+        <div style="display: flex; justify-content: space-between; text-align: center;">
+          <span class="text-h5 text-uppercase text-bold text-blue-grey-7">Subject Information</span>
+          <div
+            :style="{ display: isInputMode ? 'none' : 'flex', alignItems: 'center', gap: '10px', fontSize: '12px' }"
+            class="text-subtitle2 text-blue-grey-3"
+          >
+            <span>Current Analysis: {{ currentAnalysisResult ? currentAnalysisResult.analysis_name : '' }}</span>
+            <span>Analysis ID: {{ currentAnalysisResult ? currentAnalysisResult.analysis_id : '' }}</span>
+          </div>
         </div>
 
         <!-- 模板檔案上傳和下載容器 -->
@@ -71,12 +78,12 @@
           <!-- Thal 特殊欄位 -->
           <q-td class="col" :props="props" v-if="showThalColumn">
             <div class="row justify-center text-bold"> HBA:   </div>
-            <div class="row justify-center q-mb-sm">
-              {{ 'A1' }} / {{ 'A2' }}
+            <div class="row justify-center q-mb-sm" v-if="props.row.result.label.alpha.type.length !== 0">
+              {{ props.row.result.label.alpha.type[0] }} / {{ props.row.result.label.alpha.type[1] }}
             </div>
-            <div class="row justify-center q-mb-sm">-</div>
+            <div class="row justify-center q-mb-sm" v-else>-</div>
             <div class="row justify-center text-bold"> HBB: </div>
-            <div class="row justify-center q-mb-sm">
+            <div class="row justify-center q-mb-sm" v-if="props.row.result.value.beta.length !== 0">
               <div
                 class="row justify-center"
                 v-for="b in props.row.result.value.beta"
@@ -85,7 +92,7 @@
                 {{ b.label }} {{ b.zygosity }}
               </div>
             </div>
-            <div class="row justify-center q-mb-sm">-</div>
+            <div class="row justify-center q-mb-sm" v-else>-</div>
           </q-td>
 
           <!-- 其他欄位 -->
@@ -111,7 +118,7 @@
           <q-td style="min-width: 110px">
             <q-input
               v-model="editSubjectInfo[props.key].name"
-              @update:model-value="(val) => editSubjectInfo = {index: props.key, col: 'name', update: val}"
+              @update:model-value="(val) => updateEditSubjectInfo(props.key, 'name', val)"
               color="deep-orange"
               dense
               :disable="!editSubjectInfo[props.key].edit"
@@ -137,7 +144,7 @@
                     <q-date
                       v-model="editSubjectInfo[props.key].birth"
                       @input="() => $refs.qDateProxy.hide()"
-                      @update:model-value="(val) => editSubjectInfo = {index: props.key, col: 'birth', update: val}"
+                      @update:model-value="(val) => updateEditSubjectInfo(props.key, 'birth', val)"
                       mask="YYYY/MM/DD"
                       color="deep-orange"
                       minimal
@@ -155,7 +162,7 @@
           <q-radio
             size="xs"
             color="deep-orange"
-            @update:model-value="(val) => editSubjectInfo = {index: props.key, col: 'gender', update: val}"
+            @update:model-value="(val) => updateEditSubjectInfo(props.key, 'gender', val)"
             v-model="editSubjectInfo[props.key].gender"
             checked-icon="task_alt"
             unchecked-icon="panorama_fish_eye"
@@ -167,7 +174,7 @@
           <q-radio
             size="xs"
             color="deep-orange"
-            @update:model-value="(val) => editSubjectInfo = {index: props.key, col: 'gender', update: val}"
+            @update:model-value="(val) => updateEditSubjectInfo(props.key, 'gender', val)"
             v-model="editSubjectInfo[props.key].gender"
             checked-icon="task_alt"
             unchecked-icon="panorama_fish_eye"
@@ -183,7 +190,7 @@
           <q-td style="min-width: 120px">
             <q-input
               v-model="editSubjectInfo[props.key].idNumber"
-              @update:model-value="(val) => editSubjectInfo = {index: props.key, col: 'idNumber', update: val}"
+              @update:model-value="(val) => updateEditSubjectInfo(props.key, 'idNumber', val)"
               color="deep-orange"
               dense
               :disable="!editSubjectInfo[props.key].edit"
@@ -196,7 +203,7 @@
           <q-td style="min-width: 100px">
             <q-select
               v-model="editSubjectInfo[props.key].type"
-              @update:model-value="(val) => editSubjectInfo = {index: props.key, col: 'type', update: val.value}"
+              @update:model-value="(val) => updateEditSubjectInfo(props.key, 'type', val.value)"
               :options="typeOptions"
               color="deep-orange"
               label-color="deep-orange"
@@ -227,7 +234,7 @@
                     <q-date
                       v-model="editSubjectInfo[props.key].collectingDate"
                       @input="() => $refs.qDateProxy.hide()"
-                      @update:model-value="(val) => editSubjectInfo = {index: props.key, col: 'collectingDate', update: val}"
+                      @update:model-value="(val) => updateEditSubjectInfo(props.key, 'collectingDate', val)"
                       mask="YYYY/MM/DD"
                       color="deep-orange"
                       minimal
@@ -257,7 +264,7 @@
                     <q-date
                       v-model="editSubjectInfo[props.key].receivedDate"
                       @input="() => $refs.qDateProxy.hide()"
-                      @update:model-value="(val) => editSubjectInfo = {index: props.key, col: 'receivedDate', update: val}"
+                      @update:model-value="(val) => updateEditSubjectInfo(props.key, 'receivedDate', val)"
                       mask="YYYY/MM/DD"
                       color="deep-orange"
                       minimal
@@ -396,46 +403,51 @@ const exportResults = computed(() => {
     assessment: {
       label: row.assessmentLabel,
       value: row.assessment,
-    }
+    },
+    // 新增以下屬性
+    name: row.name ? row.name : '',
+    birth: row.birth ? row.birth : '',
+    gender: row.gender ? row.gender : '',
+    idNumber: row.idNumber ? row.idNumber : '',
+    type: row.type ? row.type : '',
+    collectingDate: row.collectingDate ? row.collectingDate : '',
+    receivedDate: row.receivedDate ? row.receivedDate : '',
+    edit: row.edit ? row.edit : '',
   }));
 });
 const exportSampleInfo = computed({
   get: () => {
-    return exportResults.value.map(result => {
-      var subject = result.index in subjectInfo.value
-        ? subjectInfo.value[result.index]
-        : {
-          name: "",
-          birth: "",
-          gender: "",
-          idNumber: "",
-          type: "",
-          collectingDate: "",
-          receivedDate: "",
-          edit: selected.value.includes(result.index) ? false : true
-        };
-      return {
-        index: result.index,
-        sampleId: result.sampleId,
-        well: result.well ? result.well : null,
-        result: {
-          label: result.result.label,
-          value: result.result.value,
-        },
-        assessment: {
-          label: result.assessment.label,
-          value: result.assessment.value,
-        },
-        name: subject.name,
-        birth: subject.birth,
-        gender: subject.gender,
-        idNumber: subject.idNumber,
-        type: subject.type,
-        collectingDate: subject.collectingDate,
-        receivedDate: subject.receivedDate,
-        edit: subject.edit
-      }
-    })
+    const inputData = store.getters["export_page_setting/getXsubi"]
+    const importData = store.getters["export_page_setting/getSubjectInfoTable"];
+    const storeData = isInputMode.value ? inputData : importData;
+    if (storeData && storeData.length > 0) {
+      return storeData;
+    }
+    else {
+      return exportResults.value.map(result => {
+        return {
+          index: result.index,
+          sampleId: result.sampleId,
+          well: result.well ? result.well : null,
+          result: {
+            label: result.result.label,
+            value: result.result.value,
+          },
+          assessment: {
+            label: result.assessment.label,
+            value: result.assessment.value,
+          },
+          name: result.name ? result.name : '',
+          birth: result.birth ? result.birth : '',
+          gender: result.gender ? result.gender : '',
+          idNumber: result.idNumber ? result.idNumber : '',
+          type: result.type ? result.type : '',
+          collectingDate: result.collectingDate ? result.collectingDate : '',
+          receivedDate: result.receivedDate ? result.receivedDate : '',
+          edit: result.edit ? result.edit : '',
+        }
+      })
+    }
   }
 });
 
@@ -630,17 +642,42 @@ async function downloadTemplate() {
   }
 }
 
-// 更新 exportSampleInfo
-function updateCurrentExportResults() {
-  const currentResult = currentAnalysisResult.value.exportResult;
-  current_exportResults.value = currentResult;
+// 更新 current_exportResults
+function updateCurrentExportResults(input_type) {
+
+  // 如果 input_type 是 Input, 則更新 current_exportResults
+  if (input_type === 'Input') {
+
+    // 取得 store 的 exportedProduct 的產品
+    const exportedProduct = store.getters["export_page_setting/getExportedProduct"];
+    const currentSettingProduct = currentSettingProps.value.product;
+
+    // 如果 exportedProduct 和 currentSettingProduct 相同, 則更新 current_exportResults; 否則不更新
+    if (exportedProduct === currentSettingProduct){
+      // 取得 store 的 exportResults
+      const storeInputData = store.getters["export_page_setting/getExportResults"];
+      current_exportResults.value = storeInputData;
+    }
+
+    // 如果 product 是 thal 把 showThalColumn 打開
+    if (exportedProduct === 'thal') {
+      showThalColumn.value = true;
+    }
+  }
+
+  // 如果 input_type 是 Import, 則更新 current_exportResults
+  else if (input_type === 'Import') {
+    // 取得 currentAnalysisResult 的 exportResult
+    const currentResult = currentAnalysisResult.value.exportResult;
+    current_exportResults.value = currentResult;
+  }
 }
 
 // 更新 selectedExport
 const selectedExport = computed({
-  get: () => store.getters["analysis_setting/getSelectedExport"],
+  get: () => store.getters["export_page_setting/getSelectedExport"],
   set: (val) => {
-    store.commit("analysis_setting/updateSelectedExport", val);
+    store.commit("export_page_setting/updateSelectedExport", val);
     selected.value = val.map(selected => selected.index);
   }
 });
@@ -690,10 +727,8 @@ const getVisibleColumns = (reagent) => {
   if (reagent === 'accuinMTHFR3') {
     return columns;
   } else {
-    if (reagent && columns) {
-      const selectedColumns = columns.filter(col => col.name !== 'well');
-      visibleColumns.value = selectedColumns;
-    }
+    const selectedColumns = columns.filter(col => col.name !== 'well');
+    visibleColumns.value = selectedColumns;
   }
 };
 
@@ -834,8 +869,29 @@ async function uploadAndParseSubjectInfo(file) {
   return subject_info;
 }
 
+// 定義一個函數來更新 editSubjectInfo
+function updateEditSubjectInfo(key, col, val) {
+  editSubjectInfo.value = { index: key, col: col, update: val };
+  exportSampleInfo.value[key-1][col] = val;
+  if (!isInputMode.value){
+    store.commit("export_page_setting/updateSubjectInfoTable", exportSampleInfo.value);
+  }
+  else {
+    store.commit("export_page_setting/updateXsubi", exportSampleInfo.value);
+  }
+}
+
+// 檢查是否為 Input 的 模式
+const isInputMode = computed(() => {
+  if (!currentSettingProps.value) return false;
+  return currentSettingProps.value.instrument === '' && currentSettingProps.value.reagent === '';
+});
+
 /* 掛載時 */
 onMounted(async () => {
+
+  // 清空 Xsubi
+  store.commit("export_page_setting/updateXsubi", []);
 
   // 取得使用者身份
   const { login_status } = updateGetUserInfo();
@@ -851,33 +907,43 @@ onMounted(async () => {
   // 取得當前分析結果
   currentAnalysisResult.value = await getCurrentAnalysisResult(login_status, currentSettingProps);
 
-  // 如果當前分析結果不存在, 則跳出
-  if (!currentAnalysisResult.value) {
-    return;
+  // 如果當前設定沒有 instrument 也沒有 reagent, 則代表是使用 Input 的 exportResults
+  if (isInputMode.value) {
+    updateCurrentExportResults('Input');
+    getVisibleColumns('');
   }
 
-  // 更新 Export Results
-  updateCurrentExportResults();
-
-  // 更新 visibleColumns
-  const used_analysis_name = currentAnalysisResult.value.analysis_name;
-  const used_reagent = used_analysis_name !== 'SMA' ? currentAnalysisResult.value.config.reagent : currentAnalysisResult.value.config.V1.reagent;
-  getVisibleColumns(used_analysis_name, used_reagent);
+  // 如果當前設定有 instrument 也有 reagent, 則代表是使用 Analysis 的 exportResults
+  else{
+    if (currentAnalysisResult.value) {
+      updateCurrentExportResults('Import');
+      const used_analysis_name = currentAnalysisResult.value.analysis_name;
+      const used_reagent = used_analysis_name !== 'SMA' ? currentAnalysisResult.value.config.reagent : currentAnalysisResult.value.config.V1.reagent;
+      getVisibleColumns(used_reagent);
+    }
+  }
 
   // 取得 current_Selected_index
   const current_Selected_index = selectedExport.value.map(selected => selected.index);
   const current_Selected_export = exportSampleInfo.value.filter(selected => current_Selected_index.includes(selected.index));
-  store.commit("analysis_setting/updateSelectedExport", current_Selected_export);
+  store.commit("export_page_setting/updateSelectedExport", current_Selected_export);
 });
 
 // 監聽 subjectFile
 watch(subjectFile, async (newVal, oldVal) => {
+
   // 如果 newVal 和 oldVal 不同, 則上傳檔案
   if (newVal && newVal !== oldVal) {
+
+    // 上傳並解析 subject Info
     subjectInfo.value = await uploadAndParseSubjectInfo(newVal);
 
     // 清空 selectedExport
     selectedExport.value = [];
+
+    // 更新 store 的 subjectInfoTable
+    store.commit("export_page_setting/updateSubjectInfoTable", []);
+    store.commit("export_page_setting/updateSubjectInfoTable", exportSampleInfo.value);
   }
 });
 

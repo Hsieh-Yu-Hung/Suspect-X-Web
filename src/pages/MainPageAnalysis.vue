@@ -47,7 +47,7 @@
 
       <!-- Thal -->
       <div class="col " v-else-if="currentProduct() == 'thal'">
-        <span class="text-h6 text-bold">A/B THAL</span>
+        <InputThal />
       </div>
 
     </div>
@@ -63,6 +63,12 @@ import { useRouter } from 'vue-router';
 import { useStore } from 'vuex';
 import { v4 as uuidv4 } from 'uuid';
 
+// 導入模組 composable
+import { useValidateAccountStatus } from '@/composables/accessStoreUserInfo.js';
+
+// 導入其他元件
+import AnalysisSettings from '@/components/AnalysisSettings.vue';
+
 // Import views
 import ImportApoe from '@/components/ImportViews/ImportApoe.vue';
 import ImportMthfr from '@/components/ImportViews/ImportMthfr.vue';
@@ -71,11 +77,8 @@ import ImportFXS from '@/components/ImportViews/ImportFXS.vue';
 import ImportHTD from '@/components/ImportViews/ImportHTD.vue';
 import ImportSMA from '@/components/ImportViews/ImportSMA.vue';
 
-// 導入模組 composable
-import { useValidateAccountStatus } from '@/composables/accessStoreUserInfo.js';
-
-// 導入元件
-import AnalysisSettings from '@/components/AnalysisSettings.vue';
+// Input views
+import InputThal from '@/components/InputViews/InputThal.vue';
 
 // 取得 Quasar 和 Router 和 store
 const $q = useQuasar();

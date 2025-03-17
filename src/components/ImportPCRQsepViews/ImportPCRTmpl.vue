@@ -362,6 +362,9 @@ async function onSubmit() {
     // 隱藏 loading 視窗
     $q.loading.hide();
 
+    // 清除 store 的 subjectInfoTable 和 LabInfomation
+    store.commit("export_page_setting/initExportPageSetting");
+
     // 跳轉到分析結果頁面
     setTimeout(()=>{
       router.push({
