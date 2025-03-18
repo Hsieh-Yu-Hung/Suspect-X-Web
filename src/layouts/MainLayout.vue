@@ -15,13 +15,11 @@
           <div style="width: fit-content; display: flex; flex-direction: row; align-items: center; cursor: pointer;" @click="to_index">
             <!-- logo -->
             <div class="logo" style="height: 35px; margin-inline: 10px;">
-              <img src="/icon.png" style="height: 100%;">
+              <img src="/logo.png" style="height: 100%;">
             </div>
             <!-- 標題文字 -->
-            <div style="height: 40px; margin-inline: 10px; display: flex; flex-direction: row; align-items: center;">
-              <span style="font-size: 1.4em; font-weight: bold; color: black;">ACCUiNspection
-                <span style="font-size: 0.4em; font-weight: bold; color: slategray; margin-inline: 5px;">{{ mode_display_name }}</span>
-              </span>
+            <div style="height: 40px; margin-inline: 10px; display: flex; flex-direction: row; align-items: flex-end;">
+              <span style="font-size: 0.6em; font-weight: bold; color: slategray;">{{ mode_display_name }}</span>
             </div>
           </div>
         </q-toolbar-title>
@@ -158,7 +156,7 @@ const updateUI = () => {
   if (user_info.value.role === 'admin') {
     // 設定標題列顏色和身份標籤
     account_display_name.value = account_display_name.value != null ? account_display_name.value + '(Admin)' : 'show account';
-    mode_display_name.value = 'Developper';
+    mode_display_name.value = 'Developper Mode';
     header_color.value = 'bg-teal-2';
     account_icon_display_name.value = 'manage_accounts';
   } else {

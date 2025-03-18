@@ -24,7 +24,7 @@
                       <q-chip
                         :key="props.value"
                         :color="interpretationColor(props.value)"
-                        :label="props.value"
+                        :label="adjuctInterpretation(props.value)"
                       />
                     </div>
                   </q-td>
@@ -307,24 +307,24 @@ function update_FXS_RESULT_OBJ(fxs_result) {
 
 // 解釋結果的顏色
 const interpretationColor = (value) => {
-  if (value === "Normal") {
+  if (value === "normal") {
     return "green-13";
   } else if (
-    (value === "Intermediate") ||
-    (value === "Normal/Intermediate")
+    (value === "intermediate") ||
+    (value === "normal/intermediate")
   ) {
     return "grey-5";
   } else if (
-    (value === "Premutation") ||
-    (value === "Normal/Premutation") ||
-    (value === "Intermediate/Premutation")
+    (value === "premutation") ||
+    (value === "normal/premutation") ||
+    (value === "intermediate/premutation")
   ) {
     return "yellow-8";
   } else if (
-    (value === "Full mutation") ||
-    (value === "Normal/Full mutation") ||
-    (value === "Intermediate/Full mutation") ||
-    (value === "Premutation/Full mutation")
+    (value === "full") ||
+    (value === "normal/full") ||
+    (value === "intermediate/full") ||
+    (value === "premutation/full")
   ) {
     return "red";
   } else {
@@ -360,6 +360,36 @@ const interpretation = (value) => {
     return "invalid";
   }
 };
+
+//
+const adjuctInterpretation = (value) => {
+  if (value === "normal") {
+    return "Normal";
+  } else if (
+    (value === "intermediate") ||
+    (value === "normal/intermediate")
+  ) {
+    return "Intermediate";
+  } else if (
+    (value === "premutation") ||
+    (value === "normal/premutation") ||
+    (value === "intermediate/premutation")
+  ) {
+    return "Premutation";
+  } else if (value === "full"){
+    return "Full mutation";
+  } else if (value === "normal/full") {
+    return "Normal/Full mutation";
+  } else if (value === "intermediate/full") {
+    return "Intermediate/Full mutation";
+  } else if (value === "premutation/full") {
+    return "Premutation/Full mutation";
+  } else if (value === "Inconclusive"){
+    return "Inconclusive";
+  } else {
+    return "Invalid";
+  }
+}
 
 // 按鈕顏色
 const btnColor = (id) => {
@@ -430,19 +460,6 @@ onMounted(async () => {
 
   // 更新圖表
   updateFxChart();
-
-  // 更新導出結果
-  const updated = resultTableFxProps.value.map((row, index) => ({
-    index: index + 1,
-    sampleId: row.sampleId,
-    result: row.position,
-    resultLabel: [row.repeats],
-    assessment: interpretation(row.assessment),
-    assessmentLabel: row.assessment
-  }));
-
-  store.commit("FXS_analysis_data/updateExportResults", updated);
-
 });
 
 // 組件卸載時移除事件監聽器

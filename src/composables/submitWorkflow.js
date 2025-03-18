@@ -33,7 +33,7 @@ function makeRunParameter(inputData, organization, instrument, reagent) {
 // 送出表單
 export async function submitWorkflow(AnalysisName, InputData, userInfo, currentSettingProps) {
 
-  //
+  // 初始化 execute_status
   let execute_status = {status:"pending", message: "Waiting for start...", result:null}
 
   /* 1. Check file type */

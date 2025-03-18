@@ -81,3 +81,8 @@ export const listAllFilesInFolder = async (folder_path) => {
 
 // 導出 storage
 export const Storage = storage;
+
+// 導出 PATH_OF_DATA
+export const getPATH_OF_DATA = () => {
+  return PATH_OF_DATA;
+}

@@ -79,7 +79,7 @@ import { submitWorkflow } from '@/composables/submitWorkflow';
 import { updateGetUserInfo } from '@/composables/accessStoreUserInfo';
 import { CATEGORY_LIST, upload_files_to_storage } from '@/composables/storageManager';
 import { setAnalysisID } from '@/composables/checkAnalysisStatus';
-import { ANALYSIS_RESULT, update_userAnalysisData, simplifyFilePath } from '@/firebase/firebaseDatabase';
+import { ANALYSIS_RESULT, EXPORT_RESULT, update_userAnalysisData, simplifyFilePath } from '@/firebase/firebaseDatabase';
 
 // 元件
 import WarningDialog from '@/components/WarningDialog.vue';
@@ -149,6 +149,81 @@ function initInputs() {
   testingSampleFile.value = null;
 }
 
+// FXS 解釋結果
+const interpretationValue = (value) => {
+  if (value === "normal") {
+    return "normal";
+  } else if (
+    (value === "intermediate") ||
+    (value === "normal/intermediate")
+  ) {
+    return "intermediate";
+  } else if (
+    (value === "premutation") ||
+    (value === "normal/premutation") ||
+    (value === "intermediate/premutation")
+  ) {
+    return "premutation";
+  } else if (
+    (value === "full-mutation") ||
+    (value === "normal/full-mutation") ||
+    (value === "intermediate/full-mutation") ||
+    (value === "premutation/full-mutation")
+  ) {
+    return "full";
+  } else if (value === "inconclusive"){
+    return "inconclusive";
+  } else {
+    return "invalid";
+  }
+};
+
+// FXS 結果評估標籤
+const interpretationLabel = (value) => {
+  if (value === "normal") {
+    return "Normal";
+  } else if (
+    (value === "intermediate") ||
+    (value === "normal/intermediate")
+  ) {
+    return "Intermediate";
+  } else if (
+    (value === "premutation") ||
+    (value === "normal/premutation") ||
+    (value === "intermediate/premutation")
+  ) {
+    return "Premutation";
+  } else if (
+    (value === "full-mutation") ||
+    (value === "normal/full-mutation") ||
+    (value === "intermediate/full-mutation") ||
+    (value === "premutation/full-mutation")
+  ) {
+    return "Full";
+  } else if (value === "inconclusive"){
+    return "Inconclusive";
+  } else {
+    return "Invalid";
+  }
+}
+
+// HTD 結果評估值
+const HTD_assessmentValue = (value) => {
+  if (value === "normal") {
+    return "Normal";
+  } else if (value === "intermediate") {
+    return "Intermediate";
+  } else if (value === "penetrance") {
+    return "Reduced penetrance";
+  } else if (value === "full-penetrance") {
+    return "Full penetrance";
+  } else if (value === "inconclusive") {
+    return "Inconclusive";
+  } else {
+    return "Invalid";
+  }
+};
+
 // 送出按鈕
 async function onSubmit() {
   // *. 顯示 loading 視窗
@@ -191,6 +266,23 @@ async function onSubmit() {
         resultObj.control_qc,
         resultObj.result);
 
+      // 製作 EXPORT_RESULT
+      const sample_ids = Object.keys(resultObj.result);
+      const exportResult = sample_ids.map((sample_id, index) => {
+        let result_list = resultObj.sample_data[sample_id].selected_fx_peaks.map(peak => peak.average_repeatNum);
+        if (result_list.length === 1) {
+          result_list = [result_list[0], result_list[0]];
+        }
+        return EXPORT_RESULT(
+          index+1,
+          sample_id,
+          result_list.join("/"),
+          [result_list.join("/")],
+          interpretationValue(resultObj.result[sample_id].assessment),
+          interpretationLabel(resultObj.result[sample_id].assessment)
+        );
+      });
+
       // 製作 ANALYSIS_RESULT
       const AnalysisResult = ANALYSIS_RESULT(
         currentAnalysisID.value.analysis_name,
@@ -199,7 +291,8 @@ async function onSubmit() {
         [simplifyFilePath(controlSampleFile.value.name)],
         resultObj.qc_status,
         "",
-        FXS_Result
+        FXS_Result,
+        exportResult
       );
 
       // 將結果存到 firestore
@@ -219,6 +312,23 @@ async function onSubmit() {
         resultObj.errMsg
       );
 
+      // 製作 EXPORT_RESULT
+      const sample_ids = Object.keys(HTD_Result.result_and_data);
+      const exportResult = sample_ids.map((sample_id, index) => {
+        let result_list = HTD_Result.result_and_data[sample_id].selected_target_peaks.map(peak => peak.repeat_num);
+        if (result_list.length === 1) {
+          result_list = [result_list[0], result_list[0]];
+        }
+        return EXPORT_RESULT(
+          index+1,
+          sample_id,
+          result_list.join(" / "),
+          [result_list.join(" / ")],
+          HTD_Result.result_and_data[sample_id].assessment,
+          HTD_assessmentValue(HTD_Result.result_and_data[sample_id].assessment)
+        );
+      });
+
       // 製作 ANALYSIS_RESULT
       const AnalysisResult = ANALYSIS_RESULT(
         currentAnalysisID.value.analysis_name,
@@ -227,7 +337,8 @@ async function onSubmit() {
         [simplifyFilePath(controlSampleFile.value.name)],
         resultObj.qc_status,
         "",
-        HTD_Result
+        HTD_Result,
+        exportResult
       );
 
       // 將結果存到 firestore
@@ -250,6 +361,9 @@ async function onSubmit() {
 
     // 隱藏 loading 視窗
     $q.loading.hide();
+
+    // 清除 store 的 subjectInfoTable 和 LabInfomation
+    store.commit("export_page_setting/initExportPageSetting");
 
     // 跳轉到分析結果頁面
     setTimeout(()=>{

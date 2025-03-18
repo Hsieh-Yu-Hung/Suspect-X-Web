@@ -91,3 +91,36 @@ export async function upload_files_to_storage(file, user_id=null, category=CATEG
   return execute_result;
 }
 
+// 選擇後上傳檔案
+export async function uploadFile_to_category(files, user_uid, analysis_uuid, category) {
+
+  // 如果沒有檔案, 則返回
+  if (!files) return;
+
+  // 上傳檔案
+  const uploading = await Promise.all(files.map(async (file) => {
+    return await upload_files_to_storage(
+      file, user_uid, category, analysis_uuid
+    ).then((response) => {return response;});
+  }));
+
+  // 檢查是否有 error
+  if (uploading.some(res => res.status === 'error')) {
+
+    // 找出 error 的檔案
+    const error_file = uploading.filter(res => res.status === 'error');
+
+    // 印出 error 的檔案
+    const error_message = error_file.map(res => res.message).join(', \n');
+
+    // 印出 error message
+    console.error(error_message);
+  }
+
+  // 更新 files 中 file 的 path
+  else {
+    files.forEach((file) => {
+      file.path = uploading.find((res) => res.file === file.name).storage_path;
+    });
+  }
+}

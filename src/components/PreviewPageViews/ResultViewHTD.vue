@@ -324,18 +324,6 @@ onMounted(async () => {
 
   // 更新 hdResult
   updateHdResult(currentAnalysisResult.value);
-
-  // 更新導出結果
-  const updated = resultTableHdProps.value.map((row, index) => ({
-    index: index + 1,
-    sampleId: row.sampleId,
-    result: row.repeats,
-    resultLabel: row.repeats,
-    assessment: row.assessment,
-    assessmentLabel: assessmentValue(row.assessment)
-  }));
-
-  store.commit("HTD_analysis_data/updateExportResults", updated);
 });
 
 // 組件卸載時移除事件監聽器

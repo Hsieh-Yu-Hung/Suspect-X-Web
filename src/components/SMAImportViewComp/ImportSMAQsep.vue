@@ -201,7 +201,7 @@ import { updateGetUserInfo } from '@/composables/accessStoreUserInfo';
 import { setAnalysisID } from '@/composables/checkAnalysisStatus';
 import { upload_files_to_storage } from '@/composables/storageManager';
 import { CATEGORY_LIST } from '@/composables/storageManager';
-import { update_userAnalysisData, getData, dataset_list, ANALYSIS_RESULT } from '@/firebase/firebaseDatabase';
+import { update_userAnalysisData, getData, dataset_list, ANALYSIS_RESULT, EXPORT_RESULT } from '@/firebase/firebaseDatabase';
 import { deleteData } from '@/firebase/firebaseDatabase';
 import { submitWorkflow } from '@/composables/submitWorkflow';
 import loggerV2 from '@/composables/loggerV2';
@@ -690,6 +690,29 @@ const getControlID = (smav4InputFilesObj) => {
   ]
 }
 
+const smnTypeInterpretation = (smn1, smn2) => {
+  const type = String(smn1) + String(smn2);
+
+  const isNormal = (typeArray) => [
+    "20", "21", "22", "23", "24",
+    "30", "31", "32", "33", "34",
+    "41", "42", "43", "44"
+  ].includes(typeArray);
+
+  const isCarrier = (typeArray) => ["10", "11", "12", "13", "14"].includes(typeArray);
+  const isAffected = (typeArray) => ["01", "02", "03", "04"].includes(typeArray);
+
+  if (isNormal(type)) {
+    return { value: "normal", label: "Normal" };
+  } else if (isCarrier(type)) {
+    return { value: "carrier", label: "SMA carrier" };
+  } else if (isAffected(type)) {
+    return { value: "affected", label: "SMA affected" };
+  } else {
+    return { value: "invalid", label: "Invalid" };
+  }
+};
+
 /* 主程式 */
 async function onSubmit() {
 
@@ -750,6 +773,22 @@ async function onSubmit() {
       currentDisplayedConfig.value
     );
 
+    // 製作 EXPORT_RESULT
+    const sample_list = Object.keys(SMAv4_Result.RESULT_LIST);
+    const exportResult = sample_list.map((sample_name, index)=>{
+      const smn1 = SMAv4_Result.RESULT_LIST[sample_name].smn1_copy_number;
+      const smn2 = SMAv4_Result.RESULT_LIST[sample_name].smn2_copy_number;
+      const smnAssessment = smnTypeInterpretation(smn1, smn2);
+      return EXPORT_RESULT(
+        index+1,
+        sample_name,
+        SMAv4_Result.RESULT_LIST[sample_name].typeStr,
+        [SMAv4_Result.RESULT_LIST[sample_name].typeStr],
+        smnAssessment.value,
+        smnAssessment.label
+      )
+    })
+
     // 製作 ANALYSIS_RESULT
     const AnalysisResult = ANALYSIS_RESULT(
       "SMAv4",
@@ -758,7 +797,8 @@ async function onSubmit() {
       control_id,
       resultObj.qc_status,
       resultObj.errMsg,
-      SMAv4_Result
+      SMAv4_Result,
+      exportResult
     );
 
     // 將結果存到 firestore
@@ -777,6 +817,9 @@ async function onSubmit() {
       analysis_uuid: new_id,
     });
     currentAnalysisID.value = store.getters['analysis_setting/getCurrentAnalysisID'];
+
+    // 清除 store 的 subjectInfoTable 和 LabInfomation
+    store.commit("export_page_setting/initExportPageSetting");
 
     // 隱藏 loading 視窗
     $q.loading.hide();

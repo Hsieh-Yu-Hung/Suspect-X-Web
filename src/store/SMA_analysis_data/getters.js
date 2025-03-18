@@ -81,56 +81,6 @@ export function resultTableSmaProps(state) {
   });
 }
 
-export function exportSmaProps(state) {
-  function standardInfoExport() {
-    const expectCopy = state.settingProps.reagent === "accuinSma1"
-      ? [ "1:1", "2:2" ]
-      : [ "1:1", "2:2", "3:3" ];
-
-    let standardInfo = new Array();
-
-    expectCopy.forEach((copy, idx) => {
-      standardInfo.push({
-        expectCopy: copy,
-        testingCopy: state.qualityControlProps.controlAssessment === 'meet-the-criteria'
-          ? expectCopy[idx]
-          : '-',
-        result: state.qualityControlProps.controlAssessment === 'meet-the-criteria'
-          ? 'meetTheCriteria'
-          : 'failTheCriteria',
-      });
-    });
-
-    return standardInfo
-  };
-
-  return state.selectedExport.map((s) => {
-
-    return {
-      result: {
-        standard: standardInfoExport(),
-        testing: {
-          sample: {
-            id: s.sampleId,
-            name: s.sampleId
-          },
-          measurement: [ ...s.result.label ],
-          assessment: s.assessment.value,
-        },
-      },
-      subject: {
-        name: s.name,
-        birth: s.birth,
-        gender: s.gender,
-        idNumber: s.idNumber,
-        sampleType: s.type
-      },
-      collectionDate: s.collectingDate,
-      receivingDate: s.receivedDate,
-    }
-  });
-}
-
 export function displaySMNVersion(state) {
   return {
     smn1: state.displaySMN1Version,
@@ -142,5 +92,12 @@ export function distanceRatio(state) {
   return {
     smn1: state.distanceRatioSmn1,
     smn2: state.distanceRatioSmn2,
+  };
+}
+
+export function resultSMNVersion(state) {
+  return {
+    smn1: state.resultSMN1Version,
+    smn2: state.resultSMN2Version,
   };
 }

@@ -155,13 +155,18 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed, watch } from "vue";
+import { ref, onMounted, computed, watch, onUnmounted } from "vue";
 import { useStore } from "vuex";
 import { getCurrentDisplayAnalysisID, getCurrentAnalysisResult } from '@/composables/checkAnalysisStatus.js';
 import { updateGetUserInfo } from '@/composables/accessStoreUserInfo';
+import { update_userAnalysisData } from '@/firebase/firebaseDatabase';
 
 // 取得 store
 const store = useStore();
+
+// 使用者身份
+const is_login = ref(false);
+const user_info = ref(null);
 
 // 響應式變數
 const showResult = ref(true);
@@ -359,39 +364,23 @@ watch(folateLst, (newVal) => {
     return;
   }
 
-  // 更新導出結果
-  const updated = resultTableMthfrProps.value.map((row, index) => {
-    const updatedRow = {
-      index: index + 1,
-      sampleId: row.sampleId,
-      result: row.type,
-      resultLabel: [...row.mthfrType],
-      assessment: row.assessment,
-      assessmentLabel: assessment(row.assessment),
-      well: row.well
-    };
-
-    if (newVal[index] && !updatedRow.resultLabel.at(-1).includes('Folate')) {
-      updatedRow.resultLabel.push('Folate ' + newVal[index] + ' ng/ml');
-    } else if (newVal[index] && updatedRow.resultLabel.at(-1).includes('Folate')) {
-      updatedRow.resultLabel.pop();
-      updatedRow.resultLabel.push('Folate ' + newVal[index] + ' ng/ml');
-    }
-
-    return updatedRow;
-  });
-
-  //
+  // 加入葉酸列表
   resultTableMthfrProps.value.forEach((row, index) => {
     row.folate = newVal[index];
   });
 
-  store.commit("MTHFR_analysis_data/updateExportResults", updated);
+  // 更新葉酸列表
   store.commit("MTHFR_analysis_data/updateInputResults", [...folateLst.value]);
+
 }, { deep: true });
 
 // 生命週期鉤子
 onMounted(async () => {
+  // 取得使用者身份
+  const { login_status } = updateGetUserInfo();
+  is_login.value = login_status.value.is_login;
+  user_info.value = login_status.value.user_info;
+
   // 取得 currentDisplayAnalysisID
   currentDisplayAnalysis.value = getCurrentDisplayAnalysisID();
 
@@ -418,22 +407,34 @@ onMounted(async () => {
     return;
   }
 
-  // 更新導出結果
-  const updated = resultTableMthfrProps.value.map((row, index) => ({
-    index: index + 1,
-    sampleId: row.sampleId,
-    result: row.type,
-    resultLabel: row.mthfrType,
-    assessment: row.assessment,
-    assessmentLabel: assessment(row.assessment),
-    well: row.well
-  }));
-
-  store.commit("MTHFR_analysis_data/updateExportResults", updated);
-
   // 取得輸入結果
   const inputResults = store.getters["MTHFR_analysis_data/getInputResults"];
   folateLst.value = [...inputResults];
+});
+
+// 離開頁面時才將葉酸資訊 更新至 firestore
+onUnmounted(() => {
+
+  // 葉酸資訊 更新至 firestore
+  let AnalysisResult = JSON.parse(JSON.stringify(currentAnalysisResult.value));
+
+  // 先移除所包含 Folate 的項目
+  AnalysisResult.exportResult.forEach((item) => {
+    item.resultLabel = item.resultLabel.filter((label) => !label.includes('Folate'));
+  });
+
+  // 加入葉酸資訊
+  AnalysisResult.exportResult.forEach((item) => {
+    const sample_data = resultTableMthfrProps.value.find((row) => row.sampleId === item.sampleId);
+    if (sample_data.folate) {
+      item.resultLabel.push('Folate ' + sample_data.folate + ' ng/ml');
+    }
+  });
+
+  // 更新至 firestore
+  const dbMTHFRResultPath = 'mthfr_result';
+  update_userAnalysisData(user_info.value.uid, dbMTHFRResultPath, AnalysisResult, currentAnalysisResult.value.analysis_id);
+
 });
 
 const pagination = ref({ rowsPerPage: 0 });
