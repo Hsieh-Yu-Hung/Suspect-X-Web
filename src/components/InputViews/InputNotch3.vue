@@ -5,7 +5,7 @@
         Input
       </div>
       <div class="text-subtitle1">
-        Please input the APOE (AD) corresponding sample results.
+        Please input the NOTCH3 corresponding sample results.
       </div>
       <div class="row q-pb-lg q-gutter-sm">
         <div class="col">
@@ -85,50 +85,50 @@
               />
             </q-td>
           </template>
-          <template v-slot:body-cell-e2="props">
-            <q-td :class="props.row.e2 ? 'text-center text-indigo text-bold' : 'text-center text-blue-grey text-bold'">
+          <template v-slot:body-cell-target1="props">
+            <q-td :class="props.row.target1 ? 'text-center text-indigo text-bold' : 'text-center text-blue-grey text-bold'">
               <q-checkbox
                 keep-color
                 left-label
                 size="lg"
-                :color="props.row.e2 ? 'indigo' : 'blue-grey'"
-                v-model="updateInput[props.key].e2"
-                @update:model-value="(val) => updateInput = {index: props.key, col: 'e2', update: val}"
+                :color="props.row.target1 ? 'indigo' : 'blue-grey'"
+                v-model="updateInput[props.key].target1"
+                @update:model-value="(val) => updateInput = {index: props.key, col: 'target1', update: val}"
                 checked-icon="add_circle"
                 unchecked-icon="remove_circle"
-                label="E2 (175 bp)"
+                label="Out (390 bp)"
                 dense
               />
             </q-td>
           </template>
-          <template v-slot:body-cell-e3="props">
-            <q-td :class="props.row.e3 ? 'text-center text-blue text-bold' : 'text-center text-blue-grey text-bold'">
+          <template v-slot:body-cell-target2="props">
+            <q-td :class="props.row.target2 ? 'text-center text-blue text-bold' : 'text-center text-blue-grey text-bold'">
               <q-checkbox
                 keep-color
                 left-label
                 size="lg"
-                :color="props.row.e3 ? 'blue' : 'blue-grey'"
-                v-model="updateInput[props.key].e3"
-                @update:model-value="(val) => updateInput = {index: props.key, col: 'e3', update: val}"
+                :color="props.row.target2 ? 'blue' : 'blue-grey'"
+                v-model="updateInput[props.key].target2"
+                @update:model-value="(val) => updateInput = {index: props.key, col: 'target2', update: val}"
                 checked-icon="add_circle"
                 unchecked-icon="remove_circle"
-                label="E3 (174 bp)"
+                label="C (303 bp)"
                 dense
               />
             </q-td>
           </template>
-          <template v-slot:body-cell-e4="props">
-            <q-td :class="props.row.e4 ? 'text-center text-cyan text-bold' : 'text-center text-blue-grey text-bold'">
+          <template v-slot:body-cell-target3="props">
+            <q-td :class="props.row.target3 ? 'text-center text-cyan text-bold' : 'text-center text-blue-grey text-bold'">
               <q-checkbox
                 keep-color
                 left-label
                 size="lg"
-                :color="props.row.e4 ? 'cyan' : 'blue-grey'"
-                v-model="updateInput[props.key].e4"
-                @update:model-value="(val) => updateInput = {index: props.key, col: 'e4', update: val}"
+                :color="props.row.target3 ? 'cyan' : 'blue-grey'"
+                v-model="updateInput[props.key].target3"
+                @update:model-value="(val) => updateInput = {index: props.key, col: 'target3', update: val}"
                 checked-icon="add_circle"
                 unchecked-icon="remove_circle"
-                label="E4 (173 bp)"
+                label="T (127 bp)"
                 dense
               />
             </q-td>
@@ -160,32 +160,32 @@
 <script setup>
 import { ref, computed, onMounted, watch } from "vue";
 import { useStore } from "vuex";
-import { updateGetUserInfo } from '@/composables/accessStoreUserInfo';
+import { useQuasar } from 'quasar';
 import { extract, downloadTemplate } from "@/composables/useExtract";
+import { updateGetUserInfo } from "@/composables/accessStoreUserInfo";
 import { uploadFile_to_category } from "@/composables/storageManager";
-import { useQuasar } from "quasar";
 
+// 使用 store, Quasar
 const store = useStore();
 const $q = useQuasar();
-const subjectListFile = ref(null);
-const currentSettingProps = ref(null);
 
 // 使用者身份
 const is_login = ref(false);
 const user_info = ref(null);
+const currentSettingProps = ref(null);
+const subjectListFile = ref(null);
 
 // Input result table
 const inputRows = ref([{
   sampleId: '',
-  e2: false,
-  e3: false,
-  e4: false,
-  result: '-',
-  resultLabel: ['-'],
-  assessment: 'invalid',
-  assessmentLabel: 'Invalid',
+  target1: true,
+  target2: true,
+  target3: false,
+  result: 'cc',
+  resultLabel: ['NOTCH3 R544C基因型[C/C]'],
+  assessment: 'low-risk',
+  assessmentLabel: '低風險基因型',
 }]);
-
 const inputColumns = [
   {
     name: 'add',
@@ -208,23 +208,23 @@ const inputColumns = [
     field: "sampleId",
   },
 
-  // APOE
+  // NOTCH3
   {
-    name: "e2",
-    label: "E2 PCR",
-    field: "e2",
+    name: "target1",
+    label: "Target 1",
+    field: "target1",
     align: "center",
   },
   {
-    name: "e3",
-    label: "E3 PCR",
-    field: "e3",
+    name: "target2",
+    label: "Target 2",
+    field: "target2",
     align: "center",
   },
   {
-    name: "e4",
-    label: "E4 PCR",
-    field: "e4",
+    name: "target3",
+    label: "Target 3",
+    field: "target3",
     align: "center",
   },
 
@@ -243,46 +243,25 @@ const inputColumns = [
 ];
 
 const resultAssessment = (row) => {
-  const list = [ row.e2, row.e3, row.e4 ];
-  if (list[0] && !list[1] && !list[2]) {
+  const list = [row.target1, row.target2, row.target3];
+  if (list[0] && list[1] && !list[2]) {
     return {
-      result: 'e2e2',
-      resultLabel: ['APOE基因型E2/E2'],
+      result: 'cc',
+      resultLabel: ['NOTCH3 R544C基因型[C/C]'],
       assessment: 'low-risk',
       assessmentLabel: '低風險基因型',
     }
-  } else if (!list[0] && list[1] && !list[2]) {
+  } else if (list[0] && list[1] && list[2]) {
     return {
-      result: 'e3e3',
-      resultLabel: ['APOE基因型E3/E3'],
-      assessment: 'normal-risk',
-      assessmentLabel: '一般風險基因型',
-    }
-  } else if (!list[0] && !list[1] && list[2]) {
-    return {
-      result: 'e4e4',
-      resultLabel: ['APOE基因型E4/E4'],
+      result: 'ct',
+      resultLabel: ['NOTCH3 R544C基因型[C/T]'],
       assessment: 'high-risk',
       assessmentLabel: '高風險基因型',
-    }
-  } else if (list[0] && list[1] && !list[2]) {
-    return {
-      result: 'e2e3',
-      resultLabel: ['APOE基因型E2/E3'],
-      assessment: 'low-risk',
-      assessmentLabel: '低風險基因型',
     }
   } else if (list[0] && !list[1] && list[2]) {
     return {
-      result: 'e2e4',
-      resultLabel: ['APOE基因型E2/E4'],
-      assessment: 'high-risk',
-      assessmentLabel: '高風險基因型',
-    }
-  } else if (!list[0] && list[1] && list[2]) {
-    return {
-      result: 'e3e4',
-      resultLabel: ['APOE基因型E3/E4'],
+      result: 'tt',
+      resultLabel: ['NOTCH3 R544C基因型[T/T]'],
       assessment: 'high-risk',
       assessmentLabel: '高風險基因型',
     }
@@ -327,6 +306,7 @@ const updateInput = computed({
   }
 });
 
+// Methods
 const removeRow = (idx) => {
   inputRows.value.splice(idx - 1, 1);
   inputRows.value.forEach((row, index) => {
@@ -335,117 +315,100 @@ const removeRow = (idx) => {
 };
 
 const addRow = (idx) => {
-  inputRows.value.splice(idx, 0, ...[{
+  inputRows.value.splice(idx, 0, {
     sampleId: '',
-    e2: false,
-    e3: false,
-    e4: false,
-    result: '-',
-    resultLabel: ['-'],
-    assessment: 'invalid',
-    assessmentLabel: 'Invalid',
+    target1: true,
+    target2: true,
+    target3: false,
+    result: 'cc',
+    resultLabel: ['NOTCH3 R544C基因型[C/C]'],
+    assessment: 'low-risk',
+    assessmentLabel: '低風險基因型',
     index: idx + 1
-  }]);
+  });
   inputRows.value.forEach((row, index) => {
     row.index = index + 1;
   });
 };
 
-// 初始化索引
-inputRows.value.forEach((row, index) => {
-  row.index = index + 1;
-});
-
-// 監聽 subjectListFile 變化
+// Watchers
 watch(subjectListFile, async (newVal, oldVal) => {
   if (newVal && newVal !== oldVal) {
-    try {
-      // 取得使用者身份
-      const user_uid = user_info.value.uid;
-      const analysis_uuid = 'LIMS_files';
-      const category = 'subject_info';
 
-      // 顯示 loading 視窗
-      $q.loading.show();
+    // 取得使用者身份
+    const user_uid = user_info.value.uid;
+    const analysis_uuid = 'LIMS_files';
+    const category = 'subject_info';
 
-      // 上傳檔案
-      await uploadFile_to_category([newVal], user_uid, analysis_uuid, category);
+    // 顯示 loading 視窗
+    $q.loading.show();
 
-      // 解析檔案
-      const extract_result = await extract(newVal);
-      let updatedInput = new Array();
-      let updatedSubject = {};
+    // 上傳檔案
+    await uploadFile_to_category([newVal], user_uid, analysis_uuid, category);
 
-      const subjectSampleIdLst = Object.keys(extract_result);
-      const inputSampleIdLst = inputRows.value.map(obj => obj.sampleId);
+    // 解析檔案
+    const extract_result = await extract(newVal);
+    let updatedInput = [...inputRows.value];
+    let updatedSubject = {};
 
-      inputRows.value.forEach(row => {
-        updatedInput.push(row);
-      });
+    const subjectSampleIdLst = Object.keys(extract_result);
+    const inputSampleIdLst = inputRows.value.map(obj => obj.sampleId);
 
-      subjectSampleIdLst.forEach((sampleId, idx) => {
-        const index = inputSampleIdLst.length + idx + 1;
+    subjectSampleIdLst.forEach((sampleId, idx) => {
+      const index = inputSampleIdLst.length + idx + 1;
 
-        if (!inputSampleIdLst.includes(sampleId)) {
-          updatedInput.push({
-            index: index,
-            sampleId: sampleId,
-            e2: false,
-            e3: false,
-            e4: false,
-            result: '-',
-            resultLabel: ['-'],
-            assessment: 'invalid',
-            assessmentLabel: 'Invalid',
+      if (!inputSampleIdLst.includes(sampleId)) {
+        updatedInput.push({
+          index: index,
+          sampleId: sampleId,
+          target1: false,
+          target2: false,
+          target3: false,
+          result: '-',
+          resultLabel: ['-'],
+          assessment: 'invalid',
+          assessmentLabel: 'Invalid',
 
-            // 新增以下屬性
-            birth: extract_result[sampleId].birth,
-            collectingDate: extract_result[sampleId].collectingDate,
-            edit: extract_result[sampleId].edit,
-            gender: extract_result[sampleId].gender,
-            idNumber: extract_result[sampleId].idNumber,
-            name: extract_result[sampleId].name,
-            receivedDate: extract_result[sampleId].receivedDate,
-            type: extract_result[sampleId].type,
-          });
-        }
+          // 新增以下屬性
+          birth: extract_result[sampleId].birth,
+          collectingDate: extract_result[sampleId].collectingDate,
+          edit: extract_result[sampleId].edit,
+          gender: extract_result[sampleId].gender,
+          idNumber: extract_result[sampleId].idNumber,
+          name: extract_result[sampleId].name,
+          receivedDate: extract_result[sampleId].receivedDate,
+          type: extract_result[sampleId].type,
+        });
+      }
 
-        updatedSubject[sampleId] = extract_result[sampleId];
-      });
+      updatedSubject[sampleId] = extract_result[sampleId];
+    });
 
-      inputRows.value = updatedInput;
+    inputRows.value = updatedInput;
 
-      $q.loading.hide();
-    } catch (error) {
-      console.error("Error extracting subject info:", error);
-      $q.loading.hide();
-    }
+    // 隱藏 loading 視窗
+    $q.loading.hide();
   }
 });
 
-// 監聽 inputRows 變化
-watch(inputRows, (newVal) => {
-  let updated = new Array();
+watch(inputRows, () => {
+  let updated = inputRows.value.map(row => ({
+    ...row,
+    result: resultAssessment(row).result,
+    resultLabel: resultAssessment(row).resultLabel,
+    assessment: resultAssessment(row).assessment,
+    assessmentLabel: resultAssessment(row).assessmentLabel,
 
-  inputRows.value.forEach((row) => {
-    updated.push({
-      ...row,
-      result: resultAssessment(row).result,
-      resultLabel: resultAssessment(row).resultLabel,
-      assessment: resultAssessment(row).assessment,
-      assessmentLabel: resultAssessment(row).assessmentLabel,
-
-      // 新增以下屬性
-      birth: row.birth ? row.birth : '',
-      collectingDate: row.collectingDate ? row.collectingDate : '',
-      edit: row.edit ? row.edit : '',
-      gender: row.gender ? row.gender : '',
-      idNumber: row.idNumber ? row.idNumber : '',
-      name: row.name ? row.name : '',
-      receivedDate: row.receivedDate ? row.receivedDate : '',
-      type: row.type ? row.type : '',
-    });
-  });
+    // 新增以下屬性
+    birth: row.birth ? row.birth : '',
+    collectingDate: row.collectingDate ? row.collectingDate : '',
+    edit: row.edit ? row.edit : '',
+    gender: row.gender ? row.gender : '',
+    idNumber: row.idNumber ? row.idNumber : '',
+    name: row.name ? row.name : '',
+    receivedDate: row.receivedDate ? row.receivedDate : '',
+    type: row.type ? row.type : '',
+  }));
 
   // 更新 store 中的 exportResults
   store.commit("export_page_setting/updateExportResults", updated);
@@ -453,9 +416,10 @@ watch(inputRows, (newVal) => {
   // 更新產品資訊
   const currentProduct = currentSettingProps.value ? currentSettingProps.value.product : '';
   store.commit("export_page_setting/updateExportedProduct", currentProduct);
+
 }, { deep: true });
 
-// 掛載時檢查 exportResults
+// Mounted
 onMounted(() => {
 
   // 取得使用者身份
@@ -468,13 +432,13 @@ onMounted(() => {
 
   // 若 store 有資料則載入
   const storeData = store.getters["export_page_setting/getExportResults"];
-  if (storeData && storeData.length !== 0 && currentSettingProps.value.product === 'apoe') {
+  if (storeData.length > 0 && currentSettingProps.value.product === 'notch3') {
     inputRows.value = storeData.map(p => ({
       index: p.index,
       sampleId: p.sampleId,
-      e2: p.e2 ? p.e2 : false,
-      e3: p.e3 ? p.e3 : false,
-      e4: p.e4 ? p.e4 : false,
+      target1: p.target1,
+      target2: p.target2,
+      target3: p.target3,
       result: p.result,
       resultLabel: p.resultLabel,
       assessment: p.assessment,

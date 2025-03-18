@@ -1,18 +1,12 @@
 <template>
   <q-card bordered>
     <q-card-section>
-
-      <!-- 標題 -->
       <div class="text-h5 text-uppercase text-bold text-blue-grey-7">
         Input
       </div>
-
-      <!-- 說明 -->
       <div class="text-subtitle1">
-        Please input the ADH1B/ALDH2 corresponding sample results.
+        Please input the B27 corresponding sample results.
       </div>
-
-      <!-- 上傳檔案 -->
       <div class="row q-pb-lg q-gutter-sm">
         <div class="col">
           <q-file
@@ -40,12 +34,11 @@
           />
         </div>
       </div>
-
-      <!-- 結果表格 -->
       <div class="row">
         <q-table
           :rows="inputRows"
           :columns="inputColumns"
+          :visible-columns="inputVisibleColumns"
           class="col"
           :v-model:pagination="{ rowsPerPage: 0 }"
           :rows-per-page-options="[0]"
@@ -93,10 +86,9 @@
               />
             </q-td>
           </template>
-
-          <template v-slot:body-cell-adh1b="props">
+          <template v-slot:body-cell-set1="props">
             <q-td class="col text-overline">
-              <div :class="props.row.adh1b.ic
+              <div :class="props.row.set1.f1r1
                 ? 'row justify-center text-indigo text-bold'
                 : 'row justify-center text-blue-grey text-bold'"
               >
@@ -104,16 +96,16 @@
                   keep-color
                   left-label
                   size="lg"
-                  :color="props.row.adh1b.ic ? 'indigo' : 'blue-grey'"
-                  v-model="updateInput[props.key].adh1b.ic"
-                  @update:model-value="(val) => updateInput = {index: props.key, col: ['adh1b', 'ic'], update: val}"
+                  :color="props.row.set1.f1r1 ? 'indigo' : 'blue-grey'"
+                  v-model="updateInput[props.key].set1.f1r1"
+                  @update:model-value="(val) => updateInput = {index: props.key, col: ['set1', 'f1r1'], update: val}"
                   checked-icon="add_circle"
                   unchecked-icon="remove_circle"
-                  label="IC (283 bp)"
+                  label="F1 & R1 (142 bp)"
                   dense
                 />
               </div>
-              <div :class="props.row.adh1b.mut
+              <div :class="props.row.set1.ic
                 ? 'row justify-center text-indigo text-bold'
                 : 'row justify-center text-blue-grey text-bold'"
               >
@@ -121,38 +113,20 @@
                   keep-color
                   left-label
                   size="lg"
-                  :color="props.row.adh1b.mut ? 'indigo' : 'blue-grey'"
-                  v-model="updateInput[props.key].adh1b.mut"
-                  @update:model-value="(val) => updateInput = {index: props.key, col: ['adh1b', 'mut'], update: val}"
+                  :color="props.row.set1.ic ? 'indigo' : 'blue-grey'"
+                  v-model="updateInput[props.key].set1.ic"
+                  @update:model-value="(val) => updateInput = {index: props.key, col: ['set1', 'ic'], update: val}"
                   checked-icon="add_circle"
                   unchecked-icon="remove_circle"
-                  label="MUT (128 bp)"
-                  dense
-                />
-              </div>
-              <div :class="props.row.adh1b.wt
-                ? 'row justify-center text-indigo text-bold'
-                : 'row justify-center text-blue-grey text-bold'"
-              >
-                <q-checkbox
-                  keep-color
-                  left-label
-                  size="lg"
-                  :color="props.row.adh1b.wt ? 'indigo' : 'blue-grey'"
-                  v-model="updateInput[props.key].adh1b.wt"
-                  @update:model-value="(val) => updateInput = {index: props.key, col: ['adh1b', 'wt'], update: val}"
-                  checked-icon="add_circle"
-                  unchecked-icon="remove_circle"
-                  label="WT (206 bp)"
+                  label="IC (65 bp)"
                   dense
                 />
               </div>
             </q-td>
           </template>
-
-          <template v-slot:body-cell-aldh2="props">
+          <template v-slot:body-cell-set2="props">
             <q-td class="col text-overline">
-              <div :class="props.row.aldh2.ic
+              <div :class="props.row.set2.f2r2
                 ? 'row justify-center text-blue text-bold'
                 : 'row justify-center text-blue-grey text-bold'"
               >
@@ -160,16 +134,16 @@
                   keep-color
                   left-label
                   size="lg"
-                  :color="props.row.aldh2.ic ? 'blue' : 'blue-grey'"
-                  v-model="updateInput[props.key].aldh2.ic"
-                  @update:model-value="(val) => updateInput = {index: props.key, col: ['aldh2', 'ic'], update: val}"
+                  :color="props.row.set2.f2r2 ? 'blue' : 'blue-grey'"
+                  v-model="updateInput[props.key].set2.f2r2"
+                  @update:model-value="(val) => updateInput = {index: props.key, col: ['set2', 'f2r2'], update: val}"
                   checked-icon="add_circle"
                   unchecked-icon="remove_circle"
-                  label="IC (358 bp)"
+                  label="F2 & R2 (439 bp)"
                   dense
                 />
               </div>
-              <div :class="props.row.aldh2.mut
+              <div :class="props.row.set2.ic
                 ? 'row justify-center text-blue text-bold'
                 : 'row justify-center text-blue-grey text-bold'"
               >
@@ -177,40 +151,14 @@
                   keep-color
                   left-label
                   size="lg"
-                  :color="props.row.aldh2.mut ? 'blue' : 'blue-grey'"
-                  v-model="updateInput[props.key].aldh2.mut"
-                  @update:model-value="(val) => updateInput = {index: props.key, col: ['aldh2', 'mut'], update: val}"
+                  :color="props.row.set2.ic ? 'blue' : 'blue-grey'"
+                  v-model="updateInput[props.key].set2.ic"
+                  @update:model-value="(val) => updateInput = {index: props.key, col: ['set2', 'ic'], update: val}"
                   checked-icon="add_circle"
                   unchecked-icon="remove_circle"
-                  label="MUT (292 bp)"
+                  label="IC (65 bp)"
                   dense
                 />
-              </div>
-              <div :class="props.row.aldh2.wt
-                ? 'row justify-center text-blue text-bold'
-                : 'row justify-center text-blue-grey text-bold'"
-              >
-                <q-checkbox
-                  keep-color
-                  left-label
-                  size="lg"
-                  :color="props.row.aldh2.wt ? 'blue' : 'blue-grey'"
-                  v-model="updateInput[props.key].aldh2.wt"
-                  @update:model-value="(val) => updateInput = {index: props.key, col: ['aldh2', 'wt'], update: val}"
-                  checked-icon="add_circle"
-                  unchecked-icon="remove_circle"
-                  label="WT (116 bp)"
-                  dense
-                />
-              </div>
-            </q-td>
-          </template>
-          <template v-slot:body-cell-result="props">
-            <q-td
-              class='text-center text-blue-grey text-bold'
-            >
-              <div class="row justify-center" v-for="label in updateInput[props.key].resultLabel" :key="label">
-                {{ label }}
               </div>
             </q-td>
           </template>
@@ -225,7 +173,6 @@
           </template>
         </q-table>
       </div>
-
     </q-card-section>
   </q-card>
 </template>
@@ -246,28 +193,24 @@ const $q = useQuasar();
 const is_login = ref(false);
 const user_info = ref(null);
 const currentSettingProps = ref(null);
-
 const subjectListFile = ref(null);
 
 // Input result table
 const inputRows = ref([{
   sampleId: '',
-  adh1b: {
+  set1: {
+    f1r1: false,
     ic: true,
-    wt: true,
-    mut: false,
   },
-  aldh2: {
+  set2: {
+    f2r2: false,
     ic: true,
-    wt: true,
-    mut: false,
   },
-  result: 'aagg',
-  resultLabel: [ 'ADH1B c.143基因型[A/A]', 'ALDH2 c.1510基因型[G/G]' ],
-  assessment: 'normal-risk',
-  assessmentLabel: '一般風險基因型',
+  result: '-',
+  resultLabel: ['-'],
+  assessment: 'negative',
+  assessmentLabel: '未檢出人類白血球抗原B27基因型',
 }]);
-
 const inputColumns = [
   {
     name: 'add',
@@ -289,19 +232,21 @@ const inputColumns = [
     align: "center",
     field: "sampleId",
   },
-  // Alcohol
+
+  // B27
   {
-    name: "adh1b",
-    label: "ADH1B PCR",
-    field: "adh1b",
+    name: "set1",
+    label: "Set 1",
+    field: "set1",
     align: "center",
   },
   {
-    name: "aldh2",
-    label: "ALDH2 PCR",
-    field: "aldh2",
+    name: "set2",
+    label: "Set 2",
+    field: "set2",
     align: "center",
   },
+
   {
     name: "result",
     label: "Result",
@@ -315,64 +260,35 @@ const inputColumns = [
     align: "center",
   },
 ];
+const inputVisibleColumns = [
+  'add',
+  'remove',
+  'index',
+  'sampleId',
+  'set1',
+  'set2',
+  'assessment'
+]
 
 const resultAssessment = (row) => {
-  let resultAdh1b;
-  let resultAldh2;
-  let resultLabel = new Array();
-
-  if (row.adh1b.ic && !row.adh1b.wt && row.adh1b.mut) {
-    // +-+
-    resultAdh1b = 'gg';
-    resultLabel.push('ADH1B c.143基因型[G/G]');
-  } else if (row.adh1b.ic && row.adh1b.wt && row.adh1b.mut) {
-    // +++
-    resultAdh1b = 'ag';
-    resultLabel.push('ADH1B c.143基因型[A/G]');
-  } else if (row.adh1b.ic && row.adh1b.wt && !row.adh1b.mut) {
-    // ++-
-    resultAdh1b = 'aa';
-    resultLabel.push('ADH1B c.143基因型[A/A]');
-  }
-
-  if (row.aldh2.ic && row.aldh2.wt && !row.aldh2.mut) {
-    // +-+
-    resultAldh2 = 'gg';
-    resultLabel.push('ALDH2 c.1510基因型[G/G]');
-  } else if (row.aldh2.ic && row.aldh2.wt && row.aldh2.mut) {
-    // +++
-    resultAldh2 = 'ga';
-    resultLabel.push('ALDH2 c.1510基因型[G/A]');
-  } else if (row.aldh2.ic && !row.aldh2.wt && row.aldh2.mut) {
-    // ++-
-    resultAldh2 = 'aa';
-    resultLabel.push('ALDH2 c.1510基因型[A/A]');
-  }
-
-  if (
-    (resultAdh1b === 'aa' && resultAldh2 === 'gg') ||
-    (resultAdh1b === 'ag' && resultAldh2 === 'gg')
-  ) {
+  const list = [ row.set1.f1r1, row.set1.ic, row.set2.f2r2, row.set2.ic ];
+  if (!list[0] && list[1] && !list[2] && list[3]) {
     return {
-      result: resultAdh1b + resultAldh2,
-      resultLabel: resultLabel,
-      assessment: 'normal-risk',
-      assessmentLabel: '一般風險基因型',
+      result: '-',
+      resultLabel: ['-'],
+      assessment: 'negative',
+      assessmentLabel: '未檢出人類白血球抗原B27基因型',
     }
   } else if (
-    (resultAdh1b === 'aa' && resultAldh2 === 'ga') ||
-    (resultAdh1b === 'aa' && resultAldh2 === 'aa') ||
-    (resultAdh1b === 'ag' && resultAldh2 === 'ga') ||
-    (resultAdh1b === 'ag' && resultAldh2 === 'aa') ||
-    (resultAdh1b === 'gg' && resultAldh2 === 'gg') ||
-    (resultAdh1b === 'gg' && resultAldh2 === 'ga') ||
-    (resultAdh1b === 'gg' && resultAldh2 === 'aa')
+    (list[0] && list[1] && !list[2] && list[3]) ||
+    (!list[0] && list[1] && list[2] && list[3]) ||
+    (list[0] && list[1] && list[2] && list[3])
   ) {
     return {
-      result: resultAdh1b + resultAldh2,
-      resultLabel: resultLabel,
-      assessment: 'high-risk',
-      assessmentLabel: '高風險基因型'
+      result: '+',
+      resultLabel: ['+'],
+      assessment: 'positive',
+      assessmentLabel: '檢出人類白血球抗原B27基因型',
     }
   } else {
     return {
@@ -385,11 +301,9 @@ const resultAssessment = (row) => {
 };
 
 const assessmentColor = (assessment) => {
-  if (assessment === "low-risk") {
+  if (assessment === "negative") {
     return "green-13";
-  } else if (assessment === "normal-risk") {
-    return "orange-5";
-  } else if (assessment === "high-risk") {
+  } else if (assessment === "positive") {
     return "red";
   } else {
     return "grey-5";
@@ -423,52 +337,7 @@ inputRows.value.forEach((row, index) => {
   row.index = index + 1;
 });
 
-onMounted(() => {
-
-  // 取得使用者身份
-  const { login_status } = updateGetUserInfo();
-  is_login.value = login_status.value.is_login;
-  user_info.value = login_status.value.user_info;
-
-  // 取得 setting props
-  currentSettingProps.value = store.getters["analysis_setting/getSettingProps"];
-
-  // 若 store 有資料則載入
-  const storeData = store.getters["export_page_setting/getExportResults"];
-  if (storeData.length !== 0 && currentSettingProps.value.product === 'alcohol') {
-    inputRows.value = storeData.map(p => {
-      return {
-        index: p.index,
-        sampleId: p.sampleId,
-        adh1b: {
-          ic: p.adh1b_ic,
-          wt: p.adh1b_wt,
-          mut: p.adh1b_mut,
-        },
-        aldh2: {
-          ic: p.aldh2_ic,
-          wt: p.aldh2_wt,
-          mut: p.aldh2_mut,
-        },
-        result: p.result,
-        resultLabel: p.resultLabel,
-        assessment: p.assessment,
-        assessmentLabel: p.assessmentLabel,
-
-        // 新增以下屬性
-        birth: p.birth ? p.birth : '',
-        collectingDate: p.collectingDate ? p.collectingDate : '',
-        edit: p.edit ? p.edit : '',
-        gender: p.gender ? p.gender : '',
-        idNumber: p.idNumber ? p.idNumber : '',
-        name: p.name ? p.name : '',
-        receivedDate: p.receivedDate ? p.receivedDate : '',
-        type: p.type ? p.type : '',
-      }
-    });
-  }
-});
-
+// Methods
 const removeRow = (idx) => {
   inputRows.value.splice(idx - 1, 1);
   inputRows.value.forEach((row, index) => {
@@ -477,33 +346,31 @@ const removeRow = (idx) => {
 };
 
 const addRow = (idx) => {
-  inputRows.value.splice(idx, 0, ...[{
+  inputRows.value.splice(idx, 0, {
     sampleId: '',
-    adh1b: {
+    set1: {
+      f1r1: false,
       ic: true,
-      wt: true,
-      mut: false,
     },
-    aldh2: {
+    set2: {
+      f2r2: false,
       ic: true,
-      wt: true,
-      mut: false,
     },
-    result: 'aagg',
-    resultLabel: ['ADH1B c.143基因型[A/A]', 'ALDH2 c.1510基因型[G/G]'],
-    assessment: 'normal-risk',
-    assessmentLabel: '一般風險基因型',
+    result: '-',
+    resultLabel: ['-'],
+    assessment: 'negative',
+    assessmentLabel: '未檢出人類白血球抗原B27基因型',
     index: idx + 1
-  }]);
+  });
   inputRows.value.forEach((row, index) => {
     row.index = index + 1;
   });
 };
 
-// 監聽 subjectListFile 的變化
+// Watchers
 watch(subjectListFile, async (newVal, oldVal) => {
-  if (newVal && newVal !== oldVal) {
 
+  if (newVal && newVal !== oldVal) {
     // 取得使用者身份
     const user_uid = user_info.value.uid;
     const analysis_uuid = 'LIMS_files';
@@ -518,13 +385,11 @@ watch(subjectListFile, async (newVal, oldVal) => {
     // 解析檔案
     const extract_result = await extract(newVal);
 
-    let updatedInput = new Array();
+    let updatedInput = [...inputRows.value];
     let updatedSubject = {};
+
     const subjectSampleIdLst = Object.keys(extract_result);
-    const inputSampleIdLst = inputRows.value.map(obj => obj.sampleId)
-    inputRows.value.forEach(row => {
-      updatedInput.push(row);
-    });
+    const inputSampleIdLst = inputRows.value.map(obj => obj.sampleId);
 
     subjectSampleIdLst.forEach((sampleId, idx) => {
       const index = inputSampleIdLst.length + idx + 1;
@@ -533,15 +398,13 @@ watch(subjectListFile, async (newVal, oldVal) => {
         updatedInput.push({
           index: index,
           sampleId: sampleId,
-          adh1b: {
-            ic: true,
-            wt: true,
-            mut: false,
+          set1: {
+            f1r1: false,
+            ic: false,
           },
-          aldh2: {
-            ic: true,
-            wt: true,
-            mut: false,
+          set2: {
+            f2r2: false,
+            ic: false,
           },
           result: '-',
           resultLabel: ['-'],
@@ -569,36 +432,29 @@ watch(subjectListFile, async (newVal, oldVal) => {
   }
 });
 
-// 監聽 inputRows 的變化
 watch(inputRows, () => {
-  let updated = new Array();
+  let updated = inputRows.value.map(row => ({
+    index: row.index,
+    sampleId: row.sampleId,
+    set1_f1r1: row.set1.f1r1,
+    set1_ic: row.set1.ic,
+    set2_f2r2: row.set2.f2r2,
+    set2_ic: row.set2.ic,
+    result: resultAssessment(row).result,
+    resultLabel: resultAssessment(row).resultLabel,
+    assessment: resultAssessment(row).assessment,
+    assessmentLabel: resultAssessment(row).assessmentLabel,
 
-  inputRows.value.forEach((row) => {
-    updated.push({
-      index: row.index,
-      sampleId: row.sampleId,
-      adh1b_ic: row.adh1b.ic,
-      adh1b_wt: row.adh1b.wt,
-      adh1b_mut: row.adh1b.mut,
-      aldh2_ic: row.aldh2.ic,
-      aldh2_wt: row.aldh2.wt,
-      aldh2_mut: row.aldh2.mut,
-      result: resultAssessment(row).result,
-      resultLabel: resultAssessment(row).resultLabel,
-      assessment: resultAssessment(row).assessment,
-      assessmentLabel: resultAssessment(row).assessmentLabel,
-
-      // 新增以下屬性
-      birth: row.birth ? row.birth : '',
-      collectingDate: row.collectingDate ? row.collectingDate : '',
-      edit: row.edit ? row.edit : '',
-      gender: row.gender ? row.gender : '',
-      idNumber: row.idNumber ? row.idNumber : '',
-      name: row.name ? row.name : '',
-      receivedDate: row.receivedDate ? row.receivedDate : '',
-      type: row.type ? row.type : '',
-    });
-  });
+    // 新增以下屬性
+    birth: row.birth ? row.birth : '',
+    collectingDate: row.collectingDate ? row.collectingDate : '',
+    edit: row.edit ? row.edit : '',
+    gender: row.gender ? row.gender : '',
+    idNumber: row.idNumber ? row.idNumber : '',
+    name: row.name ? row.name : '',
+    receivedDate: row.receivedDate ? row.receivedDate : '',
+    type: row.type ? row.type : '',
+  }));
 
   // 更新 store 中的 exportResults
   store.commit("export_page_setting/updateExportResults", updated);
@@ -606,5 +462,50 @@ watch(inputRows, () => {
   // 更新產品資訊
   const currentProduct = currentSettingProps.value ? currentSettingProps.value.product : '';
   store.commit("export_page_setting/updateExportedProduct", currentProduct);
+
 }, { deep: true });
+
+// Mounted
+onMounted(() => {
+
+  // 取得使用者身份
+  const { login_status } = updateGetUserInfo();
+  is_login.value = login_status.value.is_login;
+  user_info.value = login_status.value.user_info;
+
+  // 取得 setting props
+  currentSettingProps.value = store.getters["analysis_setting/getSettingProps"];
+
+  // 若 store 有資料則載入
+  const storeData = store.getters["export_page_setting/getExportResults"];
+  if (storeData.length > 0 && currentSettingProps.value.product === 'b27') {
+    inputRows.value = storeData.map(p => ({
+      index: p.index,
+      sampleId: p.sampleId,
+      set1: {
+        f1r1: p.set1_f1r1,
+        ic: p.set1_ic,
+      },
+      set2: {
+        f2r2: p.set2_f2r2,
+        ic: p.set2_ic,
+      },
+      result: p.result,
+      resultLabel: p.resultLabel,
+      assessment: p.assessment,
+      assessmentLabel: p.assessmentLabel,
+
+      // 新增以下屬性
+      birth: p.birth ? p.birth : '',
+      collectingDate: p.collectingDate ? p.collectingDate : '',
+      edit: p.edit ? p.edit : '',
+      gender: p.gender ? p.gender : '',
+      idNumber: p.idNumber ? p.idNumber : '',
+      name: p.name ? p.name : '',
+      receivedDate: p.receivedDate ? p.receivedDate : '',
+      type: p.type ? p.type : '',
+    }));
+  }
+});
+
 </script>

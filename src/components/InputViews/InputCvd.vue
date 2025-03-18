@@ -5,7 +5,7 @@
         Input
       </div>
       <div class="text-subtitle1">
-        Please input the APOE (AD) corresponding sample results.
+        Please input the APOE(CVD) corresponding sample results.
       </div>
       <div class="row q-pb-lg q-gutter-sm">
         <div class="col">
@@ -160,22 +160,24 @@
 <script setup>
 import { ref, computed, onMounted, watch } from "vue";
 import { useStore } from "vuex";
-import { updateGetUserInfo } from '@/composables/accessStoreUserInfo';
+import { useQuasar } from 'quasar';
 import { extract, downloadTemplate } from "@/composables/useExtract";
+import { updateGetUserInfo } from "@/composables/accessStoreUserInfo";
 import { uploadFile_to_category } from "@/composables/storageManager";
-import { useQuasar } from "quasar";
 
+// 使用 store, Quasar
 const store = useStore();
 const $q = useQuasar();
-const subjectListFile = ref(null);
-const currentSettingProps = ref(null);
 
 // 使用者身份
 const is_login = ref(false);
 const user_info = ref(null);
+const currentSettingProps = ref(null);
+const subjectListFile = ref(null);
 
 // Input result table
 const inputRows = ref([{
+  index: 1,
   sampleId: '',
   e2: false,
   e3: false,
@@ -208,7 +210,7 @@ const inputColumns = [
     field: "sampleId",
   },
 
-  // APOE
+  // CVD
   {
     name: "e2",
     label: "E2 PCR",
@@ -243,43 +245,42 @@ const inputColumns = [
 ];
 
 const resultAssessment = (row) => {
-  const list = [ row.e2, row.e3, row.e4 ];
-  if (list[0] && !list[1] && !list[2]) {
+  if (row.e2 && !row.e3 && !row.e4) {
     return {
       result: 'e2e2',
       resultLabel: ['APOE基因型E2/E2'],
-      assessment: 'low-risk',
-      assessmentLabel: '低風險基因型',
+      assessment: 'high-risk',
+      assessmentLabel: '高風險基因型',
     }
-  } else if (!list[0] && list[1] && !list[2]) {
+  } else if (!row.e2 && row.e3 && !row.e4) {
     return {
       result: 'e3e3',
       resultLabel: ['APOE基因型E3/E3'],
       assessment: 'normal-risk',
       assessmentLabel: '一般風險基因型',
     }
-  } else if (!list[0] && !list[1] && list[2]) {
+  } else if (!row.e2 && !row.e3 && row.e4) {
     return {
       result: 'e4e4',
       resultLabel: ['APOE基因型E4/E4'],
       assessment: 'high-risk',
       assessmentLabel: '高風險基因型',
     }
-  } else if (list[0] && list[1] && !list[2]) {
+  } else if (row.e2 && row.e3 && !row.e4) {
     return {
       result: 'e2e3',
       resultLabel: ['APOE基因型E2/E3'],
-      assessment: 'low-risk',
-      assessmentLabel: '低風險基因型',
-    }
-  } else if (list[0] && !list[1] && list[2]) {
-    return {
-      result: 'e2e4',
-      resultLabel: ['APOE基因型E2/E4'],
       assessment: 'high-risk',
       assessmentLabel: '高風險基因型',
     }
-  } else if (!list[0] && list[1] && list[2]) {
+  } else if (row.e2 && !row.e3 && row.e4) {
+    return {
+      result: 'e2e4',
+      resultLabel: ['APOE基因型E2/E4'],
+      assessment: 'normal-risk',
+      assessmentLabel: '一般風險基因型',
+    }
+  } else if (!row.e2 && row.e3 && row.e4) {
     return {
       result: 'e3e4',
       resultLabel: ['APOE基因型E3/E4'],
@@ -327,6 +328,7 @@ const updateInput = computed({
   }
 });
 
+// Methods
 const removeRow = (idx) => {
   inputRows.value.splice(idx - 1, 1);
   inputRows.value.forEach((row, index) => {
@@ -335,7 +337,7 @@ const removeRow = (idx) => {
 };
 
 const addRow = (idx) => {
-  inputRows.value.splice(idx, 0, ...[{
+  inputRows.value.splice(idx, 0, {
     sampleId: '',
     e2: false,
     e3: false,
@@ -345,117 +347,13 @@ const addRow = (idx) => {
     assessment: 'invalid',
     assessmentLabel: 'Invalid',
     index: idx + 1
-  }]);
+  });
   inputRows.value.forEach((row, index) => {
     row.index = index + 1;
   });
 };
 
-// 初始化索引
-inputRows.value.forEach((row, index) => {
-  row.index = index + 1;
-});
-
-// 監聽 subjectListFile 變化
-watch(subjectListFile, async (newVal, oldVal) => {
-  if (newVal && newVal !== oldVal) {
-    try {
-      // 取得使用者身份
-      const user_uid = user_info.value.uid;
-      const analysis_uuid = 'LIMS_files';
-      const category = 'subject_info';
-
-      // 顯示 loading 視窗
-      $q.loading.show();
-
-      // 上傳檔案
-      await uploadFile_to_category([newVal], user_uid, analysis_uuid, category);
-
-      // 解析檔案
-      const extract_result = await extract(newVal);
-      let updatedInput = new Array();
-      let updatedSubject = {};
-
-      const subjectSampleIdLst = Object.keys(extract_result);
-      const inputSampleIdLst = inputRows.value.map(obj => obj.sampleId);
-
-      inputRows.value.forEach(row => {
-        updatedInput.push(row);
-      });
-
-      subjectSampleIdLst.forEach((sampleId, idx) => {
-        const index = inputSampleIdLst.length + idx + 1;
-
-        if (!inputSampleIdLst.includes(sampleId)) {
-          updatedInput.push({
-            index: index,
-            sampleId: sampleId,
-            e2: false,
-            e3: false,
-            e4: false,
-            result: '-',
-            resultLabel: ['-'],
-            assessment: 'invalid',
-            assessmentLabel: 'Invalid',
-
-            // 新增以下屬性
-            birth: extract_result[sampleId].birth,
-            collectingDate: extract_result[sampleId].collectingDate,
-            edit: extract_result[sampleId].edit,
-            gender: extract_result[sampleId].gender,
-            idNumber: extract_result[sampleId].idNumber,
-            name: extract_result[sampleId].name,
-            receivedDate: extract_result[sampleId].receivedDate,
-            type: extract_result[sampleId].type,
-          });
-        }
-
-        updatedSubject[sampleId] = extract_result[sampleId];
-      });
-
-      inputRows.value = updatedInput;
-
-      $q.loading.hide();
-    } catch (error) {
-      console.error("Error extracting subject info:", error);
-      $q.loading.hide();
-    }
-  }
-});
-
-// 監聽 inputRows 變化
-watch(inputRows, (newVal) => {
-  let updated = new Array();
-
-  inputRows.value.forEach((row) => {
-    updated.push({
-      ...row,
-      result: resultAssessment(row).result,
-      resultLabel: resultAssessment(row).resultLabel,
-      assessment: resultAssessment(row).assessment,
-      assessmentLabel: resultAssessment(row).assessmentLabel,
-
-      // 新增以下屬性
-      birth: row.birth ? row.birth : '',
-      collectingDate: row.collectingDate ? row.collectingDate : '',
-      edit: row.edit ? row.edit : '',
-      gender: row.gender ? row.gender : '',
-      idNumber: row.idNumber ? row.idNumber : '',
-      name: row.name ? row.name : '',
-      receivedDate: row.receivedDate ? row.receivedDate : '',
-      type: row.type ? row.type : '',
-    });
-  });
-
-  // 更新 store 中的 exportResults
-  store.commit("export_page_setting/updateExportResults", updated);
-
-  // 更新產品資訊
-  const currentProduct = currentSettingProps.value ? currentSettingProps.value.product : '';
-  store.commit("export_page_setting/updateExportedProduct", currentProduct);
-}, { deep: true });
-
-// 掛載時檢查 exportResults
+// Lifecycle hooks
 onMounted(() => {
 
   // 取得使用者身份
@@ -468,7 +366,8 @@ onMounted(() => {
 
   // 若 store 有資料則載入
   const storeData = store.getters["export_page_setting/getExportResults"];
-  if (storeData && storeData.length !== 0 && currentSettingProps.value.product === 'apoe') {
+
+  if (storeData.length > 0 && currentSettingProps.value.product === 'cvd') {
     inputRows.value = storeData.map(p => ({
       index: p.index,
       sampleId: p.sampleId,
@@ -479,6 +378,10 @@ onMounted(() => {
       resultLabel: p.resultLabel,
       assessment: p.assessment,
       assessmentLabel: p.assessmentLabel,
+      set1_f1r1: p.set1_f1r1,
+      set1_ic: p.set1_ic,
+      set2_f2r2: p.set2_f2r2,
+      set2_ic: p.set2_ic,
 
       // 新增以下屬性
       birth: p.birth ? p.birth : '',
@@ -492,5 +395,94 @@ onMounted(() => {
     }));
   }
 });
+
+// Watchers
+watch(subjectListFile, async (newVal, oldVal) => {
+  if (newVal && newVal !== oldVal) {
+
+    // 取得使用者身份
+    const user_uid = user_info.value.uid;
+    const analysis_uuid = 'LIMS_files';
+    const category = 'subject_info';
+
+    // 顯示 loading 視窗
+    $q.loading.show();
+
+    // 上傳檔案
+    await uploadFile_to_category([newVal], user_uid, analysis_uuid, category);
+
+    // 解析檔案
+    const extract_result = await extract(newVal);
+
+    let updatedInput = [...inputRows.value];
+    let updatedSubject = {};
+
+    const subjectSampleIdLst = Object.keys(extract_result);
+    const inputSampleIdLst = inputRows.value.map(obj => obj.sampleId);
+
+    subjectSampleIdLst.forEach((sampleId, idx) => {
+      const index = inputSampleIdLst.length + idx + 1;
+
+      if (!inputSampleIdLst.includes(sampleId)) {
+        updatedInput.push({
+          index: index,
+          sampleId: sampleId,
+          e2: false,
+          e3: false,
+          e4: false,
+          result: '-',
+          resultLabel: ['-'],
+          assessment: 'invalid',
+          assessmentLabel: 'Invalid',
+
+          // 新增以下屬性
+          birth: extract_result[sampleId].birth,
+          collectingDate: extract_result[sampleId].collectingDate,
+          edit: extract_result[sampleId].edit,
+          gender: extract_result[sampleId].gender,
+          idNumber: extract_result[sampleId].idNumber,
+          name: extract_result[sampleId].name,
+          receivedDate: extract_result[sampleId].receivedDate,
+          type: extract_result[sampleId].type,
+        });
+      }
+
+      updatedSubject[sampleId] = extract_result[sampleId];
+    });
+
+    inputRows.value = updatedInput;
+
+    // 隱藏 loading 視窗
+    $q.loading.hide();
+  }
+});
+
+watch(inputRows, () => {
+  let updated = inputRows.value.map(row => ({
+    ...row,
+    result: resultAssessment(row).result,
+    resultLabel: resultAssessment(row).resultLabel,
+    assessment: resultAssessment(row).assessment,
+    assessmentLabel: resultAssessment(row).assessmentLabel,
+
+    // 新增以下屬性
+    birth: row.birth ? row.birth : '',
+    collectingDate: row.collectingDate ? row.collectingDate : '',
+    edit: row.edit ? row.edit : '',
+    gender: row.gender ? row.gender : '',
+    idNumber: row.idNumber ? row.idNumber : '',
+    name: row.name ? row.name : '',
+    receivedDate: row.receivedDate ? row.receivedDate : '',
+    type: row.type ? row.type : '',
+  }));
+
+  // 更新 store 中的 exportResults
+  store.commit("export_page_setting/updateExportResults", updated);
+
+  // 更新產品資訊
+  const currentProduct = currentSettingProps.value ? currentSettingProps.value.product : '';
+  store.commit("export_page_setting/updateExportedProduct", currentProduct);
+
+}, { deep: true });
 
 </script>

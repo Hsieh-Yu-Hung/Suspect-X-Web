@@ -783,7 +783,7 @@ onMounted(async () => {
       category: "negative",
     }
   }
-  if (storeData.length > 0) {
+  if (storeData.length > 0 && currentSettingProps.value.product === 'thal') {
     inputRows.value = storeData.map(p => {
       return {
         index: p.index,
@@ -794,6 +794,16 @@ onMounted(async () => {
         resultLabel: p.result.alpha ? [[...new Set(p.resultLabel.alpha.type)], p.resultLabel.beta.type] : default_result_label,
         assessment: p.assessment,
         assessmentLabel: p.assessmentLabel,
+
+        // 新增以下屬性
+        birth: p.birth ? p.birth : '',
+        collectingDate: p.collectingDate ? p.collectingDate : '',
+        edit: p.edit ? p.edit : '',
+        gender: p.gender ? p.gender : '',
+        idNumber: p.idNumber ? p.idNumber : '',
+        name: p.name ? p.name : '',
+        receivedDate: p.receivedDate ? p.receivedDate : '',
+        type: p.type ? p.type : '',
       }
     });
   }
@@ -803,4 +813,5 @@ onMounted(async () => {
     row.index = index + 1;
   });
 });
+
 </script>

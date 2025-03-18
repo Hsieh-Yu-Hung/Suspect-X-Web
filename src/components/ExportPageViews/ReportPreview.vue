@@ -25,7 +25,7 @@
         </div>
 
         <!-- 模板檔案上傳和下載容器 -->
-        <div class="row q-pb-xs q-mb-md">
+        <div v-if="!isInputMode" class="row q-pb-xs q-mb-md">
 
           <!-- 模板檔案上傳 -->
           <div class="col">
@@ -44,7 +44,7 @@
           </div>
 
           <!-- 模板檔案下載 -->
-          <div class="col text-blue-grey-7 flex justify-end">
+          <div class="col-2 text-blue-grey-7 flex justify-end">
             <q-btn
               icon-right="download"
               size="md"
@@ -58,227 +58,230 @@
       </div>
 
       <!-- 樣本資訊表格 -->
-      <q-table
-        :rows="exportSampleInfo"
-        :columns="visibleColumns"
-        class="text-blue-grey-10"
-        :v-model:pagination="{ rowsPerPage: 0 }"
-        :rows-per-page-options="[0]"
-        v-model:selected="selectedExport"
-        row-key="index"
-        selection="multiple"
-        flat
-        dense
-        virtual-scroll
-      >
+      <div style="margin-top: 2em;">
+        <q-table
+          :rows="exportSampleInfo"
+          :columns="visibleColumns"
+          class="text-blue-grey-10"
+          :v-model:pagination="{ rowsPerPage: 0 }"
+          :rows-per-page-options="[0]"
+          v-model:selected="selectedExport"
+          row-key="index"
+          selection="multiple"
+          flat
+          dense
+          virtual-scroll
+        >
 
-        <!-- 結果欄位 -->
-        <template v-slot:body-cell-result="props">
+          <!-- 結果欄位 -->
+          <template v-slot:body-cell-result="props">
 
-          <!-- Thal 特殊欄位 -->
-          <q-td class="col" :props="props" v-if="showThalColumn">
-            <div class="row justify-center text-bold"> HBA:   </div>
-            <div class="row justify-center q-mb-sm" v-if="props.row.result.label.alpha.type.length !== 0">
-              {{ props.row.result.label.alpha.type[0] }} / {{ props.row.result.label.alpha.type[1] }}
-            </div>
-            <div class="row justify-center q-mb-sm" v-else>-</div>
-            <div class="row justify-center text-bold"> HBB: </div>
-            <div class="row justify-center q-mb-sm" v-if="props.row.result.value.beta.length !== 0">
+            <!-- Thal 特殊欄位 -->
+            <q-td class="col" :props="props" v-if="showThalColumn">
+              <div class="row justify-center text-bold"> HBA:   </div>
+              <div class="row justify-center q-mb-sm" v-if="props.row.result.label.alpha.type.length !== 0">
+                {{ props.row.result.label.alpha.type[0] }} / {{ props.row.result.label.alpha.type[1] }}
+              </div>
+              <div class="row justify-center q-mb-sm" v-else>-</div>
+              <div class="row justify-center text-bold"> HBB: </div>
+              <div class="row justify-center q-mb-sm" v-if="props.row.result.value.beta.length !== 0">
+                <div
+                  class="row justify-center"
+                  v-for="b in props.row.result.value.beta"
+                  :key="b"
+                >
+                  {{ b.label }} {{ b.zygosity }}
+                </div>
+              </div>
+              <div class="row justify-center q-mb-sm" v-else>-</div>
+            </q-td>
+
+            <!-- 其他欄位 -->
+            <q-td class="col" :props="props" v-else>
               <div
                 class="row justify-center"
-                v-for="b in props.row.result.value.beta"
-                :key="b"
+                v-for="label in props.row.result.label"
+                :key="label"
               >
-                {{ b.label }} {{ b.zygosity }}
+                {{ label }}
               </div>
-            </div>
-            <div class="row justify-center q-mb-sm" v-else>-</div>
-          </q-td>
+            </q-td>
 
-          <!-- 其他欄位 -->
-          <q-td class="col" :props="props" v-else>
-            <div
-              class="row justify-center"
-              v-for="label in props.row.result.label"
-              :key="label"
-            >
-              {{ label }}
-            </div>
-          </q-td>
+          </template>
 
-        </template>
+          <!-- 評估欄位 -->
+          <template v-slot:body-cell-assessment="props">
+            <q-td :props="props" :class="assessmentColor(props.row.assessment.value)">{{props.row.assessment.label}}</q-td>
+          </template>
 
-        <!-- 評估欄位 -->
-        <template v-slot:body-cell-assessment="props">
-          <q-td :props="props" :class="assessmentColor(props.row.assessment.value)">{{props.row.assessment.label}}</q-td>
-        </template>
+          <!-- 名稱欄位 -->
+          <template v-slot:body-cell-name="props">
+            <q-td style="min-width: 110px">
+              <q-input
+                v-model="editSubjectInfo[props.key].name"
+                @update:model-value="(val) => updateEditSubjectInfo(props.key, 'name', val)"
+                color="deep-orange"
+                dense
+                :disable="!editSubjectInfo[props.key].edit"
+              />
+            </q-td>
+          </template>
 
-        <!-- 名稱欄位 -->
-        <template v-slot:body-cell-name="props">
-          <q-td style="min-width: 110px">
-            <q-input
-              v-model="editSubjectInfo[props.key].name"
-              @update:model-value="(val) => updateEditSubjectInfo(props.key, 'name', val)"
+          <!-- 生日欄位 -->
+          <template v-slot:body-cell-birth="props">
+            <q-td style="min-width: 180px; vertical-align: middle;">
+              <q-input
+                filled
+                v-model="editSubjectInfo[props.key].birth"
+                mask="####/##/##"
+                color="deep-orange"
+                :rules="[checkDate]"
+                :disable="!editSubjectInfo[props.key].edit"
+                dense
+              >
+                <template v-slot:append>
+                  <q-icon name="event" class="cursor-pointer">
+                    <q-popup-proxy ref="qDateProxy" transition-show="scale" transition-hide="scale">
+                      <q-date
+                        v-model="editSubjectInfo[props.key].birth"
+                        @input="() => $refs.qDateProxy.hide()"
+                        @update:model-value="(val) => updateEditSubjectInfo(props.key, 'birth', val)"
+                        mask="YYYY/MM/DD"
+                        color="deep-orange"
+                        minimal
+                      ></q-date>
+                    </q-popup-proxy>
+                  </q-icon>
+                </template>
+              </q-input>
+            </q-td>
+          </template>
+
+          <!-- 性別欄位 -->
+          <template v-slot:body-cell-gender="props">
+            <q-td>
+            <q-radio
+              size="xs"
               color="deep-orange"
-              dense
+              @update:model-value="(val) => updateEditSubjectInfo(props.key, 'gender', val)"
+              v-model="editSubjectInfo[props.key].gender"
+              checked-icon="task_alt"
+              unchecked-icon="panorama_fish_eye"
+              val="male"
+              label="M"
               :disable="!editSubjectInfo[props.key].edit"
-            />
-          </q-td>
-        </template>
-
-        <!-- 生日欄位 -->
-        <template v-slot:body-cell-birth="props">
-          <q-td style="min-width: 180px; vertical-align: middle;">
-            <q-input
-              filled
-              v-model="editSubjectInfo[props.key].birth"
-              mask="####/##/##"
-              color="deep-orange"
-              :rules="[checkDate]"
-              :disable="!editSubjectInfo[props.key].edit"
-              dense
-            >
-              <template v-slot:append>
-                <q-icon name="event" class="cursor-pointer">
-                  <q-popup-proxy ref="qDateProxy" transition-show="scale" transition-hide="scale">
-                    <q-date
-                      v-model="editSubjectInfo[props.key].birth"
-                      @input="() => $refs.qDateProxy.hide()"
-                      @update:model-value="(val) => updateEditSubjectInfo(props.key, 'birth', val)"
-                      mask="YYYY/MM/DD"
-                      color="deep-orange"
-                      minimal
-                    ></q-date>
-                  </q-popup-proxy>
-                </q-icon>
-              </template>
-            </q-input>
-          </q-td>
-        </template>
-
-        <!-- 性別欄位 -->
-        <template v-slot:body-cell-gender="props">
-          <q-td>
-          <q-radio
-            size="xs"
-            color="deep-orange"
-            @update:model-value="(val) => updateEditSubjectInfo(props.key, 'gender', val)"
-            v-model="editSubjectInfo[props.key].gender"
-            checked-icon="task_alt"
-            unchecked-icon="panorama_fish_eye"
-            val="male"
-            label="M"
-            :disable="!editSubjectInfo[props.key].edit"
-            dense
-          />
-          <q-radio
-            size="xs"
-            color="deep-orange"
-            @update:model-value="(val) => updateEditSubjectInfo(props.key, 'gender', val)"
-            v-model="editSubjectInfo[props.key].gender"
-            checked-icon="task_alt"
-            unchecked-icon="panorama_fish_eye"
-            val="female"
-            label="F"
-            :disable="!editSubjectInfo[props.key].edit"
-          />
-          </q-td>
-        </template>
-
-        <!-- 身分證號欄位 -->
-        <template v-slot:body-cell-idNumber="props">
-          <q-td style="min-width: 120px">
-            <q-input
-              v-model="editSubjectInfo[props.key].idNumber"
-              @update:model-value="(val) => updateEditSubjectInfo(props.key, 'idNumber', val)"
-              color="deep-orange"
-              dense
-              :disable="!editSubjectInfo[props.key].edit"
-            />
-          </q-td>
-        </template>
-
-        <!-- 樣本類型欄位 -->
-        <template v-slot:body-cell-type="props">
-          <q-td style="min-width: 100px">
-            <q-select
-              v-model="editSubjectInfo[props.key].type"
-              @update:model-value="(val) => updateEditSubjectInfo(props.key, 'type', val.value)"
-              :options="typeOptions"
-              color="deep-orange"
-              label-color="deep-orange"
-              behavior="menu"
-              :disable="!editSubjectInfo[props.key].edit"
-              map-options
-              outlined
               dense
             />
-          </q-td>
-        </template>
-
-        <!-- 採樣日期欄位 -->
-        <template v-slot:body-cell-collectingDate="props">
-          <q-td style="min-width: 180px">
-            <q-input
-              filled
-              v-model="editSubjectInfo[props.key].collectingDate"
-              mask="####/##/##"
+            <q-radio
+              size="xs"
               color="deep-orange"
-              :rules="[checkDate]"
+              @update:model-value="(val) => updateEditSubjectInfo(props.key, 'gender', val)"
+              v-model="editSubjectInfo[props.key].gender"
+              checked-icon="task_alt"
+              unchecked-icon="panorama_fish_eye"
+              val="female"
+              label="F"
               :disable="!editSubjectInfo[props.key].edit"
-              dense
-            >
-              <template v-slot:append>
-                <q-icon name="event" class="cursor-pointer">
-                  <q-popup-proxy ref="qDateProxy" transition-show="jump-up" transition-hide="scale">
-                    <q-date
-                      v-model="editSubjectInfo[props.key].collectingDate"
-                      @input="() => $refs.qDateProxy.hide()"
-                      @update:model-value="(val) => updateEditSubjectInfo(props.key, 'collectingDate', val)"
-                      mask="YYYY/MM/DD"
-                      color="deep-orange"
-                      minimal
-                    ></q-date>
-                  </q-popup-proxy>
-                </q-icon>
-              </template>
-            </q-input>
-          </q-td>
-        </template>
+            />
+            </q-td>
+          </template>
 
-        <!-- 收樣日期欄位 -->
-        <template v-slot:body-cell-receivedDate="props">
-          <q-td style="min-width: 180px">
-            <q-input
-              filled
-              v-model="editSubjectInfo[props.key].receivedDate"
-              mask="####/##/##"
-              color="deep-orange"
-              :rules="[checkDate]"
-              :disable="!editSubjectInfo[props.key].edit"
-              dense
-            >
-              <template v-slot:append>
-                <q-icon name="event" class="cursor-pointer">
-                  <q-popup-proxy ref="qDateProxy" transition-show="jump-up" transition-hide="scale">
-                    <q-date
-                      v-model="editSubjectInfo[props.key].receivedDate"
-                      @input="() => $refs.qDateProxy.hide()"
-                      @update:model-value="(val) => updateEditSubjectInfo(props.key, 'receivedDate', val)"
-                      mask="YYYY/MM/DD"
-                      color="deep-orange"
-                      minimal
-                    ></q-date>
-                  </q-popup-proxy>
-                </q-icon>
-              </template>
-            </q-input>
-          </q-td>
-        </template>
+          <!-- 身分證號欄位 -->
+          <template v-slot:body-cell-idNumber="props">
+            <q-td style="min-width: 120px">
+              <q-input
+                v-model="editSubjectInfo[props.key].idNumber"
+                @update:model-value="(val) => updateEditSubjectInfo(props.key, 'idNumber', val)"
+                color="deep-orange"
+                dense
+                :disable="!editSubjectInfo[props.key].edit"
+              />
+            </q-td>
+          </template>
 
-      </q-table>
+          <!-- 樣本類型欄位 -->
+          <template v-slot:body-cell-type="props">
+            <q-td style="min-width: 100px">
+              <q-select
+                v-model="editSubjectInfo[props.key].type"
+                @update:model-value="(val) => updateEditSubjectInfo(props.key, 'type', val.value)"
+                :options="typeOptions"
+                color="deep-orange"
+                label-color="deep-orange"
+                behavior="menu"
+                :disable="!editSubjectInfo[props.key].edit"
+                map-options
+                outlined
+                dense
+              />
+            </q-td>
+          </template>
+
+          <!-- 採樣日期欄位 -->
+          <template v-slot:body-cell-collectingDate="props">
+            <q-td style="min-width: 180px">
+              <q-input
+                filled
+                v-model="editSubjectInfo[props.key].collectingDate"
+                mask="####/##/##"
+                color="deep-orange"
+                :rules="[checkDate]"
+                :disable="!editSubjectInfo[props.key].edit"
+                dense
+              >
+                <template v-slot:append>
+                  <q-icon name="event" class="cursor-pointer">
+                    <q-popup-proxy ref="qDateProxy" transition-show="jump-up" transition-hide="scale">
+                      <q-date
+                        v-model="editSubjectInfo[props.key].collectingDate"
+                        @input="() => $refs.qDateProxy.hide()"
+                        @update:model-value="(val) => updateEditSubjectInfo(props.key, 'collectingDate', val)"
+                        mask="YYYY/MM/DD"
+                        color="deep-orange"
+                        minimal
+                      ></q-date>
+                    </q-popup-proxy>
+                  </q-icon>
+                </template>
+              </q-input>
+            </q-td>
+          </template>
+
+          <!-- 收樣日期欄位 -->
+          <template v-slot:body-cell-receivedDate="props">
+            <q-td style="min-width: 180px">
+              <q-input
+                filled
+                v-model="editSubjectInfo[props.key].receivedDate"
+                mask="####/##/##"
+                color="deep-orange"
+                :rules="[checkDate]"
+                :disable="!editSubjectInfo[props.key].edit"
+                dense
+              >
+                <template v-slot:append>
+                  <q-icon name="event" class="cursor-pointer">
+                    <q-popup-proxy ref="qDateProxy" transition-show="jump-up" transition-hide="scale">
+                      <q-date
+                        v-model="editSubjectInfo[props.key].receivedDate"
+                        @input="() => $refs.qDateProxy.hide()"
+                        @update:model-value="(val) => updateEditSubjectInfo(props.key, 'receivedDate', val)"
+                        mask="YYYY/MM/DD"
+                        color="deep-orange"
+                        minimal
+                      ></q-date>
+                    </q-popup-proxy>
+                  </q-icon>
+                </template>
+              </q-input>
+            </q-td>
+          </template>
+
+        </q-table>
+      </div>
 
     </q-card-section>
+
   </q-card>
 </template>
 
@@ -884,7 +887,7 @@ function updateEditSubjectInfo(key, col, val) {
 // 檢查是否為 Input 的 模式
 const isInputMode = computed(() => {
   if (!currentSettingProps.value) return false;
-  return currentSettingProps.value.instrument === '' && currentSettingProps.value.reagent === '';
+  return currentSettingProps.value.instrument === '';
 });
 
 /* 掛載時 */
@@ -907,7 +910,7 @@ onMounted(async () => {
   // 取得當前分析結果
   currentAnalysisResult.value = await getCurrentAnalysisResult(login_status, currentSettingProps);
 
-  // 如果當前設定沒有 instrument 也沒有 reagent, 則代表是使用 Input 的 exportResults
+  // 如果當前設定沒有 instrument 則代表是使用 Input 的 exportResults
   if (isInputMode.value) {
     updateCurrentExportResults('Input');
     getVisibleColumns('');
@@ -941,10 +944,41 @@ watch(subjectFile, async (newVal, oldVal) => {
     // 清空 selectedExport
     selectedExport.value = [];
 
+    let updatedExportSampleInfo = JSON.parse(JSON.stringify(exportSampleInfo.value));
+    updatedExportSampleInfo.forEach(sample => {
+      const updatedData = Object.values(subjectInfo.value).find(info => info.sampleId === sample.sampleId);
+      sample.birth = updatedData.birth;
+      sample.collectingDate = updatedData.collectingDate;
+      sample.gender = updatedData.gender;
+      sample.idNumber = updatedData.idNumber;
+      sample.name = updatedData.name;
+      sample.receivedDate = updatedData.receivedDate;
+      sample.type = updatedData.type;
+    });
+
     // 更新 store 的 subjectInfoTable
-    store.commit("export_page_setting/updateSubjectInfoTable", []);
-    store.commit("export_page_setting/updateSubjectInfoTable", exportSampleInfo.value);
+    store.commit("export_page_setting/updateSubjectInfoTable", updatedExportSampleInfo);
   }
 });
+
+// 監聽 current_exportResults
+watch(exportSampleInfo, () => {
+  let updatedExportResults = JSON.parse(JSON.stringify(current_exportResults.value));
+  updatedExportResults.forEach(result => {
+    const updatedResult = exportSampleInfo.value.find(sample => sample.index === result.index);
+    result.birth = updatedResult.birth;
+    result.collectingDate = updatedResult.collectingDate;
+    result.edit = updatedResult.edit;
+    result.gender = updatedResult.gender;
+    result.idNumber = updatedResult.idNumber;
+    result.name = updatedResult.name;
+    result.receivedDate = updatedResult.receivedDate;
+    result.type = updatedResult.type;
+  });
+  // 更新 store 中的 exportResults
+  if (updatedExportResults.length > 0) {
+    store.commit("export_page_setting/updateExportResults", updatedExportResults);
+  }
+}, { deep: true });
 
 </script>

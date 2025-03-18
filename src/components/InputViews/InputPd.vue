@@ -1,18 +1,12 @@
 <template>
   <q-card bordered>
     <q-card-section>
-
-      <!-- 標題 -->
       <div class="text-h5 text-uppercase text-bold text-blue-grey-7">
         Input
       </div>
-
-      <!-- 說明 -->
       <div class="text-subtitle1">
-        Please input the ADH1B/ALDH2 corresponding sample results.
+        Please input the LRRK2/GBA corresponding sample results.
       </div>
-
-      <!-- 上傳檔案 -->
       <div class="row q-pb-lg q-gutter-sm">
         <div class="col">
           <q-file
@@ -40,8 +34,6 @@
           />
         </div>
       </div>
-
-      <!-- 結果表格 -->
       <div class="row">
         <q-table
           :rows="inputRows"
@@ -94,9 +86,9 @@
             </q-td>
           </template>
 
-          <template v-slot:body-cell-adh1b="props">
+          <template v-slot:body-cell-gba="props">
             <q-td class="col text-overline">
-              <div :class="props.row.adh1b.ic
+              <div :class="props.row.gba.ic
                 ? 'row justify-center text-indigo text-bold'
                 : 'row justify-center text-blue-grey text-bold'"
               >
@@ -104,16 +96,16 @@
                   keep-color
                   left-label
                   size="lg"
-                  :color="props.row.adh1b.ic ? 'indigo' : 'blue-grey'"
-                  v-model="updateInput[props.key].adh1b.ic"
-                  @update:model-value="(val) => updateInput = {index: props.key, col: ['adh1b', 'ic'], update: val}"
+                  :color="props.row.gba.ic ? 'indigo' : 'blue-grey'"
+                  v-model="updateInput[props.key].gba.ic"
+                  @update:model-value="(val) => updateInput = {index: props.key, col: ['gba', 'ic'], update: val}"
                   checked-icon="add_circle"
                   unchecked-icon="remove_circle"
-                  label="IC (283 bp)"
+                  label="IC (327 bp)"
                   dense
                 />
               </div>
-              <div :class="props.row.adh1b.mut
+              <div :class="props.row.gba.wt
                 ? 'row justify-center text-indigo text-bold'
                 : 'row justify-center text-blue-grey text-bold'"
               >
@@ -121,16 +113,16 @@
                   keep-color
                   left-label
                   size="lg"
-                  :color="props.row.adh1b.mut ? 'indigo' : 'blue-grey'"
-                  v-model="updateInput[props.key].adh1b.mut"
-                  @update:model-value="(val) => updateInput = {index: props.key, col: ['adh1b', 'mut'], update: val}"
+                  :color="props.row.gba.wt ? 'indigo' : 'blue-grey'"
+                  v-model="updateInput[props.key].gba.wt"
+                  @update:model-value="(val) => updateInput = {index: props.key, col: ['gba', 'wt'], update: val}"
                   checked-icon="add_circle"
                   unchecked-icon="remove_circle"
-                  label="MUT (128 bp)"
+                  label="WT (246 bp)"
                   dense
                 />
               </div>
-              <div :class="props.row.adh1b.wt
+              <div :class="props.row.gba.mut
                 ? 'row justify-center text-indigo text-bold'
                 : 'row justify-center text-blue-grey text-bold'"
               >
@@ -138,21 +130,21 @@
                   keep-color
                   left-label
                   size="lg"
-                  :color="props.row.adh1b.wt ? 'indigo' : 'blue-grey'"
-                  v-model="updateInput[props.key].adh1b.wt"
-                  @update:model-value="(val) => updateInput = {index: props.key, col: ['adh1b', 'wt'], update: val}"
+                  :color="props.row.gba.mut ? 'indigo' : 'blue-grey'"
+                  v-model="updateInput[props.key].gba.mut"
+                  @update:model-value="(val) => updateInput = {index: props.key, col: ['gba', 'mut'], update: val}"
                   checked-icon="add_circle"
                   unchecked-icon="remove_circle"
-                  label="WT (206 bp)"
+                  label="MUT (124 bp)"
                   dense
                 />
               </div>
             </q-td>
           </template>
 
-          <template v-slot:body-cell-aldh2="props">
+          <template v-slot:body-cell-lrrk21628="props">
             <q-td class="col text-overline">
-              <div :class="props.row.aldh2.ic
+              <div :class="props.row.lrrk21628.ic
                 ? 'row justify-center text-blue text-bold'
                 : 'row justify-center text-blue-grey text-bold'"
               >
@@ -160,16 +152,16 @@
                   keep-color
                   left-label
                   size="lg"
-                  :color="props.row.aldh2.ic ? 'blue' : 'blue-grey'"
-                  v-model="updateInput[props.key].aldh2.ic"
-                  @update:model-value="(val) => updateInput = {index: props.key, col: ['aldh2', 'ic'], update: val}"
+                  :color="props.row.lrrk21628.ic ? 'blue' : 'blue-grey'"
+                  v-model="updateInput[props.key].lrrk21628.ic"
+                  @update:model-value="(val) => updateInput = {index: props.key, col: ['lrrk21628', 'ic'], update: val}"
                   checked-icon="add_circle"
                   unchecked-icon="remove_circle"
-                  label="IC (358 bp)"
+                  label="IC (261 bp)"
                   dense
                 />
               </div>
-              <div :class="props.row.aldh2.mut
+              <div :class="props.row.lrrk21628.wt
                 ? 'row justify-center text-blue text-bold'
                 : 'row justify-center text-blue-grey text-bold'"
               >
@@ -177,16 +169,16 @@
                   keep-color
                   left-label
                   size="lg"
-                  :color="props.row.aldh2.mut ? 'blue' : 'blue-grey'"
-                  v-model="updateInput[props.key].aldh2.mut"
-                  @update:model-value="(val) => updateInput = {index: props.key, col: ['aldh2', 'mut'], update: val}"
+                  :color="props.row.lrrk21628.wt ? 'blue' : 'blue-grey'"
+                  v-model="updateInput[props.key].lrrk21628.wt"
+                  @update:model-value="(val) => updateInput = {index: props.key, col: ['lrrk21628', 'wt'], update: val}"
                   checked-icon="add_circle"
                   unchecked-icon="remove_circle"
-                  label="MUT (292 bp)"
+                  label="WT (176 bp)"
                   dense
                 />
               </div>
-              <div :class="props.row.aldh2.wt
+              <div :class="props.row.lrrk21628.mut
                 ? 'row justify-center text-blue text-bold'
                 : 'row justify-center text-blue-grey text-bold'"
               >
@@ -194,12 +186,68 @@
                   keep-color
                   left-label
                   size="lg"
-                  :color="props.row.aldh2.wt ? 'blue' : 'blue-grey'"
-                  v-model="updateInput[props.key].aldh2.wt"
-                  @update:model-value="(val) => updateInput = {index: props.key, col: ['aldh2', 'wt'], update: val}"
+                  :color="props.row.lrrk21628.mut ? 'blue' : 'blue-grey'"
+                  v-model="updateInput[props.key].lrrk21628.mut"
+                  @update:model-value="(val) => updateInput = {index: props.key, col: ['lrrk21628', 'mut'], update: val}"
                   checked-icon="add_circle"
                   unchecked-icon="remove_circle"
-                  label="WT (116 bp)"
+                  label="MUT (121 bp)"
+                  dense
+                />
+              </div>
+            </q-td>
+          </template>
+
+          <template v-slot:body-cell-lrrk22385="props">
+            <q-td class="col text-overline">
+              <div :class="props.row.lrrk22385.ic
+                ? 'row justify-center text-blue text-bold'
+                : 'row justify-center text-blue-grey text-bold'"
+              >
+                <q-checkbox
+                  keep-color
+                  left-label
+                  size="lg"
+                  :color="props.row.lrrk22385.ic ? 'blue' : 'blue-grey'"
+                  v-model="updateInput[props.key].lrrk22385.ic"
+                  @update:model-value="(val) => updateInput = {index: props.key, col: ['lrrk22385', 'ic'], update: val}"
+                  checked-icon="add_circle"
+                  unchecked-icon="remove_circle"
+                  label="IC (309 bp)"
+                  dense
+                />
+              </div>
+              <div :class="props.row.lrrk22385.wt
+                ? 'row justify-center text-blue text-bold'
+                : 'row justify-center text-blue-grey text-bold'"
+              >
+                <q-checkbox
+                  keep-color
+                  left-label
+                  size="lg"
+                  :color="props.row.lrrk22385.wt ? 'blue' : 'blue-grey'"
+                  v-model="updateInput[props.key].lrrk22385.wt"
+                  @update:model-value="(val) => updateInput = {index: props.key, col: ['lrrk22385', 'wt'], update: val}"
+                  checked-icon="add_circle"
+                  unchecked-icon="remove_circle"
+                  label="WT (206 bp)"
+                  dense
+                />
+              </div>
+              <div :class="props.row.lrrk22385.mut
+                ? 'row justify-center text-blue text-bold'
+                : 'row justify-center text-blue-grey text-bold'"
+              >
+                <q-checkbox
+                  keep-color
+                  left-label
+                  size="lg"
+                  :color="props.row.lrrk22385.mut ? 'blue' : 'blue-grey'"
+                  v-model="updateInput[props.key].lrrk22385.mut"
+                  @update:model-value="(val) => updateInput = {index: props.key, col: ['lrrk22385', 'mut'], update: val}"
+                  checked-icon="add_circle"
+                  unchecked-icon="remove_circle"
+                  label="MUT (149 bp)"
                   dense
                 />
               </div>
@@ -209,7 +257,11 @@
             <q-td
               class='text-center text-blue-grey text-bold'
             >
-              <div class="row justify-center" v-for="label in updateInput[props.key].resultLabel" :key="label">
+              <div
+                class="row justify-center"
+                v-for="label in updateInput[props.key].resultLabel"
+                :key="label"
+              >
                 {{ label }}
               </div>
             </q-td>
@@ -225,7 +277,6 @@
           </template>
         </q-table>
       </div>
-
     </q-card-section>
   </q-card>
 </template>
@@ -246,24 +297,28 @@ const $q = useQuasar();
 const is_login = ref(false);
 const user_info = ref(null);
 const currentSettingProps = ref(null);
-
 const subjectListFile = ref(null);
 
 // Input result table
 const inputRows = ref([{
   sampleId: '',
-  adh1b: {
+  gba: {
     ic: true,
     wt: true,
     mut: false,
   },
-  aldh2: {
+  lrrk21628: {
     ic: true,
     wt: true,
     mut: false,
   },
-  result: 'aagg',
-  resultLabel: [ 'ADH1B c.143基因型[A/A]', 'ALDH2 c.1510基因型[G/G]' ],
+  lrrk22385: {
+    ic: true,
+    wt: true,
+    mut: false,
+  },
+  result: 'ttgggg',
+  resultLabel: ['GBA c.1448基因型[T/T]', 'LRRK c.4883基因型[G/G]', 'LRRK c.7153基因型[G/G]'],
   assessment: 'normal-risk',
   assessmentLabel: '一般風險基因型',
 }]);
@@ -289,17 +344,24 @@ const inputColumns = [
     align: "center",
     field: "sampleId",
   },
-  // Alcohol
+
+  // PD
   {
-    name: "adh1b",
-    label: "ADH1B PCR",
-    field: "adh1b",
+    name: "gba",
+    label: "GBA PCR",
+    field: "gba",
     align: "center",
   },
   {
-    name: "aldh2",
-    label: "ALDH2 PCR",
-    field: "aldh2",
+    name: "lrrk21628",
+    label: "LRRK2 1628 PCR",
+    field: "lrrk21628",
+    align: "center",
+  },
+  {
+    name: "lrrk22385",
+    label: "LRRK2 2385 PCR",
+    field: "lrrk22385",
     align: "center",
   },
   {
@@ -317,59 +379,67 @@ const inputColumns = [
 ];
 
 const resultAssessment = (row) => {
-  let resultAdh1b;
-  let resultAldh2;
+  let resultGba;
+  let resultLrrk21628;
+  let resultLrrk22385;
   let resultLabel = new Array();
 
-  if (row.adh1b.ic && !row.adh1b.wt && row.adh1b.mut) {
-    // +-+
-    resultAdh1b = 'gg';
-    resultLabel.push('ADH1B c.143基因型[G/G]');
-  } else if (row.adh1b.ic && row.adh1b.wt && row.adh1b.mut) {
-    // +++
-    resultAdh1b = 'ag';
-    resultLabel.push('ADH1B c.143基因型[A/G]');
-  } else if (row.adh1b.ic && row.adh1b.wt && !row.adh1b.mut) {
+  if (row.gba.ic && row.gba.wt && !row.gba.mut) {
     // ++-
-    resultAdh1b = 'aa';
-    resultLabel.push('ADH1B c.143基因型[A/A]');
+    resultGba = 'tt';
+    resultLabel.push('GBA c.1448基因型[T/T]');
+  } else if (row.gba.ic && row.gba.wt && row.gba.mut) {
+    // +++
+    resultGba = 'tc';
+    resultLabel.push('GBA c.1448基因型[T/C]');
+  } else if (row.gba.ic && !row.gba.wt && row.gba.mut) {
+    // +-+
+    resultGba = 'cc';
+    resultLabel.push('GBA c.1448基因型[C/C]');
   }
 
-  if (row.aldh2.ic && row.aldh2.wt && !row.aldh2.mut) {
-    // +-+
-    resultAldh2 = 'gg';
-    resultLabel.push('ALDH2 c.1510基因型[G/G]');
-  } else if (row.aldh2.ic && row.aldh2.wt && row.aldh2.mut) {
-    // +++
-    resultAldh2 = 'ga';
-    resultLabel.push('ALDH2 c.1510基因型[G/A]');
-  } else if (row.aldh2.ic && !row.aldh2.wt && row.aldh2.mut) {
+  if (row.lrrk21628.ic && row.lrrk21628.wt && !row.lrrk21628.mut) {
     // ++-
-    resultAldh2 = 'aa';
-    resultLabel.push('ALDH2 c.1510基因型[A/A]');
+    resultLrrk21628 = 'gg';
+    resultLabel.push('LRRK c.4883基因型[G/G]');
+  } else if (row.lrrk21628.ic && row.lrrk21628.wt && row.lrrk21628.mut) {
+    // +++
+    resultLrrk21628 = 'gc';
+    resultLabel.push('LRRK c.4883基因型[G/C]');
+  } else if (row.lrrk21628.ic && !row.lrrk21628.wt && row.lrrk21628.mut) {
+    // +-+
+    resultLrrk21628 = 'cc';
+    resultLabel.push('LRRK c.4883基因型[C/C]');
   }
 
-  if (
-    (resultAdh1b === 'aa' && resultAldh2 === 'gg') ||
-    (resultAdh1b === 'ag' && resultAldh2 === 'gg')
-  ) {
+  if (row.lrrk22385.ic && row.lrrk22385.wt && !row.lrrk22385.mut) {
+    // ++-
+    resultLrrk22385 = 'gg';
+    resultLabel.push('LRRK c.7153基因型[G/G]');
+  } else if (row.lrrk22385.ic && row.lrrk22385.wt && row.lrrk22385.mut) {
+    // +++
+    resultLrrk22385 = 'ga';
+    resultLabel.push('LRRK c.7153基因型[G/A]');
+  } else if (row.lrrk22385.ic && !row.lrrk22385.wt && row.lrrk22385.mut) {
+    // +-+
+    resultLrrk22385 = 'aa';
+    resultLabel.push('LRRK c.7153基因型[A/A]');
+  }
+
+  if (resultGba === 'tt' && resultLrrk21628 === 'gg' && resultLrrk22385 === 'gg') {
     return {
-      result: resultAdh1b + resultAldh2,
+      result: resultGba + resultLrrk21628 + resultLrrk22385,
       resultLabel: resultLabel,
       assessment: 'normal-risk',
       assessmentLabel: '一般風險基因型',
     }
   } else if (
-    (resultAdh1b === 'aa' && resultAldh2 === 'ga') ||
-    (resultAdh1b === 'aa' && resultAldh2 === 'aa') ||
-    (resultAdh1b === 'ag' && resultAldh2 === 'ga') ||
-    (resultAdh1b === 'ag' && resultAldh2 === 'aa') ||
-    (resultAdh1b === 'gg' && resultAldh2 === 'gg') ||
-    (resultAdh1b === 'gg' && resultAldh2 === 'ga') ||
-    (resultAdh1b === 'gg' && resultAldh2 === 'aa')
+    (resultGba === 'tt' || resultGba === 'tc' || resultGba === 'cc') &&
+    (resultLrrk21628 === 'gg' || resultLrrk21628 === 'gc' || resultLrrk21628 === 'cc') &&
+    (resultLrrk22385 === 'gg' || resultLrrk22385 === 'ga' || resultLrrk22385 === 'aa')
   ) {
     return {
-      result: resultAdh1b + resultAldh2,
+      result: resultGba + resultLrrk21628 + resultLrrk22385,
       resultLabel: resultLabel,
       assessment: 'high-risk',
       assessmentLabel: '高風險基因型'
@@ -435,72 +505,44 @@ onMounted(() => {
 
   // 若 store 有資料則載入
   const storeData = store.getters["export_page_setting/getExportResults"];
-  if (storeData.length !== 0 && currentSettingProps.value.product === 'alcohol') {
-    inputRows.value = storeData.map(p => {
-      return {
-        index: p.index,
-        sampleId: p.sampleId,
-        adh1b: {
-          ic: p.adh1b_ic,
-          wt: p.adh1b_wt,
-          mut: p.adh1b_mut,
-        },
-        aldh2: {
-          ic: p.aldh2_ic,
-          wt: p.aldh2_wt,
-          mut: p.aldh2_mut,
-        },
-        result: p.result,
-        resultLabel: p.resultLabel,
-        assessment: p.assessment,
-        assessmentLabel: p.assessmentLabel,
+  if (storeData.length > 0 && currentSettingProps.value.product === 'pd') {
+    inputRows.value = storeData.map(p => ({
+      index: p.index,
+      sampleId: p.sampleId,
+      gba: {
+        ic: p.gba_ic,
+        wt: p.gba_wt,
+        mut: p.gba_mut,
+      },
+      lrrk21628: {
+        ic: p.lrrk21628_ic,
+        wt: p.lrrk21628_wt,
+        mut: p.lrrk21628_mut,
+      },
+      lrrk22385: {
+        ic: p.lrrk22385_ic,
+        wt: p.lrrk22385_wt,
+        mut: p.lrrk22385_mut,
+      },
+      result: p.result,
+      resultLabel: p.resultLabel,
+      assessment: p.assessment,
+      assessmentLabel: p.assessmentLabel,
 
-        // 新增以下屬性
-        birth: p.birth ? p.birth : '',
-        collectingDate: p.collectingDate ? p.collectingDate : '',
-        edit: p.edit ? p.edit : '',
-        gender: p.gender ? p.gender : '',
-        idNumber: p.idNumber ? p.idNumber : '',
-        name: p.name ? p.name : '',
-        receivedDate: p.receivedDate ? p.receivedDate : '',
-        type: p.type ? p.type : '',
-      }
-    });
+      // 新增以下屬性
+      birth: p.birth ? p.birth : '',
+      collectingDate: p.collectingDate ? p.collectingDate : '',
+      edit: p.edit ? p.edit : '',
+      gender: p.gender ? p.gender : '',
+      idNumber: p.idNumber ? p.idNumber : '',
+      name: p.name ? p.name : '',
+      receivedDate: p.receivedDate ? p.receivedDate : '',
+      type: p.type ? p.type : '',
+    }));
   }
 });
 
-const removeRow = (idx) => {
-  inputRows.value.splice(idx - 1, 1);
-  inputRows.value.forEach((row, index) => {
-    row.index = index + 1;
-  });
-};
-
-const addRow = (idx) => {
-  inputRows.value.splice(idx, 0, ...[{
-    sampleId: '',
-    adh1b: {
-      ic: true,
-      wt: true,
-      mut: false,
-    },
-    aldh2: {
-      ic: true,
-      wt: true,
-      mut: false,
-    },
-    result: 'aagg',
-    resultLabel: ['ADH1B c.143基因型[A/A]', 'ALDH2 c.1510基因型[G/G]'],
-    assessment: 'normal-risk',
-    assessmentLabel: '一般風險基因型',
-    index: idx + 1
-  }]);
-  inputRows.value.forEach((row, index) => {
-    row.index = index + 1;
-  });
-};
-
-// 監聽 subjectListFile 的變化
+// Watch handlers
 watch(subjectListFile, async (newVal, oldVal) => {
   if (newVal && newVal !== oldVal) {
 
@@ -518,13 +560,11 @@ watch(subjectListFile, async (newVal, oldVal) => {
     // 解析檔案
     const extract_result = await extract(newVal);
 
-    let updatedInput = new Array();
+    let updatedInput = [...inputRows.value];
     let updatedSubject = {};
+
     const subjectSampleIdLst = Object.keys(extract_result);
-    const inputSampleIdLst = inputRows.value.map(obj => obj.sampleId)
-    inputRows.value.forEach(row => {
-      updatedInput.push(row);
-    });
+    const inputSampleIdLst = inputRows.value.map(obj => obj.sampleId);
 
     subjectSampleIdLst.forEach((sampleId, idx) => {
       const index = inputSampleIdLst.length + idx + 1;
@@ -533,12 +573,17 @@ watch(subjectListFile, async (newVal, oldVal) => {
         updatedInput.push({
           index: index,
           sampleId: sampleId,
-          adh1b: {
+          gba: {
             ic: true,
             wt: true,
             mut: false,
           },
-          aldh2: {
+          lrrk21628: {
+            ic: true,
+            wt: true,
+            mut: false,
+          },
+          lrrk22385: {
             ic: true,
             wt: true,
             mut: false,
@@ -565,40 +610,39 @@ watch(subjectListFile, async (newVal, oldVal) => {
 
     inputRows.value = updatedInput;
 
+    // 隱藏 loading 視窗
     $q.loading.hide();
   }
 });
 
-// 監聽 inputRows 的變化
-watch(inputRows, () => {
-  let updated = new Array();
+watch(inputRows, (newVal) => {
+  const updated = newVal.map(row => ({
+    index: row.index,
+    sampleId: row.sampleId,
+    gba_ic: row.gba.ic,
+    gba_wt: row.gba.wt,
+    gba_mut: row.gba.mut,
+    lrrk21628_ic: row.lrrk21628.ic,
+    lrrk21628_wt: row.lrrk21628.wt,
+    lrrk21628_mut: row.lrrk21628.mut,
+    lrrk22385_ic: row.lrrk22385.ic,
+    lrrk22385_wt: row.lrrk22385.wt,
+    lrrk22385_mut: row.lrrk22385.mut,
+    result: resultAssessment(row).result,
+    resultLabel: resultAssessment(row).resultLabel,
+    assessment: resultAssessment(row).assessment,
+    assessmentLabel: resultAssessment(row).assessmentLabel,
 
-  inputRows.value.forEach((row) => {
-    updated.push({
-      index: row.index,
-      sampleId: row.sampleId,
-      adh1b_ic: row.adh1b.ic,
-      adh1b_wt: row.adh1b.wt,
-      adh1b_mut: row.adh1b.mut,
-      aldh2_ic: row.aldh2.ic,
-      aldh2_wt: row.aldh2.wt,
-      aldh2_mut: row.aldh2.mut,
-      result: resultAssessment(row).result,
-      resultLabel: resultAssessment(row).resultLabel,
-      assessment: resultAssessment(row).assessment,
-      assessmentLabel: resultAssessment(row).assessmentLabel,
-
-      // 新增以下屬性
-      birth: row.birth ? row.birth : '',
-      collectingDate: row.collectingDate ? row.collectingDate : '',
-      edit: row.edit ? row.edit : '',
-      gender: row.gender ? row.gender : '',
-      idNumber: row.idNumber ? row.idNumber : '',
-      name: row.name ? row.name : '',
-      receivedDate: row.receivedDate ? row.receivedDate : '',
-      type: row.type ? row.type : '',
-    });
-  });
+    // 新增以下屬性
+    birth: row.birth ? row.birth : '',
+    collectingDate: row.collectingDate ? row.collectingDate : '',
+    edit: row.edit ? row.edit : '',
+    gender: row.gender ? row.gender : '',
+    idNumber: row.idNumber ? row.idNumber : '',
+    name: row.name ? row.name : '',
+    receivedDate: row.receivedDate ? row.receivedDate : '',
+    type: row.type ? row.type : '',
+  }));
 
   // 更新 store 中的 exportResults
   store.commit("export_page_setting/updateExportResults", updated);
@@ -606,5 +650,44 @@ watch(inputRows, () => {
   // 更新產品資訊
   const currentProduct = currentSettingProps.value ? currentSettingProps.value.product : '';
   store.commit("export_page_setting/updateExportedProduct", currentProduct);
+
 }, { deep: true });
+
+// Methods
+const removeRow = (idx) => {
+  inputRows.value.splice(idx - 1, 1);
+  inputRows.value.forEach((row, index) => {
+    row.index = index + 1;
+  });
+};
+
+const addRow = (idx) => {
+  inputRows.value.splice(idx, 0, {
+    sampleId: '',
+    gba: {
+      ic: true,
+      wt: true,
+      mut: false,
+    },
+    lrrk21628: {
+      ic: true,
+      wt: true,
+      mut: false,
+    },
+    lrrk22385: {
+      ic: true,
+      wt: true,
+      mut: false,
+    },
+    result: 'ttgggg',
+    resultLabel: ['GBA c.1448基因型[T/T]', 'LRRK c.4883基因型[G/G]', 'LRRK c.7153基因型[G/G]'],
+    assessment: 'normal-risk',
+    assessmentLabel: '一般風險基因型',
+    index: idx + 1
+  });
+  inputRows.value.forEach((row, index) => {
+    row.index = index + 1;
+  });
+};
+
 </script>

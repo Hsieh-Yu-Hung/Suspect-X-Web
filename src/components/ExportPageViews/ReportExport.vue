@@ -140,6 +140,14 @@ const getProductExportInfo = (product, reagent) => {
       productExport = 'NUDT15';
       break;
     case 'mthfr-input':
+      if (reagent === 'accuinMTHFR1' || reagent === 'accuinMTHFR3') {
+        exportSample = parseInputExport.exportMthfrv1Props(inputData);
+        productExport = 'MTHFR_c677';
+      } else if (reagent === 'accuinMTHFR2') {
+        exportSample = parseInputExport.exportMthfrv2Props(inputData);
+        productExport = 'MTHFR_c677_c1298';
+      }
+      break;
     case 'mthfr-import':
       if (reagent === 'accuinMTHFR1' || reagent === 'accuinMTHFR3') {
         exportSample = parseExportData.exportMthfrv1Props(currentAnalysisResult.value, selectedExport.value);
@@ -150,7 +158,7 @@ const getProductExportInfo = (product, reagent) => {
       }
       break;
     case 'cd':
-      exportSample = [];
+      exportSample = parseInputExport.exportCdProps(inputData);
       productExport = 'DQ2_DQ8';
       break;
     case 'alcohol':
@@ -158,35 +166,35 @@ const getProductExportInfo = (product, reagent) => {
       productExport = 'ADH1B_ALDH2';
       break;
     case 'cvd':
-      exportSample = [];
+      exportSample = parseInputExport.exportCvdProps(inputData);
       productExport = 'APOE_CVD';
       break;
     case 'b27':
-      exportSample = [];
+      exportSample = parseInputExport.exportB27Props(inputData);
       productExport = 'B27';
       break;
     case 'cyp1a2':
-      exportSample = [];
+      exportSample = parseInputExport.exportCyp1a2Props(inputData);
       productExport = 'CYP';
       break;
     case 'notch3':
-      exportSample = [];
+      exportSample = parseInputExport.exportNotch3Props(inputData);
       productExport = 'NOTCH3';
       break;
     case 'f2f5':
-      exportSample = [];
+      exportSample = parseInputExport.exportF2f5Props(inputData);
       productExport = 'F2_F5';
       break;
     case 'pd':
-      exportSample = [];
+      exportSample = parseInputExport.exportPdProps(inputData);
       productExport = 'LRRK2_GBA';
       break;
     case 'lct':
-      exportSample = [];
+      exportSample = parseInputExport.exportLctProps(inputData);
       productExport = 'LCT';
       break;
     case 'hfe':
-      exportSample = [];
+      exportSample = parseInputExport.exportHfeProps(inputData);
       productExport = 'HFE';
       break;
     case 'thal':
