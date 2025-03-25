@@ -184,6 +184,8 @@ const getProductName = computed(() => {
       return 'HTD';
     case 'apoe-import':
       return 'APOE';
+    case 'THAL_BETA':
+      return '(Temp) Beta-Thal';
     default:
       return props.product;
   }
@@ -200,6 +202,8 @@ const getInstrumentName = computed(() => {
       return 'qTOWER³';
     case 'z480':
       return 'Roche Cobas® z 480';
+    case 'sanger':
+      return 'Sanger Sequencer';
     default:
       return props.instrument;
   }
@@ -234,6 +238,8 @@ const getReagentName = computed(() => {
       return 'ACCUiN BioTech HTD v1';
     case 'accuinApoe1':
       return 'ACCUiN BioTech APOE v1';
+    case 'accuinTHALBeta':
+      return '(Temp) Beta-Thal Reagent';
     default:
       return props.reagent;
   }

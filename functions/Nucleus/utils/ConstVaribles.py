@@ -51,3 +51,4 @@ class NucleusVersion(Enum):
   NUDT15 = 'v3.4.3'
   SMA = 'v3.8.5'
   SMAv4 = 'v3.9.2'
+  THAL_BETA = 'v3.9.4'

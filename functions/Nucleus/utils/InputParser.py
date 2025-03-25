@@ -18,7 +18,7 @@ class AnalysisName:
   HTD = 'HTD'
   SMA = 'SMA'
   SMAv4 = 'SMAv4'
-
+  THAL_BETA = 'THAL_BETA'
 # 定義使用者資訊
 @dataclass
 class UserInfo:
@@ -89,6 +89,14 @@ class SMAv4InputData():
   smn2_samples: list[str]
   peak_condition: dict
   analysis_name: str
+
+# 定義 Thal Beta input 資料格式
+@dataclass
+class ThalBetaInputData:
+  input_file_path: str
+  left_trim: int
+  right_trim: int
+  peak_ratio: float
 
 # InputParser
 class InputParser:
@@ -178,6 +186,9 @@ class InputParser:
     elif analysisName == AnalysisName.SMAv4:
       sma_input_data = self.parseSMAv4InputData(self.input_data)
       return sma_input_data
+    elif analysisName == AnalysisName.THAL_BETA:
+      thal_beta_input_data = self.parseThalBetaInputData(self.input_data)
+      return thal_beta_input_data
 
   # 使用者資訊
   def getUserInfo(self):
@@ -513,4 +524,13 @@ class InputParser:
       smn2_samples = smn2_samples,
       peak_condition = peak_condition,
       analysis_name = AnalysisName.SMAv4
+    )
+
+  # 解析 Thal Beta input 資料
+  def parseThalBetaInputData(self, thal_beta_input_data):
+    return ThalBetaInputData(
+      input_file_path = thal_beta_input_data['file_path'],
+      left_trim = thal_beta_input_data['left_trim'],
+      right_trim = thal_beta_input_data['right_trim'],
+      peak_ratio = thal_beta_input_data['peak_ratio']
     )

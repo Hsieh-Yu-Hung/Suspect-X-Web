@@ -72,6 +72,11 @@
         <ResultViewSMAv4 ref="ref_resultViewSMAv4" @updatePeakSettings="call_updatePeakSettings" />
       </div>
 
+      <!-- THAL_BETA -->
+      <div class="col" v-else-if="currentDisplayAnalysis.analysis_name === 'THAL_BETA'">
+        <ResultViewBetaThal />
+      </div>
+
     </div>
 
   </q-page>
@@ -100,6 +105,7 @@ import ResultViewSMA from '@/components/PreviewPageViews/ResultViewSMA.vue';
 import ResultViewSMAv4 from '@/components/PreviewPageViews/ResultViewSMAv4.vue';
 import SMAv4ReanalysePanel from '@/components/PreviewPageViews/SMAv4ReanalysePanel.vue';
 import SMAReanalysisParamSettings from '@/components/PreviewPageViews/SMAReanalysisParamSettings.vue';
+import ResultViewBetaThal from '@/components/PreviewPageViews/ResultViewBetaThal.vue';
 
 // 取得 Quasar 和 Router 和 store
 const $q = useQuasar();
@@ -221,7 +227,6 @@ onMounted(async () => {
 
   // 更新 QC_PANEL_DISPLAY
   updateQC_PANEL_DISPLAY(currentAnalysisResult.value);
-
 });
 
 </script>

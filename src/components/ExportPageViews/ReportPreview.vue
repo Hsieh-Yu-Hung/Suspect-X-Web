@@ -419,6 +419,9 @@ const exportResults = computed(() => {
   }));
 });
 const exportSampleInfo = computed({
+  set: (val) => {
+    exportSampleInfo.value = val;
+  },
   get: () => {
     const inputData = store.getters["export_page_setting/getXsubi"]
     const importData = store.getters["export_page_setting/getSubjectInfoTable"];

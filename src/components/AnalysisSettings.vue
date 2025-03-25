@@ -136,6 +136,7 @@ const importArray = [
   { label: "SMA", val: "sma" },
   { label: "APOE", val: "apoe-import" },
   { label: "NUDT15", val: "nudt15" },
+  { label: "α/β THAL", val: "thal-import" },
 ];
 
 /* 顯示 input 結果的選項 */
@@ -274,6 +275,11 @@ const instrumentArray = (product) => {
       { label: "QuantStudio™ 3", val: "qs3" },
       { label: "Roche Cobas® z 480", val: "z480" },
     ]
+  } else if (product == 'thal-import') {
+    return [
+      { label: "Qsep 100", val: "qsep100" },
+      { label: "Sanger Sequencer", val: "sanger" },
+    ]
   } else {
     return [
       { label: '', val: ''}
@@ -334,6 +340,14 @@ const reagentArray = (product, instrument) => {
   } else if (product == 'apoe-import') {
     return [
       { label: "ACCUiN BioTech APOE v1", val: "accuinApoe1" },
+    ]
+  } else if (product == 'thal-import' && instrument == 'qsep100') {
+    return [
+      { label: "ACCUiN BioTech THAL Alpha", val: "accuinTHALAlpha" },
+    ]
+  } else if (product == 'thal-import' && instrument == 'sanger') {
+    return [
+      { label: "ACCUiN BioTech THAL Beta", val: "accuinTHALBeta" },
     ]
   } else {
     return [

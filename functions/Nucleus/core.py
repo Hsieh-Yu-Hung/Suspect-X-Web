@@ -16,6 +16,7 @@ from .fxs import FXS
 from .htd import HTD
 from .sma import SMA
 from .smav4 import SMAv4
+from .thalbeta import ThalBeta
 from utils.InputParser import InputParser, AnalysisName
 
 # Nucleus 控制核心
@@ -129,3 +130,16 @@ class Core:
           )
 
       return sma_result
+
+    # Thal Beta 分析
+    def runThalBeta(self, input_data):
+      thal_beta_parsed_data = self.inputParser.parseInputObject(input_data, AnalysisName.THAL_BETA)
+      user_info = self.inputParser.getUserInfo()
+      thal_beta_result = ThalBeta(
+        input_file_path = thal_beta_parsed_data.input_file_path,
+        left_trim = thal_beta_parsed_data.left_trim,
+        right_trim = thal_beta_parsed_data.right_trim,
+        peak_ratio = thal_beta_parsed_data.peak_ratio,
+        user_info = user_info
+      )
+      return thal_beta_result

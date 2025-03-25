@@ -519,6 +519,8 @@ export const getAnalysisResult = async (user_id, analysis_name, analysis_id) => 
         return 'nudt15_result';
       case 'SMAv4':
         return 'sma_v4_result';
+      case 'THAL_BETA':
+        return 'thalbeta_result';
       default:
         return analysis_name;
     }

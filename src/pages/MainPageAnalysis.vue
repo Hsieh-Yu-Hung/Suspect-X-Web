@@ -43,6 +43,12 @@
         <ImportSMA class="q-ma-none" />
       </div>
 
+      <!-- THAL -->
+      <div class="col " v-else-if="currentProduct() == 'thal-import'">
+        <ImportThalAlpha v-if="currentReagent() == 'accuinTHALAlpha'" />
+        <ImportThalBeta v-else-if="currentReagent() == 'accuinTHALBeta'" />
+      </div>
+
       <!-- =========================== Inputs =========================== -->
 
       <!-- Thal -->
@@ -137,6 +143,8 @@ import ImportNudt15 from '@/components/ImportViews/ImportNudt15.vue';
 import ImportFXS from '@/components/ImportViews/ImportFXS.vue';
 import ImportHTD from '@/components/ImportViews/ImportHTD.vue';
 import ImportSMA from '@/components/ImportViews/ImportSMA.vue';
+import ImportThalAlpha from '@/components/ImportViews/ImportThalAlpha.vue';
+import ImportThalBeta from '@/components/ImportViews/ImportThalBeta.vue';
 
 // Input views
 import InputThal from '@/components/InputViews/InputThal.vue';

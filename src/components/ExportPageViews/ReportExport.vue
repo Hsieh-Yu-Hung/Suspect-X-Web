@@ -110,6 +110,10 @@ const getProductExportInfo = (product, reagent) => {
   const inputData = store.getters["export_page_setting/getExportResults"];
 
   switch (product) {
+    case 'thal-import':
+      exportSample = parseExportData.exportThalBetaProps(currentAnalysisResult.value, selectedExport.value);
+      productExport = 'THAL_BETA';
+      break;
     case 'fx':
       exportSample = parseExportData.exportFxProps(currentAnalysisResult.value, selectedExport.value);
       productExport = reagent === 'accuinFx1' ? 'FXSv1' : 'FXSv2';
@@ -228,6 +232,76 @@ function runExportJSON(exportObj) {
   return Promise.resolve({ isExported: true });
 }
 
+// 解析 ThalBeta 的 row_content
+const parsedThalBetaRow = (row_content) => {
+  const seperator = '___SEP_ANNO___';
+  if (row_content && row_content.includes(seperator)) {
+    const split_content = row_content.split(seperator);
+    return split_content.map((content, index) => `${index + 1}. ${content.trim()}`).join('\n');
+  }
+  return row_content;
+};
+
+// 加入 beta thal 的表格
+const addBetaThalTable = (worksheet) => {
+  const thalbetaHeader = [ 'Genomic Position', 'Ref', 'Alt', 'Variant Class', 'Genotype', 'Variant Type', 'Variant Name', 'Disease' ];
+  const resultData = currentAnalysisResult.value.resultObj.resultTable;
+  const resultHeader = currentAnalysisResult.value.resultObj.resultHeader;
+
+  // 加入結果表格
+  const thalbetaHeaderRow = worksheet.addRow(thalbetaHeader);
+  const writeThalbetaResultRow = resultData.rows.map(row => [
+    `${row.adjusted_position.chr}:${row.adjusted_position.start}-${row.adjusted_position.end}`,
+    row.ref,
+    row.alt,
+    row.type,
+    row.genotype,
+    parsedThalBetaRow(row.Variant_Type),
+    parsedThalBetaRow(row.Present_Name),
+    parsedThalBetaRow(row.Disease_Type),
+  ]);
+
+  // 寫入結果表格
+  const thalbetaResultRow = worksheet.addRows(writeThalbetaResultRow);
+  worksheet.addRow();
+
+  // 設定結果表格樣式
+  thalbetaHeaderRow.eachCell((cell, colNumber) => {
+    cell.font = {
+      name: 'Calibri',
+      bold: true,
+      size: 11,
+      color: { argb: '4774AA' }
+    };
+    cell.alignment = {
+      horizontal: 'center',
+      vertical: 'middle',
+      wrapText: false
+    };
+  });
+
+  // 設定結果表格樣式
+  thalbetaResultRow.forEach(row => {
+    row.eachCell((cell, colNumber) => {
+      cell.font = {
+        name: 'Calibri',
+      };
+      cell.alignment = {
+        horizontal: 'center',
+        vertical: 'middle',
+        wrapText: false
+      };
+      if (colNumber === 8) {
+        cell.alignment = {
+          horizontal: 'left',
+          vertical: 'middle',
+          wrapText: false
+        };
+      }
+    });
+  });
+};
+
 // 修改 downloadReportFile 函數以使用 ExcelJS
 async function downloadReportFile(data) {
   const savePath = data[0];
@@ -320,26 +394,33 @@ async function downloadReportFile(data) {
     // 新增資料行
     const addInfoRow = worksheet.addRows(writeInfo);
     worksheet.addRow();
+
+    // 如果 product 是 THAL_BETA 則寫入 THAL_BETA 表格
+    if (product === 'THAL_BETA') {
+      addBetaThalTable(worksheet);
+    }
+
+    // 加入結果表格
     const headerRow = worksheet.addRow(headers);
     const writeSampleRows = worksheet.addRows(writeSample);
 
     // 設定欄寬
     worksheet.columns = [
       { width: 50 },  // A 欄 - Sample ID
-      { width: 16 },  // B 欄 - Results
-      { width: 16 },  // C 欄 - Assessment
-      { width: 16 },  // D 欄 - QC
-      { width: 16 },  // E 欄 - Name
-      { width: 16 },  // F 欄 - Date of birth
-      { width: 16 },  // G 欄 - Gender
-      { width: 16 },  // H 欄 - ID Number
-      { width: 16 },  // I 欄 - Type
-      { width: 16 },  // J 欄 - Collecting Date
-      { width: 16 },  // K 欄 - Received Date
-      { width: 16 },  // L 欄 - Laboratory
-      { width: 16 },  // M 欄 - Contact
-      { width: 16 },  // N 欄 - Authorized by
-      { width: 16 },  // O 欄 - Reporting Date
+      { width: 20 },  // B 欄 - Results
+      { width: 20 },  // C 欄 - Assessment
+      { width: 20 },  // D 欄 - QC
+      { width: 20 },  // E 欄 - Name
+      { width: 20 },  // F 欄 - Date of birth
+      { width: 20 },  // G 欄 - Gender
+      { width: 20 },  // H 欄 - ID Number
+      { width: 20 },  // I 欄 - Type
+      { width: 20 },  // J 欄 - Collecting Date
+      { width: 20 },  // K 欄 - Received Date
+      { width: 20 },  // L 欄 - Laboratory
+      { width: 20 },  // M 欄 - Contact
+      { width: 20 },  // N 欄 - Authorized by
+      { width: 20 },  // O 欄 - Reporting Date
     ];
 
     // 設定 addInfoRow 樣式

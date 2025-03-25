@@ -1,20 +1,6 @@
 // 導入 firebase function
 import { RunAnalysis } from '@/firebase/firebaseFunction';
 
-// 由 AnalysisName 決定 check_type
-function getCheckType(AnalysisName, currentSettingProps) {
-  const Matrix = {
-    'APOE': 'qsep100',
-    'MTHFR': currentSettingProps.instrument,
-    'NUDT15': currentSettingProps.instrument,
-    'FXS': 'qsep100',
-    'HTD': 'qsep100',
-    'SMA': currentSettingProps.instrument
-  }
-  const check_type = AnalysisName in Matrix ? Matrix[AnalysisName] : null;
-  return check_type;
-}
-
 // 製作 run parameter
 function makeRunParameter(inputData, organization, instrument, reagent) {
 
@@ -36,19 +22,12 @@ export async function submitWorkflow(AnalysisName, InputData, userInfo, currentS
   // 初始化 execute_status
   let execute_status = {status:"pending", message: "Waiting for start...", result:null}
 
-  /* 1. Check file type */
-  const checkType = getCheckType(AnalysisName, currentSettingProps);
-  if (!checkType){
-    execute_status = {status:"error", message: "未知的分析名稱", result:null}
-    return execute_status;
-  }
-
-  /* 2. 製作 run Parameter */
+  /* 1. 製作 run Parameter */
   const currentInstrument = currentSettingProps.instrument;
   const currentReagent = currentSettingProps.reagent;
   const runParameter = makeRunParameter(InputData, userInfo.organization, currentInstrument, currentReagent);
 
-  /* 3. 讓後台分析 */
+  /* 2. 讓後台分析 */
   const analysis_name = AnalysisName;
   const analysis_input_data = runParameter;
   const analysis_result = await RunAnalysis({analysis_name, analysis_input_data}).then((response)=>{return response.data});
