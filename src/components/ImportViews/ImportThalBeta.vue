@@ -619,115 +619,114 @@ const onSubmit = async () => {
     return;
   }
 
-  // 取得 inputFiles
-  const sampleInput = sampleList_row.value[0];
-
-  // *. 顯示 loading 視窗
-  $q.loading.show({
-    spinner: QSpinnerFacebook,
-    spinnerColor: "deep-orange-6",
-    spinnerSize: 100,
-    message: "Analyzing...",
-    messageColor: "white",
-  });
-
-  // 取得 uploaded_file_path
-  const beta_thal_input_data = {
-    sample_name: sampleInput.sample_name,
-    file_path: sampleInput.sequencing_files,
-    left_trim: left_trim.value,
-    right_trim: right_trim.value,
-    peak_ratio: peak_ratio.value
-  }
-
   // 取得 settingProps
   const currentSettingProps = store.getters["analysis_setting/getSettingProps"];
 
-  // 執行 submitWorkflow
-  const analysisResult = await submitWorkflow('THAL_BETA', beta_thal_input_data, user_info.value, currentSettingProps);
+  // 儲存所有分析結果的陣列
+  const allbetaThalResults = [];
+  const allbetaThalExportResults = [];
+  let tmp_resultObj = null;
+  try {
 
-  // 檢查有沒有出錯
-  if (analysisResult.status == 'success'){
-    dialog_error_message.value = "";
+    // 使用 for 迴圈處理所有樣本
+    for (const [index, sampleInput] of sampleList_row.value.entries()) {
 
-    // 將 result 轉換成 Object
-    const resultObj = JSON.parse(analysisResult.result);
-
-    // 製作 THAL_BETA_RESULT
-    const THAL_BETA_Result = THAL_BETA_RESULT(
-      resultObj.sample_name,
-      resultObj.input_file.join(','),
-      resultObj.parameters,
-      resultObj.result
-    );
-
-    // 製作 EXPORT_RESULT
-    const exportResult = EXPORT_RESULT(1, resultObj.sample_name, "", "", "", "");
-
-    // 製作 ANALYSIS_RESULT
-    const AnalysisResult = ANALYSIS_RESULT(
-      currentAnalysisID.value.analysis_name,
-      currentAnalysisID.value.analysis_uuid,
-      resultObj.config,
-      ["N/A"],
-      resultObj.qc_status,
-      resultObj.errMsg,
-      THAL_BETA_Result,
-      [exportResult]
-    );
-
-    console.log(AnalysisResult);
-
-    return;
-
-    // 將結果存到 firestore
-    update_userAnalysisData(user_info.value.uid, dbThalBetaResultPath, AnalysisResult, currentAnalysisID.value.analysis_uuid);
-
-    // 更新 currentDisplayAnalysisID
-    store.commit("analysis_setting/updateCurrentDisplayAnalysisID", {
-      analysis_name: "THAL_BETA",
-      analysis_uuid: currentAnalysisID.value.analysis_uuid,
-    });
-
-    // 更新 currentAnalysisID
-    const new_id = `analysis_${uuidv4()}`;
-    store.commit('analysis_setting/updateCurrentAnalysisID', {
-      analysis_name: "THAL_BETA",
-      analysis_uuid: new_id,
-    });
-    currentAnalysisID.value = store.getters['analysis_setting/getCurrentAnalysisID'];
-
-    // 清除 store 的 subjectInfoTable 和 LabInfomation
-    store.commit("export_page_setting/initExportPageSetting");
-
-    // *. 隱藏 loading 視窗
-    $q.loading.hide();
-
-    // 跳轉到分析結果頁面
-    /*
-    setTimeout(()=>{
-      router.push({
-        path: '/page-preview',
+      // 顯示 loading 視窗
+      $q.loading.show({
+        spinner: QSpinnerFacebook,
+        spinnerColor: "deep-orange-6",
+        spinnerSize: 100,
+        message: `正在分析樣本 ${index + 1}/${sampleList_row.value.length}`,
+        messageColor: "white",
       });
-    }, 500);
-    */
-  }
-  else if (analysisResult.status == 'error'){
-    // 通知
-    $q.notify({
-      progress: true,
-      message: "分析流程出了一點問題...",
-      icon: 'mdi-alert-circle',
-      color: 'deep-orange-6',
-      position: 'top'
-    });
-    // 跳出警告視窗
-    dialog_error_message.value = analysisResult.message;
-    warning_dialog.value.open_warning_dialog();
 
-    // *. 隱藏 loading 視窗
+      // 準備輸入資料
+      const beta_thal_input_data = {
+        sample_name: sampleInput.sample_name,
+        file_path: sampleInput.sequencing_files,
+        left_trim: left_trim.value,
+        right_trim: right_trim.value,
+        peak_ratio: peak_ratio.value
+      };
+
+      // 執行分析
+      const analysisResult = await submitWorkflow('THAL_BETA', beta_thal_input_data, user_info.value, currentSettingProps);
+
+      if (analysisResult.status === 'success') {
+
+        // 將 result 轉換成 Object
+        const resultObj = JSON.parse(analysisResult.result);
+        tmp_resultObj = resultObj;
+
+        // 製作 THAL_BETA_RESULT
+        const THAL_BETA_Result = THAL_BETA_RESULT(
+          resultObj.sample_name,
+          resultObj.input_file.join(','),
+          resultObj.parameters,
+          resultObj.result
+        );
+
+        // 製作 EXPORT_RESULT
+        const exportResult = EXPORT_RESULT(index + 1, resultObj.sample_name, "", "", "", "");
+
+        // 將結果加入陣列
+        allbetaThalResults.push(THAL_BETA_Result);
+        allbetaThalExportResults.push(exportResult);
+      }
+      else if (analysisResult.status == 'error') {
+        throw new Error(`Sample name: ${sampleInput.sample_name} 分析失敗, Error: ${analysisResult.message}`);
+      }
+    }
+  }
+  catch (error) {
+    // 發生錯誤時的處理
+    console.error('Analysis error:', error);
+    dialog_error_message.value = error.message;
+    warning_dialog.value.open_warning_dialog();
     $q.loading.hide();
   }
+
+  // 製作 ANALYSIS_RESULT
+  const AnalysisResult = ANALYSIS_RESULT(
+    currentAnalysisID.value.analysis_name,
+    currentAnalysisID.value.analysis_uuid,
+    tmp_resultObj.config,
+    ["N/A"],
+    tmp_resultObj.qc_status,
+    tmp_resultObj.errMsg,
+    allbetaThalResults,
+    allbetaThalExportResults
+  );
+
+  // 將結果存到 firestore
+  update_userAnalysisData(user_info.value.uid, dbThalBetaResultPath, AnalysisResult, currentAnalysisID.value.analysis_uuid);
+
+  // 更新 currentDisplayAnalysisID
+  store.commit("analysis_setting/updateCurrentDisplayAnalysisID", {
+    analysis_name: "THAL_BETA",
+    analysis_uuid: currentAnalysisID.value.analysis_uuid,
+  });
+
+  // 更新 currentAnalysisID
+  const new_id = `analysis_${uuidv4()}`;
+  store.commit('analysis_setting/updateCurrentAnalysisID', {
+    analysis_name: "THAL_BETA",
+    analysis_uuid: new_id,
+  });
+  currentAnalysisID.value = store.getters['analysis_setting/getCurrentAnalysisID'];
+
+  // 清除 store 的 subjectInfoTable 和 LabInfomation
+  store.commit("export_page_setting/initExportPageSetting");
+
+  // *. 隱藏 loading 視窗
+  $q.loading.hide();
+
+  // 跳轉到分析結果頁面
+  setTimeout(()=>{
+    router.push({
+      path: '/page-preview',
+    });
+  }, 500);
 
 }
 
