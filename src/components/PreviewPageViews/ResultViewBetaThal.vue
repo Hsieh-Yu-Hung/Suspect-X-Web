@@ -26,6 +26,17 @@
               </q-th>
             </template>
 
+            <!-- 設定 Assessment 的顯示 -->
+            <template v-slot:body-cell-assessment="props">
+              <q-td :props="props">
+                <q-chip
+                  :color="props.row.assessment === 'Pathogenic Detected' ? 'red-8' : 'green-5'"
+                  text-color="white"
+                  :label="props.row.assessment"
+                />
+              </q-td>
+            </template>
+
             <!-- 設定 showData 按鈕 -->
             <template v-slot:body-cell-showData="props">
               <q-td :props="props">
@@ -77,12 +88,16 @@
           </div>
 
           <!-- 顯示 Assessment -->
-          <div class="row">
+          <div class="row" style="display: flex; align-items: center;" >
             <div class="col-2 text-h5 text-bold text-subtitle2 text-center" style="margin-block: 1em;">
               Assessment:
             </div>
             <div class="col text-h5 text-bold text-subtitle2 text-left" style="margin-block: 1em;">
-              {{ displayAssessment }}
+              <q-chip
+                :color="displayAssessment === 'Pathogenic Detected' ? 'red-8' : 'green-5'"
+                text-color="white"
+                :label="displayAssessment"
+              />
             </div>
           </div>
         </div>
@@ -116,6 +131,21 @@
               </q-th>
             </template>
 
+            <!-- 特殊處理 Clinical Significance 的顯示 -->
+            <template v-slot:body-cell-clinicalSignificance="props">
+              <q-td :props="props">
+                <div style="display: flex; flex-direction: column; align-items: center; gap: 0.5em;">
+                <q-chip
+                  v-for="item in props.row.ClinSigList"
+                    :key="item"
+                    :label="item"
+                    :color="ClinicalSignificance[item.replace(' ', '_')].color"
+                    text-color="white"
+                  />
+                </div>
+              </q-td>
+            </template>
+
             <!-- 特殊處理 Variant Type 的顯示 -->
             <template v-slot:body-cell-variantType="props">
               <q-td :props="props">
@@ -147,14 +177,16 @@
             <!-- 特殊處理 Disease 的顯示 -->
             <template v-slot:body-cell-disease="props">
               <q-td :props="props">
-                <template v-if="props.value && props.value.includes(separator)">
-                  <div v-for="(item, index) in props.value.split(separator)" :key="index">
-                    {{ index + 1 }}. {{ item }}
-                  </div>
-                </template>
-                <template v-else>
-                  {{ props.value }}
-                </template>
+                <div style="width: 50em; white-space: wrap;">
+                  <template v-if="props.value && props.value.includes(separator)">
+                    <div v-for="(item, index) in props.value.split(separator)" :key="index">
+                      {{ index + 1 }}. {{ item }}
+                    </div>
+                  </template>
+                  <template v-else>
+                    {{ props.value }}
+                  </template>
+                </div>
               </q-td>
             </template>
 
@@ -180,6 +212,7 @@ import { useStore } from 'vuex';
 import { update_userAnalysisData } from '@/firebase/firebaseDatabase';
 import { getCurrentDisplayAnalysisID, getCurrentAnalysisResult } from '@/composables/checkAnalysisStatus.js';
 import { updateGetUserInfo } from '@/composables/accessStoreUserInfo';
+import { Variant, ClinicalSignificance, Consequence } from '@/composables/useInterpretClinvar.js';
 
 // 定義變數
 const showResult = ref(true);
@@ -201,8 +234,8 @@ const currentDisplayAnalysis = ref({
 
 // 控制顯示的結果列表
 const toggleDisplayRecords = ref(true);
-const displayResult = ref('尚未決定');
-const displayAssessment = ref('尚未決定');
+const displayResult = ref('N/A');
+const displayAssessment = ref('N/A');
 
 // 擷取 Genome Position
 const getGenomePosition = (row) => {
@@ -278,22 +311,22 @@ const resultColumns = [
     field: "type"
   },
   {
-    name: "clinicalSignificance",
-    align: "center",
-    label: "Clinical Significance",
-    field: "ClinicalSignificance"
-  },
-  {
     name: "genotype",
     align: "center",
     label: "Genotype",
     field: "genotype"
   },
   {
+    name: "clinicalSignificance",
+    align: "center",
+    label: "Clinical Significance",
+    field: (row) => row.ClinicalSignificance ? row.ClinicalSignificance.split('/'): ''
+  },
+  {
     name: "variantType",
     align: "center",
     label: "Variant Type",
-    field: "Consequence"
+    field: (row) => row.Consequence ? Consequence[row.Consequence].label : ''
   },
   {
     name: "variantName",
@@ -305,7 +338,10 @@ const resultColumns = [
     name: "disease",
     align: "left",
     label: "Disease",
-    field: "PhenotypeList"
+    field: (row) => {
+      const FilterList = ["not specified", "not provided", "conditions"];
+      return row.PhenotypeList ? row.PhenotypeList.split('|').filter(item => !FilterList.some(filter => item.includes(filter))).join(', ') : '';
+    }
   },
 ];
 
@@ -317,13 +353,57 @@ const currentAnalysisFile = ref([]);
 // 更新 summaryRows
 function updateSummaryRows() {
   const summarize = currentAnalysisResult.value.resultObj.map((item, index) => {
+
+    // 取得 result_rows 並增加細節
+    const result_rows = item.resultTable.rows;
+    result_rows.forEach(row => {
+
+      // 處理 ClinicalSignificance
+      if (row.ClinicalSignificance) {
+        // 將 ; 轉換為 /
+        if (row.ClinicalSignificance.includes(';')) {
+          row.ClinicalSignificance = row.ClinicalSignificance.replace(';', '/');
+        }
+        // 將 ClinicalSignificance 轉換為列表
+        row["ClinSigList"] = row.ClinicalSignificance.split('/');
+      }
+      else {
+        row["ClinSigList"] = [];
+      }
+
+      // 計算嚴重度(取最嚴重)
+      if (row.ClinSigList.length > 0) {
+        const severity = row.ClinSigList.map(item => ClinicalSignificance[item.replace(' ', '_')].severity_level);
+        row["Severity"] = Math.max(...severity);
+      }
+      else {
+        row["Severity"] = 0;
+      }
+    });
+
+    // 挑出 Severity 最高的 row 當作結果回報
+    const selected_Row = result_rows.sort((a, b) => b.Severity - a.Severity)[0];
+
+    // 結果為 selected_Row 的 Name
+    const ResultLabel = selected_Row.Name;
+
+    // 如果 selected_Row (最嚴重) 有包含 "Pathogenic" 或 "Likely pathogenic" 則回報 "β-thalassemia", 否則回報 "Not detected"
+    const key_word_pathogenic = [ClinicalSignificance["Pathogenic"].value, ClinicalSignificance["Likely_pathogenic"].value];
+    const AssessmentLabel = selected_Row.ClinSigList.some(item => key_word_pathogenic.includes(item)) ? "Pathogenic Detected" : "Not detected";
+
     return {
       index: index + 1,
       sampleName: item.sample_name,
-      result: "尚未決定",
-      assessment: "尚未決定"
+      result: ResultLabel,
+      assessment: AssessmentLabel
     }
   })
+
+  // 更新 displayResult 和 displayAssessment
+  displayResult.value = summarize[currentSelectedSampleIndex.value - 1].result;
+  displayAssessment.value = summarize[currentSelectedSampleIndex.value - 1].assessment;
+
+  // 更新 summaryRows
   summaryRows.value = summarize;
 }
 
@@ -431,6 +511,58 @@ watch(toggleDisplayRecords, () => {
 watch(currentSelectedSampleIndex, () => {
   updateResultTable(currentSelectedSampleIndex.value);
   adjustTableDisplay();
+
+  // 更新 displayResult 和 displayAssessment
+  const summarize = currentAnalysisResult.value.resultObj.map((item, index) => {
+
+    // 取得 result_rows 並增加細節
+    const result_rows = item.resultTable.rows;
+    result_rows.forEach(row => {
+
+      // 處理 ClinicalSignificance
+      if (row.ClinicalSignificance) {
+        // 將 ; 轉換為 /
+        if (row.ClinicalSignificance.includes(';')) {
+          row.ClinicalSignificance = row.ClinicalSignificance.replace(';', '/');
+        }
+        // 將 ClinicalSignificance 轉換為列表
+        row["ClinSigList"] = row.ClinicalSignificance.split('/');
+      }
+      else {
+        row["ClinSigList"] = [];
+      }
+
+      // 計算嚴重度(取最嚴重)
+      if (row.ClinSigList.length > 0) {
+        const severity = row.ClinSigList.map(item => ClinicalSignificance[item.replace(' ', '_')].severity_level);
+        row["Severity"] = Math.max(...severity);
+      }
+      else {
+        row["Severity"] = 0;
+      }
+    });
+
+    // 挑出 Severity 最高的 row 當作結果回報
+    const selected_Row = result_rows.sort((a, b) => b.Severity - a.Severity)[0];
+
+    // 結果為 selected_Row 的 Name
+    const ResultLabel = selected_Row.Name;
+
+    // 如果 selected_Row (最嚴重) 有包含 "Pathogenic" 或 "Likely pathogenic" 則回報 "β-thalassemia", 否則回報 "Not detected"
+    const key_word_pathogenic = [ClinicalSignificance["Pathogenic"].value, ClinicalSignificance["Likely_pathogenic"].value];
+    const AssessmentLabel = selected_Row.ClinSigList.some(item => key_word_pathogenic.includes(item)) ? "Pathogenic Detected" : "Not detected";
+
+    return {
+      index: index + 1,
+      sampleName: item.sample_name,
+      result: ResultLabel,
+      assessment: AssessmentLabel
+    }
+  })
+
+  // 更新 displayResult 和 displayAssessment
+  displayResult.value = summarize[currentSelectedSampleIndex.value - 1].result;
+  displayAssessment.value = summarize[currentSelectedSampleIndex.value - 1].assessment;
 });
 
 </script>

@@ -18,8 +18,12 @@ import { Functions } from "./firebaseFunction";
 import {
   Database, login_method, getData, addLoginInfoDatabase, addEmailListDatabase,
   USER_INFO, EMAIL_INFO, getSoftwareVersionDatabase, getOrganizationDatabase,
-  addSoftwareVersionDatabase, addOrganizationDatabase, SOFTWARE_DATA, ORGAN_DATA
+  addSoftwareVersionDatabase, addOrganizationDatabase, SOFTWARE_DATA, ORGAN_DATA,
+  addTestingSample
 } from "./firebaseDatabase";
+
+// 設定
+import config from "../../config.js";
 
 // 登入 admin
 async function create_fake_user(email, password, admin=false) {
@@ -96,6 +100,16 @@ async function dev_add_organization() {
   }
 }
 
+// 開發環境時，加入 Beta Thal 測試樣本
+async function dev_add_beta_thal_testing_samples() {
+
+  // 取得測試樣本設定
+  const beta_thal_testing_sample = config.testing_samples.beta_thal;
+
+  // 加入到 firestore
+  await addTestingSample(beta_thal_testing_sample, 'beta_thal_testings');
+}
+
 // 主程式
 export default async function onDevelopment() {
 
@@ -120,5 +134,8 @@ export default async function onDevelopment() {
 
   // 開發環境時，加入組織資料
   await dev_add_organization();
+
+  // 開發環境時，加入 Beta Thal 測試樣本
+  await dev_add_beta_thal_testing_samples();
 }
 

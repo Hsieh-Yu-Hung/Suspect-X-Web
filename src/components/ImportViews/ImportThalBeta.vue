@@ -167,12 +167,13 @@
             </div>
 
             <!-- 開發設定版面 -->
-            <div style="margin-block: 2em;">
+            <div style="margin-block: 2em; background-color: rgba(221, 232, 243, 0.2); border-radius: 10px; padding: 10px;">
               <!-- 開發設定標題 -->
-              <div class="row">
+              <div class="row" style="display: flex; flex-direction: row; justify-content: space-between; align-items: center;">
                 <span class="text-bold text-h6 text-blue-grey-7">
                   Development Settings
                 </span>
+                <q-btn dense flat label="Load Testing" icon="mdi-download" text-color="indigo-7" @click="loadTestingSamples" />
               </div>
 
               <!-- 開發設定參數:Left-Trim, Right-Trim -->
@@ -274,7 +275,7 @@ import { submitWorkflow } from '@/composables/submitWorkflow';
 import { updateGetUserInfo } from '@/composables/accessStoreUserInfo';
 import { CATEGORY_LIST, upload_files_to_storage } from '@/composables/storageManager';
 import { setAnalysisID } from '@/composables/checkAnalysisStatus';
-import { ANALYSIS_RESULT, EXPORT_RESULT, update_userAnalysisData, simplifyFilePath, dataset_list, Database } from '@/firebase/firebaseDatabase';
+import { ANALYSIS_RESULT, EXPORT_RESULT, update_userAnalysisData, dataset_list, Database } from '@/firebase/firebaseDatabase';
 
 // 引入元件
 import WarningDialog from '@/components/WarningDialog.vue';
@@ -763,6 +764,22 @@ async function loadHistoryData() {
   });
 }
 
+// 載入測試 Sample
+async function loadTestingSamples() {
+
+  // 取得 database 中所有分析
+  const search_path = `${dataset_list.testing_data}`;
+  const collectionRef = collection(Database, search_path);
+
+  // 取得所有文件
+  const querySnapshot = await getDocs(collectionRef);
+
+  // 載入測試樣本
+  const testing_sample_list = querySnapshot.docs[0].data();
+  sampleList_row.value = testing_sample_list.sample_list;
+  console.log(sampleList_row.value);
+}
+
 // 掛載時
 onMounted(async () => {
   // 取得使用者身份
@@ -784,6 +801,8 @@ onMounted(async () => {
 
   // 讀取 database 的樣本列表
   await loadDatabaseSampleList();
+
+  console.log(sampleList_row.value);
 });
 
 // 監聽 controlSampleFile

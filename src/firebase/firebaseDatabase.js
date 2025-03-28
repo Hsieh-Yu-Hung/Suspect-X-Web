@@ -21,6 +21,7 @@ export const dataset_list = {
   software_version_list: 'software_version_list',
   organization_list: 'organization_list',
   user_analysis: 'user_analysis',
+  testing_data: 'testing_data',
 };
 
 // 定義 USER_INFO
@@ -545,4 +546,21 @@ export const simplifyFilePath = (file_path) => {
 
   // 移除附檔名
   return fileName.replace(/\.[^.]+$/, '');
+}
+
+// 加入測試 Sample 到 Database
+export const addTestingSample = async (data, dataset_path) => {
+  addData(dataset_list.testing_data, data, dataset_path).then((result) => {
+    if (result.status === 'success') {
+      const message = `成功加入測試樣本, 路徑: ${dataset_path}`;
+      const source = 'firebaseDatabase.js line.553';
+      const user = 'admin';
+      loggerV2.debug(message, source, user);
+    } else if (result.status === 'error') {
+      const message = `加入測試樣本失敗, 路徑: ${dataset_path}, 原因: ${result.message}`;
+      const source = 'firebaseDatabase.js line.560';
+      const user = 'admin';
+      loggerV2.error(message, source, user);
+    }
+  });
 }
