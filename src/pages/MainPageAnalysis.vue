@@ -43,10 +43,14 @@
         <ImportSMA class="q-ma-none" />
       </div>
 
-      <!-- THAL -->
-      <div class="col " v-else-if="currentProduct() == 'thal-import'">
-        <ImportThalAlpha v-if="currentReagent() == 'accuinTHALAlpha'" />
-        <ImportThalBeta v-else-if="currentReagent() == 'accuinTHALBeta'" />
+      <!-- THAL ALPHA -->
+      <div class="col " v-else-if="currentProduct() == 'thal-import-alpha'">
+        <ImportThalAlpha class="q-ma-none" />
+      </div>
+
+      <!-- THAL BETA -->
+      <div class="col " v-else-if="currentProduct() == 'thal-import-beta'">
+        <ImportThalBeta class="q-ma-none" />
       </div>
 
       <!-- =========================== Inputs =========================== -->

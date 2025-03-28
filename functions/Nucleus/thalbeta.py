@@ -1,6 +1,7 @@
 import os
 import sys
 import requests
+import json
 from dataclasses import dataclass
 from utils.ConstVaribles import NucleusVersion, QCStatus
 from utils.DataObject import AnalysisOutput
@@ -21,12 +22,13 @@ TRACY_API_URL = "https://run-tracy-1055355904275.asia-east1.run.app/analyze"
 # 定義 ThalBeta 輸出
 @dataclass
 class ThalBetaOutput(AnalysisOutput):
+  sample_name:str = None
   input_file:str = None
   parameters:dict = None
   result:dict = None
 
 # 執行 ThalBeta 分析
-def ThalBeta(input_file_path, left_trim, right_trim, peak_ratio, user_info):
+def ThalBeta(sample_name, input_file_path, left_trim, right_trim, peak_ratio, user_info):
 
     # Logger settings
     sender = user_info.organization
@@ -49,10 +51,11 @@ def ThalBeta(input_file_path, left_trim, right_trim, peak_ratio, user_info):
     response = requests.post(
         TRACY_API_URL,
         json={
-            "input_file": input_file_path,
-            "left_trim": left_trim,
-            "right_trim": right_trim,
-            "peak_ratio": peak_ratio
+          "sample_name": sample_name,
+          "input_file": input_file_path,
+          "left_trim": left_trim,
+          "right_trim": right_trim,
+          "peak_ratio": peak_ratio
         },
         headers={
             "Content-Type": "application/json"
@@ -70,11 +73,12 @@ def ThalBeta(input_file_path, left_trim, right_trim, peak_ratio, user_info):
               'right_trim': result['inputs']['right_trim'],
               'peak_ratio': result['inputs']['peak_ratio']
           },
+          sample_name=result['inputs']['sample_name'],
           result=result['results'],
           config=config,
           qc_status=QCStatus.PASSED.value,
-          errMsg=result['message']
+          errMsg=json.dumps(result['message'])
         )
         return thalbeta_output.toJson()
     else:
-        raise Exception(f"錯誤: {response.status_code}; {response.text}")
+        raise Exception(response.text)

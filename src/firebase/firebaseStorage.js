@@ -1,6 +1,6 @@
 // 導入會用到的功能
 import app from "./firebaseApp";
-import { getStorage, ref, uploadBytesResumable, getDownloadURL, listAll } from "firebase/storage";
+import { getStorage, ref, uploadBytesResumable, getDownloadURL, listAll, deleteObject } from "firebase/storage";
 
 // 取得 storage
 const storage = getStorage(app);
@@ -77,6 +77,37 @@ export const listAllFilesInFolder = async (folder_path) => {
   const folderRef = ref(storage, `${PATH_OF_DATA}/${folder_path}`);
   const result = await listAll(folderRef);
   return result.items;
+}
+
+// 刪除資料夾內的檔案
+export const deleteFile = async (file_path) => {
+  // 設定執行結果
+  let execute_result = {
+    status: 'pending',
+    message: 'Waiting for delete',
+    file: file_path
+  };
+
+  try {
+    // 取得檔案參考
+    const fileRef = ref(storage, file_path);
+
+    // 刪除檔案
+    await deleteObject(fileRef);
+
+    execute_result.status = 'success';
+    execute_result.message = 'Delete file from storage success';
+  } catch (error) {
+    execute_result.status = 'error';
+    execute_result.message = `Error: ${error}`;
+
+    // 如果檔案不存在，回傳特別的訊息
+    if (error.code === 'storage/object-not-found') {
+      execute_result.message = 'File does not exist';
+    }
+  }
+
+  return execute_result;
 }
 
 // 導出 storage

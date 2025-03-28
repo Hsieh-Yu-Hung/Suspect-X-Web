@@ -93,7 +93,8 @@ class SMAv4InputData():
 # 定義 Thal Beta input 資料格式
 @dataclass
 class ThalBetaInputData:
-  input_file_path: str
+  sample_name: str
+  input_file_path: list[str]
   left_trim: int
   right_trim: int
   peak_ratio: float
@@ -528,8 +529,10 @@ class InputParser:
 
   # 解析 Thal Beta input 資料
   def parseThalBetaInputData(self, thal_beta_input_data):
+    file_matrix = thal_beta_input_data['file_path']
     return ThalBetaInputData(
-      input_file_path = thal_beta_input_data['file_path'],
+      sample_name = thal_beta_input_data['sample_name'],
+      input_file_path = [path['file_path'] for path in file_matrix if path['file_path']],
       left_trim = thal_beta_input_data['left_trim'],
       right_trim = thal_beta_input_data['right_trim'],
       peak_ratio = thal_beta_input_data['peak_ratio']

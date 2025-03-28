@@ -136,6 +136,7 @@ class Core:
       thal_beta_parsed_data = self.inputParser.parseInputObject(input_data, AnalysisName.THAL_BETA)
       user_info = self.inputParser.getUserInfo()
       thal_beta_result = ThalBeta(
+        sample_name = thal_beta_parsed_data.sample_name,
         input_file_path = thal_beta_parsed_data.input_file_path,
         left_trim = thal_beta_parsed_data.left_trim,
         right_trim = thal_beta_parsed_data.right_trim,
