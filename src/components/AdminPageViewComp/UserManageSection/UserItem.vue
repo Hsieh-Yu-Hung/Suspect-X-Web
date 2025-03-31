@@ -43,6 +43,14 @@
       :selected_value="props.user_info.organization" />
     </q-item-section>
 
+    <!-- 可執行動作 (個人權限) -->
+    <q-item-section class="col" style="min-width: 150px;">
+      <q-item-label v-if="props.user_info.id === masked_user_id">{{ display_user_info.actions }}</q-item-label>
+      <div class="row" v-else>
+        <q-chip v-for="action in display_user_info.actions" icon="check" color="blue-grey-2" removable :key="action.action_name" :label="action.action_label" />
+      </div>
+    </q-item-section>
+
     <!-- 帳號開通 -->
     <q-item-section class="col-1" style="width: 100px;">
       <q-item-label v-if="props.user_info.id === masked_user_id">{{ display_user_info.account_active }}</q-item-label>
@@ -211,6 +219,7 @@ function update_dropList_value(toEmit) {
 .item {
   text-align: center;
   gap: 10px;
-  justify-content: center;
+  justify-content: flex-start;
+  align-items: flex-start;
 }
 </style>

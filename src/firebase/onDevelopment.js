@@ -19,7 +19,7 @@ import {
   Database, login_method, getData, addLoginInfoDatabase, addEmailListDatabase,
   USER_INFO, EMAIL_INFO, getSoftwareVersionDatabase, getOrganizationDatabase,
   addSoftwareVersionDatabase, addOrganizationDatabase, SOFTWARE_DATA, ORGAN_DATA,
-  addTestingSample
+  addTestingSample, getPermissionDatabase, addPermissionDatabase, PERMISSION
 } from "./firebaseDatabase";
 
 // 設定
@@ -100,6 +100,17 @@ async function dev_add_organization() {
   }
 }
 
+// 開發環境時，加入權限資料
+async function dev_add_permission() {
+  // 取得權限資料
+  const permissions = await getPermissionDatabase();
+  if (permissions.length === 0) {
+    // 測試加入權限資料
+    await addPermissionDatabase(PERMISSION('enter_admin_page', '管理員頁面', '讓你能進入管理員頁面的權限'));
+    await addPermissionDatabase(PERMISSION('dev_mode', '開發者模式', '讓你能打開開發者模式開關的權限'));
+  }
+}
+
 // 開發環境時，加入 Beta Thal 測試樣本
 async function dev_add_beta_thal_testing_samples() {
 
@@ -134,6 +145,9 @@ export default async function onDevelopment() {
 
   // 開發環境時，加入組織資料
   await dev_add_organization();
+
+  // 開發環境時，加入權限資料
+  await dev_add_permission();
 
   // 開發環境時，加入 Beta Thal 測試樣本
   await dev_add_beta_thal_testing_samples();

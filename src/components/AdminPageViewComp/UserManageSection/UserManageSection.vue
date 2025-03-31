@@ -91,7 +91,7 @@ const default_organization = "未選擇";
 const display_organization = ref([default_organization]);
 
 // 列表標題
-const header = USER_INFO("人員帳號", "N/A", "header_id", "所屬組織", "帳號身份", "帳號開通")
+const header = USER_INFO("人員帳號", "N/A", "header_id", "所屬組織", "帳號身份", "帳號開通", "權限")
 header.created_at = "申請日期";
 header.updated_at = "更新日期";
 

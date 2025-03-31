@@ -22,10 +22,28 @@ export const dataset_list = {
   organization_list: 'organization_list',
   user_analysis: 'user_analysis',
   testing_data: 'testing_data',
+  permission_list: 'permission_list',
 };
 
+// 定義權限設定 Permission
+export const PERMISSION = (permission_name, permission_label, description) => {
+  return {
+    permission_name: permission_name,
+    permission_label: permission_label,
+    description: description,
+  }
+}
+// 定義權限 ACTION
+export const ACTION = (action_name, action_label, action_active=true) => {
+  return {
+    action_name: action_name,
+    action_label: action_label,
+    action_active: action_active,
+  }
+}
+
 // 定義 USER_INFO
-export const USER_INFO = (email, login_method, id = null, organization = "not-set", role = "user", account_active = false) => {
+export const USER_INFO = (email, login_method, id = null, organization = "not-set", role = "user", account_active = false, actions = [ACTION('test_action1', '測試動作1'), ACTION('test_action2', '測試動作2'), ACTION('test_action3', '測試動作3')]) => {
   const created_at = new Date().toLocaleString();
   const updated_at = new Date().toLocaleString();
   return {
@@ -37,6 +55,7 @@ export const USER_INFO = (email, login_method, id = null, organization = "not-se
     created_at: created_at,
     updated_at: updated_at,
     login_method: login_method,
+    actions: actions,
   };
 };
 
@@ -561,6 +580,56 @@ export const addTestingSample = async (data, dataset_path) => {
       const source = 'firebaseDatabase.js line.560';
       const user = 'admin';
       loggerV2.error(message, source, user);
+    }
+  });
+}
+
+// 取得 firestore 權限資料
+export const getPermissionDatabase = async () => {
+  let permission_array = [];
+  await getData(dataset_list.permission_list)
+  .then((result) => {
+    if (result.status === 'success') {
+      if (result.data) {
+        result.data.forEach((permission) => {
+          permission_array.push(permission);
+        });
+      }
+    } else {
+      console.error(` Get permission failed, Error: ${result.message}`);
+    }
+  })
+  .catch((error) => {
+    console.error(` Get permission failed, Error: ${error}`);
+  });
+  return permission_array;
+}
+
+// 加入權限資料到 firestore
+export const addPermissionDatabase = async (PERMISSION) => {
+  addData(dataset_list.permission_list, PERMISSION, PERMISSION.permission_name).then((result) => {
+    if (result.status === 'success') {
+      const message = `成功更新權限資料, 權限: ${PERMISSION.permission_name}`;
+      const source = 'firebaseDatabase.js line.609';
+      const user = 'admin';
+      loggerV2.debug(message, source, user);
+    } else if (result.status === 'error') {
+      const message = `更新權限資料失敗, 權限: ${PERMISSION.permission_name}, 原因: ${result.message}`;
+      const source = 'firebaseDatabase.js line.616';
+      const user = 'admin';
+      loggerV2.error(message, source, user);
+    }
+  });
+}
+
+// 刪除權限資料
+export const deletePermissionDatabase = async (permission_name) => {
+  deleteData(dataset_list.permission_list, permission_name).then((result) => {
+    if (result.status === 'success') {
+      const message = `成功刪除權限資料, 權限: ${permission_name}`;
+      const source = 'firebaseDatabase.js line.626';
+      const user = 'admin';
+      loggerV2.debug(message, source, user);
     }
   });
 }

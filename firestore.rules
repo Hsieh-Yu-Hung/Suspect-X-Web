@@ -24,5 +24,8 @@ service cloud.firestore {
     match /testing_data/{document=**} {
       allow read, write;
     }
+    match /permission_list/{document=**} {
+      allow read, write : if request.auth != null;
+    }
   }
 }
