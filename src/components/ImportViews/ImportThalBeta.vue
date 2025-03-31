@@ -775,7 +775,7 @@ async function loadTestingSamples() {
   const querySnapshot = await getDocs(collectionRef);
 
   // 載入測試樣本
-  const testing_sample_list = querySnapshot.docs[0].data();
+  const testing_sample_list = querySnapshot.docs.find(doc => doc._key.path.segments.includes('testing_data') && doc._key.path.segments.includes('beta_thal_testings')).data();
   sampleList_row.value = testing_sample_list.sample_list;
 }
 
