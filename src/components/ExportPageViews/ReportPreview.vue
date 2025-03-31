@@ -774,7 +774,8 @@ const assessmentColor = (value) => {
     (value === "alpha") ||
     (value === "beta") ||
     (value === "alphabeta") ||
-    (value === "affected")
+    (value === "affected") ||
+    (value === "Pathogenic Detected")
   ) {
     return "text-red-8 text-weight-bold";
   } else {

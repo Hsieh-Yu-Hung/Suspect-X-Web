@@ -819,6 +819,7 @@ export function exportSmaV4Props(resultObj, selectedExport) {
 
 // THAL_BETA 導出結果
 export function exportThalBetaProps(resultObj, selectedExport) {
+
   return selectedExport.map((s) => {
 
     return {

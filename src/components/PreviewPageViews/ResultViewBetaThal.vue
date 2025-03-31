@@ -212,7 +212,7 @@ import { useStore } from 'vuex';
 import { update_userAnalysisData } from '@/firebase/firebaseDatabase';
 import { getCurrentDisplayAnalysisID, getCurrentAnalysisResult } from '@/composables/checkAnalysisStatus.js';
 import { updateGetUserInfo } from '@/composables/accessStoreUserInfo';
-import { Variant, ClinicalSignificance, Consequence } from '@/composables/useInterpretClinvar.js';
+import { ClinicalSignificance, Consequence } from '@/composables/useInterpretClinvar.js';
 
 // 定義變數
 const showResult = ref(true);
@@ -448,7 +448,6 @@ const adjustTableDisplay = () => {
 
 // 更新導出結果
 function updateExportResults() {
-  const ResultData = Object.values(currentAnalysisResult.value.resultObj);
   let export_result = JSON.parse(JSON.stringify(currentAnalysisResult.value.exportResult));
   export_result.forEach(item => {
     item.assessment = displayAssessment.value;
@@ -500,6 +499,9 @@ onMounted(async () => {
 
   // 調整表格顯示
   adjustTableDisplay();
+
+  // 更新導出結果
+  updateExportResults();
 });
 
 // 監控 toggleDisplayRecords 的變化

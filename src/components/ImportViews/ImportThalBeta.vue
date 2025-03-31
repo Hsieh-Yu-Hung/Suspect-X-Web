@@ -777,7 +777,6 @@ async function loadTestingSamples() {
   // 載入測試樣本
   const testing_sample_list = querySnapshot.docs[0].data();
   sampleList_row.value = testing_sample_list.sample_list;
-  console.log(sampleList_row.value);
 }
 
 // 掛載時
@@ -801,8 +800,6 @@ onMounted(async () => {
 
   // 讀取 database 的樣本列表
   await loadDatabaseSampleList();
-
-  console.log(sampleList_row.value);
 });
 
 // 監聽 controlSampleFile

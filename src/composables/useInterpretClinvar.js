@@ -1,8 +1,18 @@
 /* 定義一個 KeyWord 物件 */
 class KeyWord {
   constructor(value, label) {
-    this.value = value;
-    this.label = label;
+    // 如果 value 為空，則設定 value 為空字串
+    if (value) {
+      this.value = value;
+    } else {
+      this.value = '';
+    }
+    // 如果 label 為空，則設定 label 為空字串
+    if (label) {
+      this.label = label;
+    } else {
+      this.label = '';
+    }
   }
 }
 

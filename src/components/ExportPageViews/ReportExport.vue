@@ -60,6 +60,7 @@ import { getCurrentDisplayAnalysisID, getCurrentAnalysisResult } from '@/composa
 import { updateGetUserInfo } from '@/composables/accessStoreUserInfo';
 import parseExportData from '@/composables/parseExportData.js';
 import parseInputExport from '@/composables/parseInputExport.js';
+import { Consequence } from '@/composables/useInterpretClinvar.js';
 import ExcelJS from 'exceljs';
 
 // 使用者身份
@@ -110,7 +111,7 @@ const getProductExportInfo = (product, reagent) => {
   const inputData = store.getters["export_page_setting/getExportResults"];
 
   switch (product) {
-    case 'thal-import':
+    case 'thal-import-beta':
       exportSample = parseExportData.exportThalBetaProps(currentAnalysisResult.value, selectedExport.value);
       productExport = 'THAL_BETA';
       break;
@@ -243,10 +244,14 @@ const parsedThalBetaRow = (row_content) => {
 };
 
 // 加入 beta thal 的表格
-const addBetaThalTable = (worksheet) => {
-  const thalbetaHeader = [ 'Genomic Position', 'Ref', 'Alt', 'Variant Class', 'Genotype', 'Variant Type', 'Variant Name', 'Disease' ];
-  const resultData = currentAnalysisResult.value.resultObj.resultTable;
-  const resultHeader = currentAnalysisResult.value.resultObj.resultHeader;
+const addBetaThalTables = (workbook, result, index) => {
+
+  // 取得 thalbetaHeader 和 resultData
+  const thalbetaHeader = [ 'Genomic Position', 'Ref', 'Alt', 'Variant Class', 'Genotype', 'Clinical Significance', 'Variant Type', 'Variant Name', 'Disease' ];
+  const resultData = result.resultTable;
+
+  // 為每個結果創建新的工作表，使用索引來區分
+  const worksheet = workbook.addWorksheet(`${result.sample_name}`);
 
   // 加入結果表格
   const thalbetaHeaderRow = worksheet.addRow(thalbetaHeader);
@@ -256,9 +261,10 @@ const addBetaThalTable = (worksheet) => {
     row.alt,
     row.type,
     row.genotype,
-    parsedThalBetaRow(row.Variant_Type),
-    parsedThalBetaRow(row.Present_Name),
-    parsedThalBetaRow(row.Disease_Type),
+    parsedThalBetaRow(row.ClinicalSignificance),
+    row.Consequence ? parsedThalBetaRow(Consequence[row.Consequence].label) : "",
+    parsedThalBetaRow(row.Name),
+    parsedThalBetaRow(row.PhenotypeList),
   ]);
 
   // 寫入結果表格
@@ -291,7 +297,7 @@ const addBetaThalTable = (worksheet) => {
         vertical: 'middle',
         wrapText: false
       };
-      if (colNumber === 8) {
+      if (colNumber === 9) {
         cell.alignment = {
           horizontal: 'left',
           vertical: 'middle',
@@ -300,6 +306,19 @@ const addBetaThalTable = (worksheet) => {
       }
     });
   });
+
+  // 設定欄寬
+  worksheet.columns = [
+    { width: 28 },  // A 欄 - Genomic Position
+    { width: 8 },   // B 欄 - Ref
+    { width: 8 },   // C 欄 - Alt
+    { width: 20 },  // D 欄 - Variant Class
+    { width: 20 },  // E 欄 - Genotype
+    { width: 25 },  // F 欄 - Clinical Significance
+    { width: 20 },  // G 欄 - Variant Type
+    { width: 50 },  // H 欄 - Variant Name
+    { width: 30 },  // I 欄 - Disease
+  ];
 };
 
 // 修改 downloadReportFile 函數以使用 ExcelJS
@@ -397,7 +416,10 @@ async function downloadReportFile(data) {
 
     // 如果 product 是 THAL_BETA 則寫入 THAL_BETA 表格
     if (product === 'THAL_BETA') {
-      addBetaThalTable(worksheet);
+      const all_results = currentAnalysisResult.value.resultObj;
+      all_results.forEach((result, index) => {
+        addBetaThalTables(workbook, result, index);
+      });
     }
 
     // 加入結果表格
