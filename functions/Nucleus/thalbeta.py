@@ -3,7 +3,7 @@ import sys
 import requests
 import json
 from dataclasses import dataclass
-from utils.ConstVaribles import NucleusVersion, QCStatus
+from utils.ConstVaribles import NucleusVersion
 from utils.DataObject import AnalysisOutput
 
 # 獲取當前腳本所在的目錄. 將上一層目錄添加到 sys.path
@@ -26,6 +26,8 @@ class ThalBetaOutput(AnalysisOutput):
   input_file:str = None
   parameters:dict = None
   result:dict = None
+  plot_peak_data:dict = None
+  plot_basecall_data:dict = None
 
 # 執行 ThalBeta 分析
 def ThalBeta(sample_name, input_file_path, left_trim, right_trim, peak_ratio, user_info):
@@ -76,8 +78,10 @@ def ThalBeta(sample_name, input_file_path, left_trim, right_trim, peak_ratio, us
           sample_name=result['inputs']['sample_name'],
           result=result['results'],
           config=config,
-          qc_status=QCStatus.PASSED.value,
-          errMsg=json.dumps(result['message'])
+          qc_status=result['qc_status'],
+          errMsg=json.dumps(result['message']),
+          plot_peak_data=result['plot_peak_data'],
+          plot_basecall_data=result['plot_basecall_data']
         )
         return thalbeta_output.toJson()
     else:

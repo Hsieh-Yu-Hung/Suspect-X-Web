@@ -56,6 +56,31 @@
         </div>
       </div>
 
+      <!-- Batch Summary 表格 -->
+      <div class="q-mt-md" style="background-color: rgba(221, 232, 243, 0.2); border-radius: 10px; padding: 10px;">
+
+        <!-- 標題和 Basecall File 選擇器 -->
+        <div class="row text-h6" style="display: flex; justify-content: space-between; align-items: center;">
+          <span> Basecall Viewer </span>
+          <div class="q-pa-md" style="display: flex; flex-direction: row; align-items: center; gap: 1em;">
+            <span class="text-subtitle1" style="font-weight: bold;">Current Displayed File:</span>
+            <q-btn-dropdown no-caps flat color="primary" :label="currentDisplayBasecallFile">
+              <q-list>
+                <q-item clickable v-close-popup @click="onBasecallFileClick(file)" v-for="file in currentBasecallFileList" :key="file">
+                  <q-item-section>
+                    <q-item-label>{{ file }}</q-item-label>
+                  </q-item-section>
+                </q-item>
+              </q-list>
+            </q-btn-dropdown>
+          </div>
+        </div>
+
+        <!-- 顯示 Basecalling peaks-->
+        <div id="basecall_peaks" class="row flex flex-center" style="height:40em; width: 100%;"></div>
+
+      </div>
+
       <!-- 個別分析結果表格 -->
       <div class="q-mt-md" style="background-color: rgba(221, 232, 243, 0.2); border-radius: 10px; padding: 10px;">
 
@@ -121,7 +146,7 @@
           <!-- 如果有資料則顯示表格 -->
           <q-table v-if="resultRows.length > 0"
             :rows="resultRows"
-            :columns="resultColumns"
+            :columns="displayResultColumns"
             :rows-per-page-options="[100]"
           >
             <!-- 設定表格標題為粗體 -->
@@ -207,12 +232,13 @@
 <script setup>
 
 // 導入模組
-import { ref, onMounted, watch } from 'vue';
+import { ref, onMounted, watch, computed } from 'vue';
 import { useStore } from 'vuex';
 import { update_userAnalysisData } from '@/firebase/firebaseDatabase';
 import { getCurrentDisplayAnalysisID, getCurrentAnalysisResult } from '@/composables/checkAnalysisStatus.js';
 import { updateGetUserInfo } from '@/composables/accessStoreUserInfo';
 import { ClinicalSignificance, Consequence } from '@/composables/useInterpretClinvar.js';
+import Plotly from 'plotly.js-dist';
 
 // 定義變數
 const showResult = ref(true);
@@ -279,6 +305,20 @@ const summaryColumns = [
 
 // 定義結果表格
 const resultRows = ref([]);
+const displayResultColumns = computed(() => {
+  const preservedColumns = [
+    'index',
+    'genomicPosition',
+    'refSeq',
+    'altSeq',
+    'variantClass',
+    'genotype',
+    'clinicalSignificance',
+    'variantType',
+    'variantName'
+  ];
+  return resultColumns.filter(column => preservedColumns.includes(column.name));
+});
 const resultColumns = [
   {
     name: "index",
@@ -349,6 +389,14 @@ const resultColumns = [
 const currentSelectedSampleIndex = ref(1);
 const currentSelectedSampleName = ref('');
 const currentAnalysisFile = ref([]);
+
+// 當前選擇顯示的 Basecall File
+const currentBasecallFileList = ref([]);
+const currentDisplayBasecallFile = ref('');
+
+// 從 store 取得 plot_peak_data 和 plot_basecall_data
+const plot_peak_data = computed(() => store.getters["Beta_thal_analysis_data/getPlotPeakData"]);
+const plot_basecall_data = computed(() => store.getters["Beta_thal_analysis_data/getPlotBasecallData"]);
 
 // 更新 summaryRows
 function updateSummaryRows() {
@@ -465,8 +513,256 @@ function updateExportResults() {
 }
 
 // 簡化檔案路徑
-const simplifyFilePath = (filePath) => {
-  return filePath.split('/').pop();
+const simplifyFilePath = (filePath) => { return filePath.split('/').pop(); }
+
+// 當前選擇 Basecall File
+const onBasecallFileClick = (file) => { currentDisplayBasecallFile.value = file; }
+
+// 繪製互動式圖表
+function plotBaseCallPeaks(plot_data, basecall_data) {
+
+  // 獲取繪圖容器
+  const container = document.getElementById('basecall_peaks');
+  if (!container || !plot_data || !basecall_data) return;
+
+  // 確保 x 軸長度一致
+  if (plot_data.x_axis.length !== basecall_data.x_axis.length) {
+    console.error('x_axis lengths do not match');
+    return;
+  }
+
+  // 準備繪圖數據
+  const traces = [];
+  const colors = {
+    peakA: '#26aa2e', // 綠色
+    peakC: '#0000FF', // 藍色
+    peakG: '#000000', // 黑色
+    peakT: '#FF0000'  // 紅色
+  };
+
+  const names = {
+    peakA: 'A',
+    peakC: 'C',
+    peakG: 'G',
+    peakT: 'T'
+  };
+
+  // 添加水平線
+  [1, 2, 3, 4].forEach(y => {
+    traces.push({
+      x: [Math.min(...plot_data.x_axis), Math.max(...plot_data.x_axis)],
+      y: [y, y],
+      mode: 'lines',
+      line: {
+        color: 'grey',
+        width: 1,
+        dash: 'solid'
+      },
+      showlegend: false,
+      yaxis: 'y1'
+    });
+  });
+
+  // 為每個樣本創建數據系列 (下半部分)
+  Object.entries(plot_data).forEach(([key, values]) => {
+    const x_list = plot_data.x_axis;
+    const y_list = values;
+    if (key !== 'x_axis') {
+      traces.push({
+        x: x_list,
+        y: y_list,
+        type: 'scatter',
+        mode: 'lines',
+        name: `${names[key]}`,
+        line: {
+          color: colors[key],
+          width: 1
+        },
+        yaxis: 'y2',  // 指定使用第二個 y 軸
+        legendgroup: 'peaks',  // 添加圖例分組
+        legend: 'legend2'  // 指定使用第二個圖例
+      });
+    }
+  });
+
+  // 解析 basecalls 數據 (上半部分)
+  const baseCallsData = {
+    A: { x: [], y: [] },
+    T: { x: [], y: [] },
+    C: { x: [], y: [] },
+    G: { x: [], y: [] }
+  };
+
+  const baseToY = {
+    'A': 4,
+    'T': 3,
+    'C': 2,
+    'G': 1
+  };
+
+  // 解析 basecalls 字典
+  Object.entries(basecall_data.basecalls).forEach(([pos, value]) => {
+    // 移除數字編號並分割bases
+    const bases = value.split(':')[1].split('|');
+    bases.forEach(base => {
+      if (baseCallsData[base]) {
+        baseCallsData[base].x.push(parseInt(pos));
+        baseCallsData[base].y.push(baseToY[base]);
+      }
+    });
+  });
+
+  // 添加 basecalls 的散點圖
+  Object.entries(baseCallsData).forEach(([base, data]) => {
+    traces.push({
+      x: data.x,
+      y: data.y,
+      type: 'scatter',
+      mode: 'markers',
+      name: base,
+      marker: {
+        color: colors[`peak${base}`],
+        size: 8
+      },
+      yaxis: 'y1',  // 指定使用第一個 y 軸
+      legendgroup: 'basecalls',  // 添加圖例分組
+      legend: 'legend'  // 指定使用第一個圖例
+    });
+  });
+
+  // 設置布局
+  const layout = {
+    title: 'Base Calling Peaks',
+    grid: {
+      rows: 2,
+      columns: 1,
+      pattern: 'independent',
+      roworder: 'top to bottom'
+    },
+    xaxis: {
+      title: 'Position',
+      rangeslider: {},
+      type: 'linear',
+      range: [0, 1000]
+    },
+    yaxis: {
+      title: {
+        text: 'Basecalls',
+        standoff: 20
+      },
+      domain: [0.7, 1],  // 上半部分佔 40%
+      ticktext: ['G', 'C', 'T', 'A'],
+      tickvals: [1, 2, 3, 4],
+      range: [0.5, 4.5]
+    },
+    yaxis2: {
+      title: {
+        text: 'Signal Intensity',
+        standoff: 20
+      },
+      domain: [0, 0.6]  // 下半部分佔 40%
+    },
+    showlegend: true,
+    legend: {
+      x: 1,
+      xanchor: 'left',
+      y: 1,
+      yanchor: 'top',
+      tracegroupgap: 0.5
+    },
+    legend2: {
+      x: 1,
+      xanchor: 'left',
+      y: 0.4,
+      yanchor: 'top',
+      tracegroupgap: 0.5
+    },
+    margin: {
+      l: 80,
+      r: 150,  // 增加右邊距以容納圖例
+      b: 50,
+      t: 50,
+      pad: 4
+    },
+  };
+
+  // 設置配置選項
+  const config = {
+    responsive: true,
+    displayModeBar: true,
+    scrollZoom: false,
+    dragmode: 'pan',
+    modeBarButtonsToAdd: [
+      {
+        name: 'Reset Zoom',
+        icon: Plotly.Icons.home,
+        click: function(gd) {
+          Plotly.relayout(gd, {
+            'xaxis.autorange': true,
+            'yaxis.autorange': true,
+            'yaxis2.autorange': true
+          });
+        }
+      }
+    ]
+  };
+
+  // 繪製圖表
+  Plotly.newPlot(container, traces, layout, config).then(function() {
+    let verticalLine = null;
+    let currentHoveredX = null;
+
+    // 監聽滑鼠懸停事件
+    container.on('plotly_hover', function(data) {
+      const point = data.points[0];
+
+      // 只處理上圖（basecalls）的點
+      if (point.data.legendgroup === 'basecalls') {
+        const x = point.x;
+
+        // 如果懸停的 x 座標與當前不同，則更新垂直線
+        if (x !== currentHoveredX) {
+          currentHoveredX = x;
+
+          // 如果已經有垂直線，則更新它
+          if (verticalLine) {
+            Plotly.deleteTraces(container, verticalLine);
+          }
+
+          // 創建新的垂直線
+          const newTrace = {
+            x: [x, x],
+            y: [Math.min(...plot_data[Object.keys(plot_data).find(key => key !== 'x_axis')]),
+               Math.max(...plot_data[Object.keys(plot_data).find(key => key !== 'x_axis')])],
+            mode: 'lines',
+            line: {
+              color: 'rgba(0, 0, 0, 0.5)',
+              width: 2,
+              dash: 'solid'
+            },
+            hoverinfo: 'none',
+            showlegend: false,
+            yaxis: 'y2'
+          };
+
+          // 添加垂直線
+          Plotly.addTraces(container, newTrace).then(function(gd) {
+            verticalLine = gd.data.length - 1;
+          });
+        }
+      }
+    });
+
+    // 監聽滑鼠離開事件
+    container.on('plotly_unhover', function() {
+      // 移除垂直線
+      if (verticalLine !== null) {
+        Plotly.deleteTraces(container, verticalLine);
+        verticalLine = null;
+        currentHoveredX = null;
+      }
+    });
+  });
 }
 
 // 掛載時執行
@@ -502,6 +798,10 @@ onMounted(async () => {
 
   // 更新導出結果
   updateExportResults();
+
+  // 更新 currentBasecallFileList
+  currentBasecallFileList.value = currentAnalysisFile.value.map(file => simplifyFilePath(file));
+  currentDisplayBasecallFile.value = currentBasecallFileList.value[0];
 });
 
 // 監控 toggleDisplayRecords 的變化
@@ -511,7 +811,11 @@ watch(toggleDisplayRecords, () => {
 
 // 監控 currentSelectedSampleIndex 的變化
 watch(currentSelectedSampleIndex, () => {
+
+  // 更新結果表格
   updateResultTable(currentSelectedSampleIndex.value);
+
+  // 調整表格顯示
   adjustTableDisplay();
 
   // 更新 displayResult 和 displayAssessment
@@ -565,6 +869,21 @@ watch(currentSelectedSampleIndex, () => {
   // 更新 displayResult 和 displayAssessment
   displayResult.value = summarize[currentSelectedSampleIndex.value - 1].result;
   displayAssessment.value = summarize[currentSelectedSampleIndex.value - 1].assessment;
+
+  // 更新 currentBasecallFileList 和 currentDisplayBasecallFile
+  currentBasecallFileList.value = currentAnalysisFile.value.map(file => simplifyFilePath(file));
+  currentDisplayBasecallFile.value = currentBasecallFileList.value[0];
+});
+
+// 監控 currentDisplayBasecallFile 的變化
+watch(currentDisplayBasecallFile, (newVal, oldVal) => {
+  // 繪製互動式圖表
+  if (newVal !== oldVal) {
+    const selected_file_name = currentDisplayBasecallFile.value.split('.')[0];
+    const toPlotPeakData = plot_peak_data.value[currentSelectedSampleName.value][selected_file_name];
+    const toPlotBasecallData = plot_basecall_data.value[currentSelectedSampleName.value][selected_file_name];
+    plotBaseCallPeaks(toPlotPeakData, toPlotBasecallData);
+  }
 });
 
 </script>

@@ -627,8 +627,9 @@ const onSubmit = async () => {
   const allbetaThalResults = [];
   const allbetaThalExportResults = [];
   let tmp_resultObj = null;
+  let tmp_plot_peak_data = {};
+  let tmp_plot_basecall_data = {};
   try {
-
     // 使用 for 迴圈處理所有樣本
     for (const [index, sampleInput] of sampleList_row.value.entries()) {
 
@@ -670,6 +671,10 @@ const onSubmit = async () => {
         // 製作 EXPORT_RESULT
         const exportResult = EXPORT_RESULT(index + 1, resultObj.sample_name, "", "", "", "");
 
+        // 取得 plot_peak_data 和 plot_basecall_data
+        tmp_plot_peak_data[sampleInput.sample_name] = resultObj.plot_peak_data;
+        tmp_plot_basecall_data[sampleInput.sample_name] = resultObj.plot_basecall_data;
+
         // 將結果加入陣列
         allbetaThalResults.push(THAL_BETA_Result);
         allbetaThalExportResults.push(exportResult);
@@ -678,6 +683,10 @@ const onSubmit = async () => {
         throw new Error(`Sample name: ${sampleInput.sample_name} 分析失敗, Error: ${analysisResult.message}`);
       }
     }
+
+    // 更新 store 的 plot_peak_data 和 plot_basecall_data
+    store.commit("Beta_thal_analysis_data/updatePlotPeakData", tmp_plot_peak_data);
+    store.commit("Beta_thal_analysis_data/updatePlotBasecallData", tmp_plot_basecall_data);
   }
   catch (error) {
     // 發生錯誤時的處理
