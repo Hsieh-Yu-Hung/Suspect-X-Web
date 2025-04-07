@@ -19,11 +19,18 @@ import {
   Database, login_method, getData, addLoginInfoDatabase, addEmailListDatabase,
   USER_INFO, EMAIL_INFO, getSoftwareVersionDatabase, getOrganizationDatabase,
   addSoftwareVersionDatabase, addOrganizationDatabase, SOFTWARE_DATA, ORGAN_DATA,
-  addTestingSample, getPermissionDatabase, addPermissionDatabase, PERMISSION
+  addTestingSample, getPermissionDatabase, addPermissionDatabase, PERMISSION,
+  getRoleDatabase, addRoleDatabase, ROLE, ACTION
 } from "./firebaseDatabase";
 
 // 設定
 import config from "../../config.js";
+
+// 設定模擬用預設權限
+const default_permission = [
+  ACTION('enter_admin_page', '管理員頁面', true),
+  ACTION('dev_mode', '開發者模式', true),
+];
 
 // 登入 admin
 async function create_fake_user(email, password, admin=false) {
@@ -46,11 +53,13 @@ async function create_fake_user(email, password, admin=false) {
         LoginInfo.account_active = true;
         LoginInfo.role = 'admin';
         LoginInfo.organization = 'AdminOrg';
+        LoginInfo.actions = default_permission;
       }
       else {
         LoginInfo.account_active = false;
         LoginInfo.role = 'user';
         LoginInfo.organization = 'not-set';
+        LoginInfo.actions = [];
       }
       addLoginInfoDatabase(LoginInfo, id);
 
@@ -106,8 +115,19 @@ async function dev_add_permission() {
   const permissions = await getPermissionDatabase();
   if (permissions.length === 0) {
     // 測試加入權限資料
-    await addPermissionDatabase(PERMISSION('enter_admin_page', '管理員頁面', '讓你能進入管理員頁面的權限'));
-    await addPermissionDatabase(PERMISSION('dev_mode', '開發者模式', '讓你能打開開發者模式開關的權限'));
+    await addPermissionDatabase(PERMISSION(default_permission[0].action_name, default_permission[0].action_label, '能讓你進入管理員頁面的權限'));
+    await addPermissionDatabase(PERMISSION(default_permission[1].action_name, default_permission[1].action_label, '能讓你啟動開發者模式的權限'));
+  }
+}
+
+// 開發環境時，加入角色資料
+async function dev_add_role() {
+  // 取得角色資料
+  const roles = await getRoleDatabase();
+  if (roles.length === 0) {
+    // 測試加入角色資料
+    await addRoleDatabase(ROLE('admin', '管理員', '測試管理員, 可以進入管理員頁面, 可以管理後台', default_permission));
+    await addRoleDatabase(ROLE('user', '使用者', '測試使用者, 可以使用分析功能, 無特殊功能', []));
   }
 }
 
@@ -151,5 +171,8 @@ export default async function onDevelopment() {
 
   // 開發環境時，加入 Beta Thal 測試樣本
   await dev_add_beta_thal_testing_samples();
+
+  // 開發環境時，加入角色資料
+  await dev_add_role();
 }
 

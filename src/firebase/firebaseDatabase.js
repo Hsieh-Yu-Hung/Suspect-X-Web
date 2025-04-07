@@ -23,7 +23,18 @@ export const dataset_list = {
   user_analysis: 'user_analysis',
   testing_data: 'testing_data',
   permission_list: 'permission_list',
+  role_list: 'role_list',
 };
+
+// 定義角色設定 ROLE
+export const ROLE = (role_name, role_label, role_description, role_permission=[]) => {
+  return {
+    role_name: role_name,
+    role_label: role_label,
+    role_description: role_description,
+    role_permission: role_permission
+  }
+}
 
 // 定義權限設定 Permission
 export const PERMISSION = (permission_name, permission_label, description) => {
@@ -43,7 +54,7 @@ export const ACTION = (action_name, action_label, action_active=true) => {
 }
 
 // 定義 USER_INFO
-export const USER_INFO = (email, login_method, id = null, organization = "not-set", role = "user", account_active = false, actions = [ACTION('test_action1', '測試動作1'), ACTION('test_action2', '測試動作2'), ACTION('test_action3', '測試動作3')]) => {
+export const USER_INFO = (email, login_method, id = null, organization = "not-set", role = "user", account_active = false, actions = []) => {
   const created_at = new Date().toLocaleString();
   const updated_at = new Date().toLocaleString();
   return {
@@ -193,6 +204,7 @@ export const getData = async (dataset, uid = null) => {
 
 // 刪除指定資料
 export const deleteData = async (dataset, uid) => {
+  if (!uid) { return {'status': 'skipped', 'message': 'No ID to delete'}; }
   let exec_status = {'status': 'pending', 'message': 'Unknown'};
   const docRef = doc(collection(database, dataset), uid);
   await deleteDoc(docRef).then(() => {
@@ -607,6 +619,7 @@ export const getPermissionDatabase = async () => {
 
 // 加入權限資料到 firestore
 export const addPermissionDatabase = async (PERMISSION) => {
+  // 加入權限資料到 firestore
   addData(dataset_list.permission_list, PERMISSION, PERMISSION.permission_name).then((result) => {
     if (result.status === 'success') {
       const message = `成功更新權限資料, 權限: ${PERMISSION.permission_name}`;
@@ -633,3 +646,65 @@ export const deletePermissionDatabase = async (permission_name) => {
     }
   });
 }
+
+// 取得 firestore 角色資料
+export const getRoleDatabase = async () => {
+  let role_array = [];
+  await getData(dataset_list.role_list)
+  .then((result) => {
+    if (result.status === 'success') {
+      if (result.data) {
+        result.data.forEach((role) => {
+          role_array.push(role);
+        });
+      }
+    } else {
+      console.error(` Get role failed, Error: ${result.message}`);
+    }
+  })
+  .catch((error) => {
+    console.error(` Get role failed, Error: ${error}`);
+  });
+  return role_array;
+}
+
+// 更新角色資料
+export const updateRoleDatabase = async (ROLE) => {
+  addData(dataset_list.role_list, ROLE, ROLE.role_name).then((result) => {
+    if (result.status === 'success') {
+      const message = `成功更新角色資料, 角色: ${ROLE.role_name}`;
+      const source = 'firebaseDatabase.js line.671';
+      const user = 'admin';
+      loggerV2.debug(message, source, user);
+    }
+  });
+}
+// 加入角色資料到 firestore
+export const addRoleDatabase = async (ROLE) => {
+  addData(dataset_list.role_list, ROLE, ROLE.role_name).then((result) => {
+    if (result.status === 'success') {
+      const message = `成功更新角色資料, 角色: ${ROLE.role_name}`;
+      const source = 'firebaseDatabase.js line.668';
+      const user = 'admin';
+      loggerV2.debug(message, source, user);
+    } else if (result.status === 'error') {
+      const message = `更新角色資料失敗, 角色: ${ROLE.role_name}, 原因: ${result.message}`;
+      const source = 'firebaseDatabase.js line.675';
+      const user = 'admin';
+      loggerV2.error(message, source, user);
+    }
+  });
+}
+
+// 刪除角色資料
+export const deleteRoleDatabase = async (role_name) => {
+  deleteData(dataset_list.role_list, role_name).then((result) => {
+    if (result.status === 'success') {
+      const message = `成功刪除角色資料, 角色: ${role_name}`;
+      const source = 'firebaseDatabase.js line.685';
+      const user = 'admin';
+      loggerV2.debug(message, source, user);
+    }
+  });
+}
+

@@ -46,8 +46,40 @@
     <!-- 可執行動作 (個人權限) -->
     <q-item-section class="col" style="min-width: 150px;">
       <q-item-label v-if="props.user_info.id === masked_user_id">{{ display_user_info.actions }}</q-item-label>
-      <div class="row" v-else>
-        <q-chip v-for="action in display_user_info.actions" icon="check" color="blue-grey-2" removable :key="action.action_name" :label="action.action_label" />
+      <div class="row flex-start flex" style="flex-direction: row;" v-else>
+
+        <div v-if="display_user_info.actions.length > 0" class="col flex flex-center">
+          <!-- 顯示權限標籤 -->
+          <q-chip v-for="(action, index) in display_user_info.actions"
+            :icon="action.action_active ? 'check' : 'close'"
+            :color="action.action_active ? 'orange-9' : 'blue-grey-7'"
+            removable
+            text-color="white"
+            :key="index"
+            :label="action.action_label"
+            class="cursor-pointer glossy"
+            clickable
+            @click="toggle_action_active(props.user_info.id, index)"
+            @remove="remove_action(props.user_info.id, index)"
+          />
+        </div>
+        <div v-else class="col flex flex-center">
+          <span class="text-subtitle2"> -- 沒有權限 --</span>
+        </div>
+
+        <!-- 下拉式選單選擇權限 -->
+        <div class="col-1">
+          <q-btn-dropdown dropdown-icon="add" color="primary" glossy dense label="">
+            <q-list>
+              <q-item @click="add_action(props.user_info.id, permission)" clickable v-close-popup v-for="(permission, index) in permission_list" :key="index">
+                <q-item-section>
+                  <q-item-label>{{ permission.permission_label }}</q-item-label>
+                </q-item-section>
+              </q-item>
+            </q-list>
+          </q-btn-dropdown>
+        </div>
+
       </div>
     </q-item-section>
 
@@ -118,7 +150,8 @@
 <script setup>
 
 // 導入模組
-import { ref } from 'vue';
+import { ref, onMounted, computed } from 'vue';
+import { getUsers_from_firestore, update_userData, ACTION, getPermissionDatabase } from '@/firebase/firebaseDatabase';
 
 // 導入元件
 import DropDownList from '@/components/DropDownList.vue';
@@ -146,7 +179,7 @@ const emit = defineEmits(['update_user_info', 'delete_user']);
 const masked_user_id = "header_id";
 
 // refs
-const display_user_info = ref(props.user_info);
+const display_user_info = computed(() => props.user_info);
 const organization_dropdown = ref(null);
 const account_role_dropdown = ref(null);
 
@@ -161,6 +194,9 @@ const account_role_option = ref(props.account_role_option_list);
 
 // 當前選擇的帳號身份
 const current_account_role = ref(account_role_option.value.find(option => option.role === props.user_info.role));
+
+// 權限清單
+const permission_list = ref([]);
 
 /* functions */
 
@@ -212,6 +248,49 @@ function update_dropList_value(toEmit) {
     update_account_role(toEmit);
   }
 }
+
+// 新增使用者權限動作
+async function add_action(user_id, selected_permission) {
+  const new_action = ACTION(selected_permission.permission_name, selected_permission.permission_label);
+  const is_dup = display_user_info.value.actions.some(action => action.action_name === new_action.action_name);
+  if(is_dup) {
+    return;
+  }
+  const emit_data = {
+    id: user_id,
+    actions: [...display_user_info.value.actions, new_action],
+  };
+  emit('update_user_info', emit_data);
+}
+
+// 移除使用者權限動作
+function remove_action(user_id, index) {
+  const user_new_action_list = display_user_info.value.actions.filter((action, i) => i !== index);
+  const emit_data = {
+    id: user_id,
+    actions: user_new_action_list,
+  };
+  emit('update_user_info', emit_data);
+}
+
+// 切換使用者權限動作啟用狀態
+function toggle_action_active(user_id, index) {
+  const emit_data = {
+    id: user_id,
+    actions: display_user_info.value.actions.map((action, i) => {
+      if(i === index) {
+        return { ...action, action_active: !action.action_active };
+      }
+      return action;
+    }),
+  };
+  emit('update_user_info', emit_data);
+}
+
+// 掛載
+onMounted(async () => {
+  permission_list.value = await getPermissionDatabase();
+});
 
 </script>
 
