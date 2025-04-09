@@ -91,15 +91,16 @@ export const SOFTWARE_DATA = (new_name, new_version, new_note, id = null, editab
 }
 
 // 定義組織資料
-export const ORGAN_DATA = (name, software_select, member, date, id = null, editable = true) => {
+export const ORGAN_DATA = (name, software_select, date, id = null, editable = true, permission = []) => {
   const organization_id = id ? id : uuidv4();
   return {
     organization_name: name,
     software_selection: software_select,
-    member_count: member,
+    member_count: 0,
     join_date: date,
     organization_id: organization_id,
-    editable: editable
+    editable: editable,
+    permission: permission
   }
 }
 

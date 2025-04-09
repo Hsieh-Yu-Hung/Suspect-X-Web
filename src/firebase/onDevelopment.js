@@ -102,10 +102,10 @@ async function dev_add_organization() {
   const organizations = await getOrganizationDatabase();
   if (organizations.length === 0) {
     // 測試加入組織資料
-    await addOrganizationDatabase(ORGAN_DATA('AdminOrg', 'AdminSoftware', '0', 'N/A', 'Admin', false));
-    await addOrganizationDatabase(ORGAN_DATA('organ1', 'soft1', '0', '2077-02-30', null, false));
-    await addOrganizationDatabase(ORGAN_DATA('organ2', 'soft2', '0', '2077-02-30', null, false));
-    await addOrganizationDatabase(ORGAN_DATA('organ3', 'soft3', '0', '2077-02-30', null, false));
+    await addOrganizationDatabase(ORGAN_DATA('AdminOrg', 'AdminSoftware', 'N/A', 'Admin', false, default_permission));
+    await addOrganizationDatabase(ORGAN_DATA('organ1', 'soft1', '2077-02-30'));
+    await addOrganizationDatabase(ORGAN_DATA('organ2', 'soft2', '2077-02-30'));
+    await addOrganizationDatabase(ORGAN_DATA('organ3', 'soft3', '2077-02-30'));
   }
 }
 

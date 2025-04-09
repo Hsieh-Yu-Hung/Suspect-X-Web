@@ -44,7 +44,7 @@
     </q-item-section>
 
     <!-- 可執行動作 (個人權限) -->
-    <q-item-section class="col" style="min-width: 150px;">
+    <q-item-section class="col" style="min-width: 150px; padding-inline: 2em;">
       <q-item-label v-if="props.user_info.id === masked_user_id">{{ display_user_info.actions }}</q-item-label>
       <div class="row flex-start flex" style="flex-direction: row;" v-else>
 
@@ -68,8 +68,9 @@
         </div>
 
         <!-- 下拉式選單選擇權限 -->
-        <div class="col-1">
-          <q-btn-dropdown dropdown-icon="add" color="primary" glossy dense label="">
+        <div class="col-1" style="display: flex; flex-direction: row; height: 100%; gap: 0.3em;">
+          <q-btn rounded dense glossy icon="download_for_offline" color="purple-7" @click="inherit_permission" />
+          <q-btn-dropdown rounded dense glossy dropdown-icon="add" color="primary" label="">
             <q-list>
               <q-item @click="add_action(props.user_info.id, permission)" clickable v-close-popup v-for="(permission, index) in permission_list" :key="index">
                 <q-item-section>
@@ -84,7 +85,7 @@
     </q-item-section>
 
     <!-- 帳號開通 -->
-    <q-item-section class="col-1" style="width: 100px;">
+    <q-item-section class="col-1" style="width: 150px; margin-left: 2em;">
       <q-item-label v-if="props.user_info.id === masked_user_id">{{ display_user_info.account_active }}</q-item-label>
       <div v-else class="flex flex-center" style="gap: 10px;">
         <q-btn-toggle
@@ -118,7 +119,7 @@
     </q-item-section>
 
     <!-- 帳號身份 -->
-    <q-item-section class="col-1" style="width: 150px;">
+    <q-item-section class="col-1" style="width: 200px;">
       <q-item-label v-if="props.user_info.id === masked_user_id">{{ display_user_info.role }}</q-item-label>
       <DropDownList v-else
         name="account_role_dropdown"
@@ -285,6 +286,11 @@ function toggle_action_active(user_id, index) {
     }),
   };
   emit('update_user_info', emit_data);
+}
+
+// 繼承權限
+function inherit_permission() {
+  console.log('繼承權限');
 }
 
 // 掛載

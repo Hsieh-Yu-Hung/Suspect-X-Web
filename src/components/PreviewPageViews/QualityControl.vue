@@ -277,6 +277,11 @@ const getQCResultLabel = computed(() => {
     return 'N/A';
   }
   else if (props.QCResult.includes(';')) {
+
+    /* 新版：將 QC 整合至 Summary Table */
+    return "See summary table below";
+
+    /* 舊版：顯示 Sample Name: QC Result */
     return props.QCResult.split(';').map(result => {
       const [id, status] = result.split(': ');
       switch (status) {
@@ -327,12 +332,20 @@ const getQCResultColorLabel = (qc_label) => {
 
 // QC Message 內容
 const getQCMessageContent = computed(() => {
-  if (props.QCMessage === 'N/A' || props.QCMessage === '') {
-    return [{index: 0, message: 'There is no QC message.'}];
+  // 特殊處理 beta-thal 的 QC Message
+  if (props.product === 'THAL_BETA') {
+    return [{index: 0, message: "See summary table below"}];
   }
+
+  // 其他情況
   else {
-    const messages = props.QCMessage.split(';');
-    return messages.map((message, index) => ({index,message}));
+    if (props.QCMessage === 'N/A' || props.QCMessage === '') {
+      return [{index: 0, message: 'There is no QC message.'}];
+    }
+    else {
+      const messages = props.QCMessage.split(';');
+      return messages.map((message, index) => ({index,message}));
+    }
   }
 })
 

@@ -240,8 +240,7 @@ import { ref, onMounted } from 'vue';
 import { useQuasar } from 'quasar';
 import { PERMISSION, getPermissionDatabase, deletePermissionDatabase,
          addPermissionDatabase, ROLE, getRoleDatabase, deleteRoleDatabase,
-         addRoleDatabase, USER_INFO, update_userData, getUsers_from_firestore,
-         updateRoleDatabase, ACTION } from '@/firebase/firebaseDatabase';
+         addRoleDatabase, updateRoleDatabase, ACTION } from '@/firebase/firebaseDatabase';
 
 // 定義 Quasar
 const $q = useQuasar();

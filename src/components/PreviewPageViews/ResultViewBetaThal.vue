@@ -1,4 +1,5 @@
 <template>
+
   <q-card bordered :style="{display: showResult ? 'block' : 'none'}">
     <q-card-section>
 
@@ -16,7 +17,7 @@
           <q-table
             style="width: 100%;"
             :rows="summaryRows"
-            :columns="summaryColumns"
+            :columns="displaySummaryColumns"
             :rows-per-page-options="[1000]"
           >
             <!-- 設定表格標題為粗體 -->
@@ -26,15 +27,34 @@
               </q-th>
             </template>
 
+            <!-- 設定 QC Status 的顯示 -->
+            <template v-slot:body-cell-qcStatus="props">
+              <q-td :props="props">
+                <q-chip
+                  :color="props.row.qcStatus === 'Meet the criteria' ? 'cyan-4'
+                        : props.row.qcStatus === 'Fail the criteria' ? 'red-8'
+                        : 'blue-grey-4'"
+                  text-color="white"
+                  :label="props.row.qcStatus"
+                  :icon="props.row.qcStatus === 'Meet the criteria' ? 'check_circle'
+                        : props.row.qcStatus === 'Fail the criteria' ? 'pan_tool_alt'
+                        : 'help'"
+                  :style="props.row.qcStatus === 'Fail the criteria' ? 'cursor: pointer;' : 'cursor: default;'"
+                  :clickable="props.row.qcStatus === 'Fail the criteria'"
+                  @click="showQCMessage(props.row.qcStatus, props.row.qcMessage)"
+                />
+              </q-td>
+            </template>
+
             <!-- 設定 Assessment 的顯示 -->
             <template v-slot:body-cell-assessment="props">
               <q-td :props="props">
                 <q-chip
                   :color="props.row.assessment === 'Pathogenic Detected' ? 'red-8'
-                        : props.row.assessment === 'QC Failed' ? 'deep-orange-6': 'green-5'"
+                        : props.row.assessment === 'Invalid' ? 'blue-grey-4': 'green-5'"
                   text-color="white"
                   :label="props.row.assessment"
-                  :icon="props.row.assessment === 'QC Failed' ? 'warning'
+                  :icon="props.row.assessment === 'Invalid' ? 'cancel'
                         : props.row.assessment === 'Pathogenic Detected' ? 'report'
                         : 'check_circle'"
                 />
@@ -136,11 +156,11 @@
             <div class="col text-h5 text-bold text-subtitle2 text-left" style="margin-block: 1em;">
               <q-chip
                 :color="displayAssessment === 'Pathogenic Detected' ? 'red-8'
-                        : displayAssessment === 'QC Failed' ? 'deep-orange-6'
+                        : displayAssessment === 'Invalid' ? 'blue-grey-4'
                         : 'green-5'"
                 text-color="white"
                 :label="displayAssessment"
-                :icon="displayAssessment === 'QC Failed' ? 'warning'
+                :icon="displayAssessment === 'Invalid' ? 'cancel'
                         : displayAssessment === 'Pathogenic Detected' ? 'report'
                         : 'check_circle'"
               />
@@ -149,7 +169,7 @@
         </div>
 
         <!-- 結果表格 -->
-        <div class="q-pa-md" :style="{display: currentSampleQCStatus === 'QC Failed' || currentSampleQCStatus === 'fail-the-criteria' ? 'none' : 'block'}">
+        <div class="q-pa-md" :style="{display: currentSampleQCStatus === 'Invalid' || currentSampleQCStatus === 'fail-the-criteria' ? 'none' : 'block'}">
 
           <!-- 顯示表格按鈕 -->
           <div class="col-2" style="display: flex; justify-content: right; align-items: center; margin-block: 1.3em;">
@@ -248,6 +268,30 @@
 
     </q-card-section>
   </q-card>
+
+  <!-- QC Message 視窗 -->
+  <q-dialog v-model="show_qc_message_dialog" persistent>
+    <q-card style="width: 1000px; max-width: 90vw;">
+      <q-card-section>
+        <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 15px; width: 100%;">
+          <div class="flex flex-row items-center justify-center gap-2" style="width: 100%;">
+            <q-icon name="warning" color="red" size="lg" />
+            <span class="text-h6">QC Failed Message</span>
+          </div>
+          <div style="width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+            <div style="width: 100%; display: flex; flex-direction: column; align-items: flex-start; justify-content: center; gap: 1em; padding: 1em;">
+              <div v-for="item in processed_qc_message" :key="item.file" style="display: flex; flex-direction: column; align-items: flex-start; justify-content: center; gap: 0.5em; width: 100%;">
+                <q-chip color="grey-2" :label="`File: ${item.file}`" style="max-width: 100%; overflow: hidden; text-overflow: ellipsis;" />
+                <span class="text-subtitle1" style="margin-left: 1.2em; white-space: pre-wrap; word-break: break-word;">Fail Reason: {{ item.message }}</span>
+              </div>
+            </div>
+            <q-btn class="q-mt-md" label="關閉" color="primary" @click="show_qc_message_dialog = false" />
+          </div>
+        </div>
+      </q-card-section>
+    </q-card>
+  </q-dialog>
+
 </template>
 
 <script setup>
@@ -265,6 +309,25 @@ import Plotly from 'plotly.js-dist';
 const showResult = ref(true);
 const store = useStore();
 const separator = '___SEP_ANNO___';
+
+// 控制 QC Message 視窗
+const show_qc_message_dialog = ref(false);
+const displayed_qc_message = ref('');
+const processed_qc_message = computed(() => {
+  let report_list = [];
+  const message_list = displayed_qc_message.value.split(';');
+  message_list.forEach(item => {
+    if (item.includes("File:") && item.includes(",")) {
+      const file = item.split("File:")[1].trim().split(",")[0].trim();
+      const message = item.split(",")[1].trim();
+      report_list.push({
+        file: file,
+        message: message
+      });
+    }
+  });
+  return report_list;
+});
 
 // 使用者身份
 const is_login = ref(false);
@@ -311,6 +374,18 @@ const summaryColumns = [
     field: "result"
   },
   {
+    name: "qcStatus",
+    align: "center",
+    label: "QC Status",
+    field: "qcStatus"
+  },
+  {
+    name: "qcMessage",
+    align: "center",
+    label: "QC Message",
+    field: "qcMessage"
+  },
+  {
     name: "assessment",
     align: "center",
     label: "Assessment",
@@ -323,6 +398,7 @@ const summaryColumns = [
     field: "showData"
   }
 ]
+const displaySummaryColumns = summaryColumns.filter(column => column.name !== 'qcMessage');
 
 // 定義結果表格
 const resultRows = ref([]);
@@ -485,17 +561,19 @@ function updateSummaryRows() {
     const key_word_pathogenic = [ClinicalSignificance["Pathogenic"].value, ClinicalSignificance["Likely_pathogenic"].value];
     let AssessmentLabel = selected_Row ? (selected_Row.ClinSigList.some(item => key_word_pathogenic.includes(item)) ? "Pathogenic Detected" : "Not detected") : "Not detected";
 
-    // 如果 qc_status 是 'fail-the-criteria' 則 result = N/A assessment = QC Failed
+    // 如果 qc_status 是 'fail-the-criteria' 則 result = N/A assessment = Invalid
     if (item.qc_status === 'fail-the-criteria') {
       ResultLabel = 'N/A';
-      AssessmentLabel = 'QC Failed';
+      AssessmentLabel = 'Invalid';
     }
 
     return {
       index: index + 1,
       sampleName: item.sample_name,
       result: ResultLabel,
-      assessment: AssessmentLabel
+      assessment: AssessmentLabel,
+      qcStatus: convertQCStatus(item.qc_status),
+      qcMessage: item.qc_message
     }
   })
 
@@ -827,6 +905,34 @@ function plotBaseCallPeaks(plot_data, basecall_data) {
   });
 }
 
+// 轉換 QC status 文字
+function convertQCStatus(qcStatus) {
+  if (qcStatus === 'meet-the-criteria') {
+    return 'Meet the criteria';
+  }
+  else if (qcStatus === 'fail-the-criteria') {
+    return 'Fail the criteria';
+  }
+  else {
+    return 'N/A';
+  }
+}
+
+// 顯示 QC Message
+function showQCMessage(qcStatus, qcMessage) {
+  // 如果 qcStatus 是 'Meet the criteria' 則不顯示 QC Message
+  if (qcStatus === 'Meet the criteria') {
+    return;
+  }
+  // 如果 qcStatus 是 'Fail the criteria' 則顯示 QC Message
+  else {
+    displayed_qc_message.value = qcMessage;
+    show_qc_message_dialog.value = true;
+  }
+
+  console.log(processed_qc_message.value);
+}
+
 // 掛載時執行
 onMounted(async () => {
   // 取得使用者身份
@@ -923,10 +1029,10 @@ watch(currentSelectedSampleIndex, () => {
     const key_word_pathogenic = [ClinicalSignificance["Pathogenic"].value, ClinicalSignificance["Likely_pathogenic"].value];
     let AssessmentLabel = selected_Row ? (selected_Row.ClinSigList.some(item => key_word_pathogenic.includes(item)) ? "Pathogenic Detected" : "Not detected") : "Not detected";
 
-    // 如果 qc_status 是 'fail-the-criteria' 則 result = N/A assessment = QC Failed
+    // 如果 qc_status 是 'fail-the-criteria' 則 result = N/A assessment = Invalid
     if (item.qc_status === 'fail-the-criteria') {
       ResultLabel = 'N/A';
-      AssessmentLabel = 'QC Failed';
+      AssessmentLabel = 'Invalid';
     }
 
     return {
