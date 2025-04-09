@@ -1,0 +1,144 @@
+{
+  "sample_list": [
+    {
+      "index": 1,
+      "sample_name": "b_Thal_303140001",
+      "sequencing_files": [
+        {
+          "file_name": "b_Thal_303140001-1F1R.ab1",
+          "file_path": "testing_data/thalassemia_test_data/betaThal/b_Thal_303140001-1F1R.ab1"
+        },
+        {
+          "file_name": "b_Thal_303140001-2F2R.ab1",
+          "file_path": "testing_data/thalassemia_test_data/betaThal/b_Thal_303140001-2F2R.ab1"
+        }
+      ]
+    },
+    {
+      "index": 2,
+      "sample_name": "b_Thal_02401107281",
+      "sequencing_files": [
+        {
+          "file_name": "b_Thal_02401107281-1F1R.ab1",
+          "file_path": "testing_data/thalassemia_test_data/betaThal/b_Thal_02401107281-1F1R.ab1"
+        },
+        {
+          "file_name": "b_Thal_02401107281-2F2R.ab1",
+          "file_path": "testing_data/thalassemia_test_data/betaThal/b_Thal_02401107281-2F2R.ab1"
+        }
+      ]
+    },
+    {
+      "index": 3,
+      "sample_name": "b_thal_2F_IVS2",
+      "sequencing_files": [
+        {
+          "file_name": "b_thal_2F_IVS2-654C_T.ab1",
+          "file_path": "testing_data/thalassemia_test_data/betaThal/b_thal_2F_IVS2-654C_T.ab1"
+        },
+        {
+          "file_name": "b_Thal_02401107281-2F2R.ab1",
+          "file_path": "testing_data/thalassemia_test_data/betaThal/b_Thal_02401107281-2F2R.ab1"
+        }
+      ]
+    },
+    {
+      "index": 4,
+      "sample_name": "b_Thal_307150002_bThal",
+      "sequencing_files": [
+        {
+          "file_name": "b_Thal_307150002_bThal-1F.ab1",
+          "file_path": "testing_data/thalassemia_test_data/betaThal/b_Thal_307150002_bThal-1F.ab1"
+        },
+        {
+          "file_name": "b_Thal_307150002_bThal-2F.ab1",
+          "file_path": "testing_data/thalassemia_test_data/betaThal/b_Thal_307150002_bThal-2F.ab1"
+        }
+      ]
+    },
+    {
+      "index": 5,
+      "sample_name": "b_Thal_307150001_bThal",
+      "sequencing_files": [
+        {
+          "file_name": "b_Thal_307150001_bThal-2F.ab1",
+          "file_path": "testing_data/thalassemia_test_data/betaThal/b_Thal_307150001_bThal-2F.ab1"
+        },
+        {
+          "file_name": "b_Thal_307150001_bThal-1F.ab1",
+          "file_path": "testing_data/thalassemia_test_data/betaThal/b_Thal_307150001_bThal-1F.ab1"
+        }
+      ]
+    },
+    {
+      "index": 6,
+      "sample_name": "b_Thal_02401048475",
+      "sequencing_files": [
+        {
+          "file_name": "b_Thal_02401048475-2F2R.ab1",
+          "file_path": "testing_data/thalassemia_test_data/betaThal/b_Thal_02401048475-2F2R.ab1"
+        },
+        {
+          "file_name": "b_Thal_02401048475-1F1R.ab1",
+          "file_path": "testing_data/thalassemia_test_data/betaThal/b_Thal_02401048475-1F1R.ab1"
+        }
+      ]
+    },
+    {
+      "index": 7,
+      "sample_name": "b_Thal_02401051615",
+      "sequencing_files": [
+        {
+          "file_name": "b_Thal_02401051615-1F1R.ab1",
+          "file_path": "testing_data/thalassemia_test_data/betaThal/b_Thal_02401051615-1F1R.ab1"
+        },
+        {
+          "file_name": "b_Thal_02401051615-2F2R.ab1",
+          "file_path": "testing_data/thalassemia_test_data/betaThal/b_Thal_02401051615-2F2R.ab1"
+        }
+      ]
+    },
+    {
+      "index": 8,
+      "sample_name": "b_Thal_307150001",
+      "sequencing_files": [
+        {
+          "file_name": "b_Thal_307150001-2F2R.ab1",
+          "file_path": "testing_data/thalassemia_test_data/betaThal/b_Thal_307150001-2F2R.ab1"
+        },
+        {
+          "file_name": "b_Thal_307150001-1F1R.ab1",
+          "file_path": "testing_data/thalassemia_test_data/betaThal/b_Thal_307150001-1F1R.ab1"
+        }
+      ]
+    },
+    {
+      "index": 9,
+      "sample_name": "b_thal_1F_CD_41_42_CTTT",
+      "sequencing_files": [
+        {
+          "file_name": "b_thal_1F_CD_41_42_CTTT-1.ab1",
+          "file_path": "testing_data/thalassemia_test_data/betaThal/b_thal_1F_CD_41_42_CTTT-1.ab1"
+        },
+        {
+          "file_name": "b_thal_1F_CD_41_42_CTTT-2.ab1",
+          "file_path": "testing_data/thalassemia_test_data/betaThal/b_thal_1F_CD_41_42_CTTT-2.ab1"
+        }
+      ]
+    },
+    {
+      "index": 10,
+      "sample_name": "b_Thal_307150002",
+      "sequencing_files": [
+        {
+          "file_name": "b_Thal_307150002-2F2R.ab1",
+          "file_path": "testing_data/thalassemia_test_data/betaThal/b_Thal_307150002-2F2R.ab1"
+        },
+        {
+          "file_name": "b_Thal_307150002-1F1R.ab1",
+          "file_path": "testing_data/thalassemia_test_data/betaThal/b_Thal_307150002-1F1R.ab1"
+        }
+      ]
+    }
+  ]
+}

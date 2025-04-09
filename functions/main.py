@@ -15,6 +15,7 @@
 # 導入模組
 import json
 import traceback
+import requests
 from firebase_functions import https_fn, options
 from config_admin import bucket
 from Nucleus import Core
@@ -60,6 +61,8 @@ def RunAnalysis(req: https_fn.Request):
             result = core.runHtd(analysis_input_data)
         elif analysis_name == "SMA":
             result = core.runSma(analysis_input_data)
+        elif analysis_name == "THAL_BETA":
+            result = core.runThalBeta(analysis_input_data)
 
         # 回傳 response
         response_data = {"data": {"status": "success", "message": "Analysis finished", "result": result}}
@@ -128,4 +131,3 @@ def ParseInputAnalysisLims(req: https_fn.Request):
         response_data = {"data": {"status": "error", "message": str(e) + "\n" + traceback.format_exc()}}
 
     return https_fn.Response(json.dumps(response_data), content_type="application/json")
-

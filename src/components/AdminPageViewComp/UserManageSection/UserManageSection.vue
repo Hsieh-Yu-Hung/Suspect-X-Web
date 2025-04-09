@@ -67,7 +67,7 @@
 <script setup>
 
 // 導入模組
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, onBeforeMount } from 'vue';
 import { useQuasar } from 'quasar';
 
 // 導入元件
@@ -79,7 +79,7 @@ import { update_userData, getUsers_from_firestore, deleteData } from '@/firebase
 import loggerV2 from '@/composables/loggerV2';
 import DropDownList from '@/components/DropDownList.vue';
 import { updateGetUserInfo } from '@/composables/accessStoreUserInfo';
-
+import { getRoleDatabase } from '@/firebase';
 // 取得 login_status
 const { login_status } = updateGetUserInfo();
 
@@ -91,7 +91,7 @@ const default_organization = "未選擇";
 const display_organization = ref([default_organization]);
 
 // 列表標題
-const header = USER_INFO("人員帳號", "N/A", "header_id", "所屬組織", "帳號身份", "帳號開通")
+const header = USER_INFO("人員帳號", "N/A", "header_id", "所屬組織", "帳號身份", "帳號開通", "權限")
 header.created_at = "申請日期";
 header.updated_at = "更新日期";
 
@@ -99,17 +99,16 @@ header.updated_at = "更新日期";
 const display_user = ref([header]);
 
 // 帳號身份選單
-const account_role_option = ref([
-  {role: 'not-set', label: '未選擇'},
-  {role: 'user', label: '使用者'},
-  {role: 'admin', label: '管理員'},
-  {role: 'supervisor', label: '單位主管'},
-]);
+const account_role_option = ref([{role: 'not-set',label: '未選擇'}]);
 
 // 帳號身份選單 (篩選用)
 const default_role = '未選擇';
-const current_filter_account_role_selected = ref(account_role_option.value.find(item => item.label === default_role).role);
-const role_option_for_filtering = account_role_option.value.map(item => item.label);
+const current_filter_account_role_selected = ref(
+  account_role_option.value.length > 0
+    ? account_role_option.value.find(item => item.label === default_role).role
+    : default_role
+);
+const role_option_for_filtering = ref(account_role_option.value);
 
 // 帳號開通選單 (篩選用)
 const default_account_active = '未選擇';
@@ -126,7 +125,7 @@ const emit = defineEmits(['user_List_is_updated']);
 /* functions */
 
 // update filters
-function update_filter_selected_value(data) {
+async function update_filter_selected_value(data) {
   // 更新篩選：帳號開通
   if(data.name === 'filter_account_active') {
     if(data.new_value !== default_account_active) {
@@ -141,7 +140,7 @@ function update_filter_selected_value(data) {
   // 更新篩選：帳號身份
   else if(data.name === 'filter_account_role') {
     if(data.new_value !== default_role) {
-      current_filter_account_role_selected.value = account_role_option.value.find(item => item.label === data.new_value).role;
+      current_filter_account_role_selected.value = account_role_option.value.find(item => item.label === data.new_value.label).role;
     }
     else {
       current_filter_account_role_selected.value = account_role_option.value.find(item => item.label === default_role).role;
@@ -159,7 +158,7 @@ function update_filter_selected_value(data) {
   }
 
   // 重新載入使用者
-  refresh_user_list();
+  await refresh_user_list();
 }
 
 // to_show condition
@@ -192,11 +191,7 @@ async function refresh_user_list() {
   const allUser = await getUsers_from_firestore();
 
   // 清空 display_user
-  display_user.value.forEach(item => {
-    if(item.id !== header.id) {
-      display_user.value.splice(display_user.value.indexOf(item), 1);
-    }
-  });
+  display_user.value = [header];
 
   // 更新 display_user
   allUser.forEach(user => {
@@ -230,7 +225,8 @@ async function update_user_info(data) {
     targetUser.id,
     targetUser.organization,
     targetUser.role,
-    targetUser.account_active
+    targetUser.account_active,
+    targetUser.actions
   );
 
   // 如果是帳號開通, 則更新帳號開通
@@ -260,11 +256,20 @@ async function update_user_info(data) {
     loggerV2.info(message, source, user);
   }
 
+  // 如果是新增使用者權限動作, 則新增使用者權限動作
+  else if(data.actions){
+    newData.actions = data.actions;
+    const message = `新增使用者權限動作: id: ${data.id}, email: ${targetUser.email}`;
+    const source = 'UserManageSection.vue line.265';
+    const user = login_status.value.user_info.email;
+    loggerV2.info(message, source, user);
+  }
+
   // 更新使用者資料
   await update_userData(newData, data.id);
 
   // 重新載入使用者
-  refresh_user_list();
+  await refresh_user_list();
 
   // 關閉loading
   setTimeout(() => {
@@ -286,6 +291,16 @@ async function update_dropdown_organization() {
   await load_organization_for_dropdown(display_organization.value,default_organization);
 }
 
+// 載入身份列表 (下拉式選單用)
+async function update_dropdown_role() {
+  const role_list = await getRoleDatabase();
+  const new_account_role_option = role_list.map(item => ({
+    role: item.role_name,
+    label: item.role_label
+  }));
+  account_role_option.value.push(...new_account_role_option);
+}
+
 // 更新組織列表
 async function update_organization_list() {
   await update_dropdown_organization()
@@ -305,13 +320,13 @@ async function delete_user(user_id_to_delete) {
 
   // 更新 firestore
   await deleteData(dataset_list.user_info, user_id_to_delete)
-  .then((Response) => {
+  .then(async (Response) => {
     if(Response.status === 'success') {
       // 發送事件
       emit('user_List_is_updated');
 
       // 重新載入使用者
-      refresh_user_list();
+      await refresh_user_list();
     }
     else {
       console.error(Response.message);
@@ -348,7 +363,12 @@ onMounted(async () => {
 
   // 關閉loading
   $q.loading.hide();
+});
 
+/* onBeforeMount */
+onBeforeMount(async () => {
+  // 載入身份列表 (下拉式選單用)
+  await update_dropdown_role();
 });
 
 // Expose

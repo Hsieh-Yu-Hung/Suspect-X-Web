@@ -13,6 +13,7 @@ const CATEGORY_LIST = {
   fx_import: 'fx_import',
   htd_import: 'htd_import',
   sma_import: 'sma_import',
+  thal_beta_import: 'thal_beta_import',
 }
 
 export { CATEGORY_LIST };

@@ -13,6 +13,7 @@
           align="justify"
           narrow-indicator
         >
+          <q-tab name="tab_permissions" label="權限" />
           <q-tab name="tab_users" label="使用者" />
           <q-tab name="tab_organizations" label="組織" />
           <q-tab name="tab_software" label="軟體" />
@@ -24,6 +25,16 @@
 
         <!-- 頁籤內容 -->
         <q-tab-panels v-model="current_tab" animated style="height: 100vh;">
+
+          <!-- 權限頁籤 -->
+          <q-tab-panel name="tab_permissions">
+
+            <!-- 權限管理 -->
+            <div class="section-container">
+              <PermissionSection ref="permission_section" />
+            </div>
+
+          </q-tab-panel>
 
           <!-- 使用者頁籤 -->
           <q-tab-panel name="tab_users">
@@ -106,6 +117,7 @@ import OrganizationSection from '@/components/AdminPageViewComp/OrganizationSect
 import SoftwareSection from '@/components/AdminPageViewComp/SoftwareSection/SoftwareSection.vue';
 import UserManageSection from '@/components/AdminPageViewComp/UserManageSection/UserManageSection.vue';
 import OtherSection from '@/components/AdminPageViewComp/OtherSettingSection/OtherSection.vue';
+import PermissionSection from '@/components/AdminPageViewComp/PermissionSection/PermissionSection.vue';
 import LogSection from '@/components/AdminPageViewComp/LogSectionViews/LogSection.vue';
 
 // refs
@@ -117,7 +129,7 @@ const other_section = ref(null);
 const displayAdmin = ref(false);
 
 // 目前選取的頁面
-const current_tab = ref('tab_logs');
+const current_tab = ref('tab_permissions');
 // router
 const router = useRouter();
 

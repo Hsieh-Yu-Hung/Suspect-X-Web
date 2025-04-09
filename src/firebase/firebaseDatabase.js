@@ -21,10 +21,40 @@ export const dataset_list = {
   software_version_list: 'software_version_list',
   organization_list: 'organization_list',
   user_analysis: 'user_analysis',
+  testing_data: 'testing_data',
+  permission_list: 'permission_list',
+  role_list: 'role_list',
 };
 
+// 定義角色設定 ROLE
+export const ROLE = (role_name, role_label, role_description, role_permission=[]) => {
+  return {
+    role_name: role_name,
+    role_label: role_label,
+    role_description: role_description,
+    role_permission: role_permission
+  }
+}
+
+// 定義權限設定 Permission
+export const PERMISSION = (permission_name, permission_label, description) => {
+  return {
+    permission_name: permission_name,
+    permission_label: permission_label,
+    description: description,
+  }
+}
+// 定義權限 ACTION
+export const ACTION = (action_name, action_label, action_active=true) => {
+  return {
+    action_name: action_name,
+    action_label: action_label,
+    action_active: action_active,
+  }
+}
+
 // 定義 USER_INFO
-export const USER_INFO = (email, login_method, id = null, organization = "not-set", role = "user", account_active = false) => {
+export const USER_INFO = (email, login_method, id = null, organization = "not-set", role = "user", account_active = false, actions = []) => {
   const created_at = new Date().toLocaleString();
   const updated_at = new Date().toLocaleString();
   return {
@@ -36,6 +66,7 @@ export const USER_INFO = (email, login_method, id = null, organization = "not-se
     created_at: created_at,
     updated_at: updated_at,
     login_method: login_method,
+    actions: actions,
   };
 };
 
@@ -60,15 +91,16 @@ export const SOFTWARE_DATA = (new_name, new_version, new_note, id = null, editab
 }
 
 // 定義組織資料
-export const ORGAN_DATA = (name, software_select, member, date, id = null, editable = true) => {
+export const ORGAN_DATA = (name, software_select, date, id = null, editable = true, permission = []) => {
   const organization_id = id ? id : uuidv4();
   return {
     organization_name: name,
     software_selection: software_select,
-    member_count: member,
+    member_count: 0,
     join_date: date,
     organization_id: organization_id,
-    editable: editable
+    editable: editable,
+    permission: permission
   }
 }
 
@@ -173,6 +205,7 @@ export const getData = async (dataset, uid = null) => {
 
 // 刪除指定資料
 export const deleteData = async (dataset, uid) => {
+  if (!uid) { return {'status': 'skipped', 'message': 'No ID to delete'}; }
   let exec_status = {'status': 'pending', 'message': 'Unknown'};
   const docRef = doc(collection(database, dataset), uid);
   await deleteDoc(docRef).then(() => {
@@ -519,6 +552,8 @@ export const getAnalysisResult = async (user_id, analysis_name, analysis_id) => 
         return 'nudt15_result';
       case 'SMAv4':
         return 'sma_v4_result';
+      case 'THAL_BETA':
+        return 'thalbeta_result';
       default:
         return analysis_name;
     }
@@ -544,3 +579,133 @@ export const simplifyFilePath = (file_path) => {
   // 移除附檔名
   return fileName.replace(/\.[^.]+$/, '');
 }
+
+// 加入測試 Sample 到 Database
+export const addTestingSample = async (data, dataset_path) => {
+  addData(dataset_list.testing_data, data, dataset_path).then((result) => {
+    if (result.status === 'success') {
+      const message = `成功加入測試樣本, 路徑: ${dataset_path}`;
+      const source = 'firebaseDatabase.js line.553';
+      const user = 'admin';
+      loggerV2.debug(message, source, user);
+    } else if (result.status === 'error') {
+      const message = `加入測試樣本失敗, 路徑: ${dataset_path}, 原因: ${result.message}`;
+      const source = 'firebaseDatabase.js line.560';
+      const user = 'admin';
+      loggerV2.error(message, source, user);
+    }
+  });
+}
+
+// 取得 firestore 權限資料
+export const getPermissionDatabase = async () => {
+  let permission_array = [];
+  await getData(dataset_list.permission_list)
+  .then((result) => {
+    if (result.status === 'success') {
+      if (result.data) {
+        result.data.forEach((permission) => {
+          permission_array.push(permission);
+        });
+      }
+    } else {
+      console.error(` Get permission failed, Error: ${result.message}`);
+    }
+  })
+  .catch((error) => {
+    console.error(` Get permission failed, Error: ${error}`);
+  });
+  return permission_array;
+}
+
+// 加入權限資料到 firestore
+export const addPermissionDatabase = async (PERMISSION) => {
+  // 加入權限資料到 firestore
+  addData(dataset_list.permission_list, PERMISSION, PERMISSION.permission_name).then((result) => {
+    if (result.status === 'success') {
+      const message = `成功更新權限資料, 權限: ${PERMISSION.permission_name}`;
+      const source = 'firebaseDatabase.js line.609';
+      const user = 'admin';
+      loggerV2.debug(message, source, user);
+    } else if (result.status === 'error') {
+      const message = `更新權限資料失敗, 權限: ${PERMISSION.permission_name}, 原因: ${result.message}`;
+      const source = 'firebaseDatabase.js line.616';
+      const user = 'admin';
+      loggerV2.error(message, source, user);
+    }
+  });
+}
+
+// 刪除權限資料
+export const deletePermissionDatabase = async (permission_name) => {
+  deleteData(dataset_list.permission_list, permission_name).then((result) => {
+    if (result.status === 'success') {
+      const message = `成功刪除權限資料, 權限: ${permission_name}`;
+      const source = 'firebaseDatabase.js line.626';
+      const user = 'admin';
+      loggerV2.debug(message, source, user);
+    }
+  });
+}
+
+// 取得 firestore 角色資料
+export const getRoleDatabase = async () => {
+  let role_array = [];
+  await getData(dataset_list.role_list)
+  .then((result) => {
+    if (result.status === 'success') {
+      if (result.data) {
+        result.data.forEach((role) => {
+          role_array.push(role);
+        });
+      }
+    } else {
+      console.error(` Get role failed, Error: ${result.message}`);
+    }
+  })
+  .catch((error) => {
+    console.error(` Get role failed, Error: ${error}`);
+  });
+  return role_array;
+}
+
+// 更新角色資料
+export const updateRoleDatabase = async (ROLE) => {
+  addData(dataset_list.role_list, ROLE, ROLE.role_name).then((result) => {
+    if (result.status === 'success') {
+      const message = `成功更新角色資料, 角色: ${ROLE.role_name}`;
+      const source = 'firebaseDatabase.js line.671';
+      const user = 'admin';
+      loggerV2.debug(message, source, user);
+    }
+  });
+}
+// 加入角色資料到 firestore
+export const addRoleDatabase = async (ROLE) => {
+  addData(dataset_list.role_list, ROLE, ROLE.role_name).then((result) => {
+    if (result.status === 'success') {
+      const message = `成功更新角色資料, 角色: ${ROLE.role_name}`;
+      const source = 'firebaseDatabase.js line.668';
+      const user = 'admin';
+      loggerV2.debug(message, source, user);
+    } else if (result.status === 'error') {
+      const message = `更新角色資料失敗, 角色: ${ROLE.role_name}, 原因: ${result.message}`;
+      const source = 'firebaseDatabase.js line.675';
+      const user = 'admin';
+      loggerV2.error(message, source, user);
+    }
+  });
+}
+
+// 刪除角色資料
+export const deleteRoleDatabase = async (role_name) => {
+  deleteData(dataset_list.role_list, role_name).then((result) => {
+    if (result.status === 'success') {
+      const message = `成功刪除角色資料, 角色: ${role_name}`;
+      const source = 'firebaseDatabase.js line.685';
+      const user = 'admin';
+      loggerV2.debug(message, source, user);
+    }
+  });
+}
+

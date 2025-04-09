@@ -419,6 +419,9 @@ const exportResults = computed(() => {
   }));
 });
 const exportSampleInfo = computed({
+  set: (val) => {
+    exportSampleInfo.value = val;
+  },
   get: () => {
     const inputData = store.getters["export_page_setting/getXsubi"]
     const importData = store.getters["export_page_setting/getSubjectInfoTable"];
@@ -771,7 +774,8 @@ const assessmentColor = (value) => {
     (value === "alpha") ||
     (value === "beta") ||
     (value === "alphabeta") ||
-    (value === "affected")
+    (value === "affected") ||
+    (value === "Pathogenic Detected")
   ) {
     return "text-red-8 text-weight-bold";
   } else {

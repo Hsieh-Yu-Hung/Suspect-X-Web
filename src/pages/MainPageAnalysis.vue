@@ -43,6 +43,16 @@
         <ImportSMA class="q-ma-none" />
       </div>
 
+      <!-- THAL ALPHA -->
+      <div class="col " v-else-if="currentProduct() == 'thal-import-alpha'">
+        <ImportThalAlpha class="q-ma-none" />
+      </div>
+
+      <!-- THAL BETA -->
+      <div class="col " v-else-if="currentProduct() == 'thal-import-beta'">
+        <ImportThalBeta class="q-ma-none" />
+      </div>
+
       <!-- =========================== Inputs =========================== -->
 
       <!-- Thal -->
@@ -137,6 +147,8 @@ import ImportNudt15 from '@/components/ImportViews/ImportNudt15.vue';
 import ImportFXS from '@/components/ImportViews/ImportFXS.vue';
 import ImportHTD from '@/components/ImportViews/ImportHTD.vue';
 import ImportSMA from '@/components/ImportViews/ImportSMA.vue';
+import ImportThalAlpha from '@/components/ImportViews/ImportThalAlpha.vue';
+import ImportThalBeta from '@/components/ImportViews/ImportThalBeta.vue';
 
 // Input views
 import InputThal from '@/components/InputViews/InputThal.vue';

@@ -18,8 +18,19 @@ import { Functions } from "./firebaseFunction";
 import {
   Database, login_method, getData, addLoginInfoDatabase, addEmailListDatabase,
   USER_INFO, EMAIL_INFO, getSoftwareVersionDatabase, getOrganizationDatabase,
-  addSoftwareVersionDatabase, addOrganizationDatabase, SOFTWARE_DATA, ORGAN_DATA
+  addSoftwareVersionDatabase, addOrganizationDatabase, SOFTWARE_DATA, ORGAN_DATA,
+  addTestingSample, getPermissionDatabase, addPermissionDatabase, PERMISSION,
+  getRoleDatabase, addRoleDatabase, ROLE, ACTION
 } from "./firebaseDatabase";
+
+// 設定
+import config from "../../config.js";
+
+// 設定模擬用預設權限
+const default_permission = [
+  ACTION('enter_admin_page', '管理員頁面', true),
+  ACTION('dev_mode', '開發者模式', true),
+];
 
 // 登入 admin
 async function create_fake_user(email, password, admin=false) {
@@ -42,11 +53,13 @@ async function create_fake_user(email, password, admin=false) {
         LoginInfo.account_active = true;
         LoginInfo.role = 'admin';
         LoginInfo.organization = 'AdminOrg';
+        LoginInfo.actions = default_permission;
       }
       else {
         LoginInfo.account_active = false;
         LoginInfo.role = 'user';
         LoginInfo.organization = 'not-set';
+        LoginInfo.actions = [];
       }
       addLoginInfoDatabase(LoginInfo, id);
 
@@ -89,11 +102,53 @@ async function dev_add_organization() {
   const organizations = await getOrganizationDatabase();
   if (organizations.length === 0) {
     // 測試加入組織資料
-    await addOrganizationDatabase(ORGAN_DATA('AdminOrg', 'AdminSoftware', '0', 'N/A', 'Admin', false));
-    await addOrganizationDatabase(ORGAN_DATA('organ1', 'soft1', '0', '2077-02-30', null, false));
-    await addOrganizationDatabase(ORGAN_DATA('organ2', 'soft2', '0', '2077-02-30', null, false));
-    await addOrganizationDatabase(ORGAN_DATA('organ3', 'soft3', '0', '2077-02-30', null, false));
+    await addOrganizationDatabase(ORGAN_DATA('AdminOrg', 'AdminSoftware', 'N/A', 'Admin', false, default_permission));
+    await addOrganizationDatabase(ORGAN_DATA('organ1', 'soft1', '2077-02-30'));
+    await addOrganizationDatabase(ORGAN_DATA('organ2', 'soft2', '2077-02-30'));
+    await addOrganizationDatabase(ORGAN_DATA('organ3', 'soft3', '2077-02-30'));
   }
+}
+
+// 開發環境時，加入權限資料
+async function dev_add_permission() {
+  // 取得權限資料
+  const permissions = await getPermissionDatabase();
+  if (permissions.length === 0) {
+    // 測試加入權限資料
+    await addPermissionDatabase(PERMISSION(default_permission[0].action_name, default_permission[0].action_label, '能讓你進入管理員頁面的權限'));
+    await addPermissionDatabase(PERMISSION(default_permission[1].action_name, default_permission[1].action_label, '能讓你啟動開發者模式的權限'));
+  }
+}
+
+// 開發環境時，加入角色資料
+async function dev_add_role() {
+  // 取得角色資料
+  const roles = await getRoleDatabase();
+  if (roles.length === 0) {
+    // 測試加入角色資料
+    await addRoleDatabase(ROLE('admin', '管理員', '測試管理員, 可以進入管理員頁面, 可以管理後台', default_permission));
+    await addRoleDatabase(ROLE('user', '使用者', '測試使用者, 可以使用分析功能, 無特殊功能', []));
+  }
+}
+
+// 開發環境時，加入 Beta Thal 測試樣本
+async function dev_add_beta_thal_testing_samples() {
+
+  // 取得測試樣本設定
+  const beta_thal_testing_sample = config.testing_samples.beta_thal;
+  const hbb_mutant_testing_sample = config.testing_samples.hbb_mutant;
+  const hbb_wild_type_testing_sample = config.testing_samples.hbb_wild_type;
+  const sanger_low_signal_testing_sample = config.testing_samples.sanger_low_signal;
+  const non_hbb_sanger_testing_sample = config.testing_samples.non_hbb_sanger;
+  const non_hbb_highbg_testing_sample = config.testing_samples.non_hbb_highbg;
+
+  // 加入到 firestore
+  await addTestingSample(beta_thal_testing_sample, 'test_betaThal');
+  await addTestingSample(hbb_mutant_testing_sample, 'test_hbb_mutant');
+  await addTestingSample(hbb_wild_type_testing_sample, 'test_hbb_wild_type');
+  await addTestingSample(sanger_low_signal_testing_sample, 'test_sanger_low_signal');
+  await addTestingSample(non_hbb_sanger_testing_sample, 'test_non_hbb_sanger');
+  await addTestingSample(non_hbb_highbg_testing_sample, 'test_non_hbb_highbg');
 }
 
 // 主程式
@@ -120,5 +175,14 @@ export default async function onDevelopment() {
 
   // 開發環境時，加入組織資料
   await dev_add_organization();
+
+  // 開發環境時，加入權限資料
+  await dev_add_permission();
+
+  // 開發環境時，加入角色資料
+  await dev_add_role();
+
+  // 開發環境時，加入 Beta Thal 測試樣本
+  await dev_add_beta_thal_testing_samples();
 }
 

@@ -33,8 +33,52 @@
       <q-input style="min-width: 100px" color="lime-2" borderless :readonly="disable_edit" dense filled v-else v-model="organization_name" />
     </q-item-section>
 
+    <!-- 組織權限 -->
+    <q-item-section class="col-2" style="padding-inline: 1em;">
+
+      <!-- 顯示表格 Title -->
+      <div class="row flex-center flex" style="flex-direction: row;" v-if="typeof props.permission_list === 'string'">
+        <span class="text-subtitle2">{{ props.permission_list }}</span>
+      </div>
+
+      <!-- 顯示標籤 -->
+      <div class="row flex-start flex" style="flex-direction: row;" v-else>
+        <div v-if="display_permission_list.length > 0" class="col flex flex-center">
+          <!-- 顯示權限標籤 -->
+          <q-chip v-for="(action, index) in display_permission_list"
+            icon="book"
+            color="indigo-9"
+            removable
+            text-color="white"
+            :key="index"
+            :label="action.action_label"
+            class="glossy"
+            @remove="remove_action(display_permission_list, action.action_name)"
+          />
+        </div>
+        <div v-else class="col flex flex-center">
+          <span class="text-subtitle2"> -- 沒有權限 --</span>
+        </div>
+
+        <!-- 下拉式選單選擇權限 -->
+        <div class="col-1">
+          <q-btn-dropdown :disable="!disable_edit" dropdown-icon="add" :color="disable_edit ? 'primary' : 'grey-4'" glossy dense label="">
+            <q-list>
+              <q-item @click="add_action(display_permission_list, permission, index)" clickable v-close-popup v-for="(permission, index) in permission_rows" :key="index">
+                <q-item-section>
+                  <q-item-label>{{ permission.permission_label }}</q-item-label>
+                </q-item-section>
+              </q-item>
+            </q-list>
+          </q-btn-dropdown>
+        </div>
+
+      </div>
+
+    </q-item-section>
+
     <!-- 軟體版本 -->
-    <q-item-section class="col">
+    <q-item-section class="col" style="padding-inline: 2em;">
       <q-item-label v-if="organization_name === masked_organization_name">{{ software_selection }}</q-item-label>
       <DropDownList
         name="software_dropdown"
@@ -70,11 +114,12 @@
 <script setup>
 
 // 導入模組
-import { ref } from 'vue';
+import { ref, onMounted, computed } from 'vue';
 
 // 導入元件
 import DropDownList from '@/components/DropDownList.vue';
 import { ORGAN_DATA } from '@/firebase';
+import { getPermissionDatabase, addOrganizationDatabase, ACTION } from '@/firebase/firebaseDatabase';
 
 // 接收 props
 const props = defineProps({
@@ -84,6 +129,9 @@ const props = defineProps({
   },
   software_version_list: {
     type: Array,
+    required: false,
+  },
+  permission_list: {
     required: false,
   },
 });
@@ -97,6 +145,8 @@ const software_selection = ref(props.organization_info.software_selection);
 const member_count = ref(props.organization_info.member_count);
 const join_date = ref(props.organization_info.join_date);
 const organization_id = props.organization_info.organization_id;
+const permission_rows = ref([]);
+const display_permission_list = ref([]);
 
 // 軟體版本下拉選單
 const software_dropdown_list = ref(null);
@@ -118,7 +168,6 @@ function edit_organization() {
     const new_organization = ORGAN_DATA(
       organization_name.value,
       software_dropdown_list.value.display_selected_value,
-      member_count.value,
       join_date.value,
       organization_id,
       false);
@@ -139,6 +188,59 @@ function delete_organization() {
   emit('delete_organization', organization_id);
   warning_dialog.value = false;
 }
+
+// 移除權限
+const remove_action = async (current_permission, selected_permission) => {
+
+  // 過濾掉選取的權限
+  const filtered_permission = current_permission.filter(p => p.action_name !== selected_permission);
+  display_permission_list.value = filtered_permission;
+
+  // 更新組織資料
+  const new_Organ_data = ORGAN_DATA(
+    organization_name.value,
+    software_dropdown_list.value.display_selected_value,
+    join_date.value,
+    organization_id,
+    false,
+    filtered_permission);
+
+  // 更新資料庫
+  await addOrganizationDatabase(new_Organ_data);
+};
+
+// 新增權限
+const add_action = async (current_permission, permission) => {
+
+  // 先檢查是否已經有該權限
+  const has_permission = current_permission.some(p => p.action_name === permission.permission_name);
+  if (has_permission) { return; }
+  current_permission.push(ACTION(permission.permission_name, permission.permission_label));
+
+  // 更新組織資料
+  const new_Organ_data = ORGAN_DATA(
+    organization_name.value,
+    software_dropdown_list.value.display_selected_value,
+    join_date.value,
+    organization_id,
+    false,
+    current_permission);
+
+  // 更新資料庫
+  await addOrganizationDatabase(new_Organ_data);
+};
+
+// 從 firestore 取得角色資料
+const loadPermissionData = async () => {
+  const permissions = await getPermissionDatabase();
+  permission_rows.value = permissions;
+};
+
+// 掛載
+onMounted(async () => {
+  await loadPermissionData();
+  display_permission_list.value = props.permission_list
+});
 
 </script>
 

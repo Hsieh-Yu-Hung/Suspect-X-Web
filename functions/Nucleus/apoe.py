@@ -488,11 +488,9 @@ def SampleAssessment(APOEDataList):
   # 取得通過 Cutoff 的 peak_group, 如果該 peak_group 沒有通過 Cutoff, 則他會變成 None
   peak_group_list = [x.peak_group for x in RFUList if x.pass_cutoff]
 
-  # 如果通過 Cutoff 的 peak_group 數量小於 2, 則回傳 INVALID
-  if len(peak_group_list) < 2:
-    qc_status = QCStatus.FAILED
-    qc_message = "該 Sample 通過 RFU Cutoff 的 peak 數量小於 2"
-    return assessment_status, qc_status, qc_message, RFUList
+  # 如果通過 Cutoff 的 peak_group 數量為 1, 則將唯一的那一個重複一次
+  if len(peak_group_list) == 1:
+    peak_group_list.append(peak_group_list[0])
 
   # Low Risk 的判斷: (E2, E2) 或 (E2, E3)
   if peak_group_list == ["E2", "E2"] or ("E2" in peak_group_list and "E3" in peak_group_list):

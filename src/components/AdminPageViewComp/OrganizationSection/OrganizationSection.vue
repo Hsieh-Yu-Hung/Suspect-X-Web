@@ -23,6 +23,7 @@
           :organization_info="item"
           :ref="item.organization_id"
           :software_version_list="software_versions"
+          :permission_list="item.permission"
           @update_firestore_organization="update_organization_Lists"
           @delete_organization="delete_organization"
         />
@@ -49,7 +50,8 @@ import { load_software_version_for_dropdown, load_organization_from_firestore } 
 const $q = useQuasar();
 
 // 顯示組織資料
-const header = ORGAN_DATA('組織名稱', '軟體選用', '成員數量', '加入日期', null, false);
+let header = ORGAN_DATA('組織名稱', '軟體選用', '加入日期', null, false, "組織權限");
+header["member_count"] = "成員數量";
 const display_organization = ref([header]);
 
 // 軟體版本列表
@@ -59,9 +61,8 @@ const software_versions = ref(['請選擇']);
 const add_organization = () => {
   const new_name = '新增組織';
   const new_software_selection = '請選擇';
-  const new_member_count = '0';
   const new_join_date = new Date().toLocaleDateString();
-  const new_organization = ORGAN_DATA(new_name, new_software_selection, new_member_count, new_join_date);
+  const new_organization = ORGAN_DATA(new_name, new_software_selection, new_join_date);
   display_organization.value.push(new_organization);
 };
 

@@ -14,6 +14,7 @@ import NUDT15_analysis_data from './NUDT15_analysis_data';
 import SMA_analysis_data from './SMA_analysis_data';
 import SMAv4_analysis_data from './SMAv4_analysis_data';
 import export_page_setting from './ExportPageSetting';
+import Beta_thal_analysis_data from './Beta_thal_analysis_data';
 
 // 從 localStorage 中恢復登入狀態
 const savedState = localStorage.getItem('store');
@@ -61,6 +62,9 @@ export default store(function () {
 
       // SMAv4 分析結果
       SMAv4_analysis_data: SMAv4_analysis_data,
+
+      // Beta Thal Analysis 結果
+      Beta_thal_analysis_data: Beta_thal_analysis_data
     }
   })
 

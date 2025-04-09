@@ -1,0 +1,32 @@
+{
+  "sample_list": [
+    {
+      "index": 1,
+      "sample_name": "A1_B1_20250219",
+      "sequencing_files": [
+        {
+          "file_name": "A1_B1_20250219-154540.ab1",
+          "file_path": "testing_data/thalassemia_test_data/Low_signal/A1_B1_20250219-154540.ab1"
+        },
+        {
+          "file_name": "A1_B1_20250219-154541.ab1",
+          "file_path": "testing_data/thalassemia_test_data/Low_signal/A1_B1_20250219-154541.ab1"
+        }
+      ]
+    },
+    {
+      "index": 2,
+      "sample_name": "C1_D1_20250219",
+      "sequencing_files": [
+        {
+          "file_name": "C1_D1_20250219-154542.ab1",
+          "file_path": "testing_data/thalassemia_test_data/Low_signal/C1_D1_20250219-154542.ab1"
+        },
+        {
+          "file_name": "C1_D1_20250219-154543.ab1",
+          "file_path": "testing_data/thalassemia_test_data/Low_signal/C1_D1_20250219-154543.ab1"
+        }
+      ]
+    }
+  ]
+}

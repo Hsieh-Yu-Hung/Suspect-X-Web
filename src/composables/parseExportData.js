@@ -817,6 +817,36 @@ export function exportSmaV4Props(resultObj, selectedExport) {
   });
 }
 
+// THAL_BETA 導出結果
+export function exportThalBetaProps(resultObj, selectedExport) {
+
+  return selectedExport.map((s) => {
+
+    return {
+      result: {
+        standard: 'No standard for this product.',
+        testing: {
+          sample: {
+            id: s.sampleId,
+            name: s.sampleId
+          },
+          measurement: [ ...s.result.label ],
+          assessment: s.assessment.value,
+        },
+      },
+      subject: {
+        name: s.name,
+        birth: s.birth,
+        gender: s.gender,
+        idNumber: s.idNumber,
+        sampleType: s.type
+      },
+      collectionDate: s.collectingDate,
+      receivingDate: s.receivedDate,
+    }
+  });
+}
+
 export default {
   exportFxProps: exportFxProps,
   exportHdProps: exportHdProps,
@@ -826,4 +856,5 @@ export default {
   exportSmaProps: exportSmaProps,
   exportSmaV4Props: exportSmaV4Props,
   exportNudt15Props: exportNudt15Props,
+  exportThalBetaProps: exportThalBetaProps,
 };
