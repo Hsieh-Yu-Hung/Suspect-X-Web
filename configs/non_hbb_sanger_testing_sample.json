@@ -1,0 +1,46 @@
+{
+  "sample_list": [
+    {
+      "index": 1,
+      "sample_name": "HBV_F1R2_KRAS_030000",
+      "sequencing_files": [
+        {
+          "file_name": "HBV_F1R2_D_15570_M13F-1.ab1",
+          "file_path": "testing_data/thalassemia_test_data/Non_HBB_Sanger/HBV_F1R2_D_15570_M13F-1.ab1"
+        },
+        {
+          "file_name": "KRAS_030000-stool_M13F.ab1",
+          "file_path": "testing_data/thalassemia_test_data/Non_HBB_Sanger/KRAS_030000-stool_M13F.ab1"
+        }
+      ]
+    },
+    {
+      "index": 2,
+      "sample_name": "KRAS_007883_KRAS_029999",
+      "sequencing_files": [
+        {
+          "file_name": "KRAS_007883-stool_M13F.ab1",
+          "file_path": "testing_data/thalassemia_test_data/Non_HBB_Sanger/KRAS_007883-stool_M13F.ab1"
+        },
+        {
+          "file_name": "KRAS_029999-stool_M13F.ab1",
+          "file_path": "testing_data/thalassemia_test_data/Non_HBB_Sanger/KRAS_029999-stool_M13F.ab1"
+        }
+      ]
+    },
+    {
+      "index": 3,
+      "sample_name": "ARSG_c.566del_MHBV_006371",
+      "sequencing_files": [
+        {
+          "file_name": "ARSG_c.566del_25833010_ARSG_c.566del-F.ab1",
+          "file_path": "testing_data/thalassemia_test_data/Non_HBB_Sanger/ARSG_c.566del_25833010_ARSG_c.566del-F.ab1"
+        },
+        {
+          "file_name": "MHBV_006371_M13F-1.ab1",
+          "file_path": "testing_data/thalassemia_test_data/Non_HBB_Sanger/MHBV_006371_M13F-1.ab1"
+        }
+      ]
+    }
+  ]
+}

@@ -65,6 +65,7 @@
                   v-model="uploaded_sample_file"
                   label=""
                   multiple
+                  accept=".ab1"
                   style="display: none;"
                 />
 
@@ -173,7 +174,14 @@
                 <span class="text-bold text-h6 text-blue-grey-7">
                   Development Settings
                 </span>
-                <q-btn dense flat label="Load Testing" icon="mdi-download" text-color="indigo-7" @click="loadTestingSamples" />
+                <div style="display: flex; flex-direction: column; justify-content: center; align-items: flex-start;">
+                  <q-btn no-caps dense flat label="Load Testing (betaThal)" icon="mdi-download" text-color="indigo-7" @click="loadTestingSamples('test_betaThal')" />
+                  <q-btn no-caps dense flat label="Load Testing (HBB Mutant)" icon="mdi-download" text-color="indigo-7" @click="loadTestingSamples('test_hbb_mutant')" />
+                  <q-btn no-caps dense flat label="Load Testing (HBB WT)" icon="mdi-download" text-color="indigo-7" @click="loadTestingSamples('test_hbb_wild_type')" />
+                  <q-btn no-caps dense flat label="Load Testing (Low Signal)" icon="mdi-download" text-color="indigo-7" @click="loadTestingSamples('test_sanger_low_signal')" />
+                  <q-btn no-caps dense flat label="Load Testing (Non HBB)" icon="mdi-download" text-color="indigo-7" @click="loadTestingSamples('test_non_hbb_sanger')" />
+                  <q-btn no-caps dense flat label="Load Testing (Non HBB High BG)" icon="mdi-download" text-color="indigo-7" @click="loadTestingSamples('test_non_hbb_highbg')" />
+                </div>
               </div>
 
               <!-- 開發設定參數:Left-Trim, Right-Trim -->
@@ -244,6 +252,7 @@
             filled
             dense
             multiple
+            accept=".ab1"
             style="display: none;"
           />
         </div>
@@ -390,12 +399,15 @@ const sampleList_column = [
 const sampleList_row = ref([])
 
 // 定義 ThalBeta 的結果
-const THAL_BETA_RESULT = (sample_name, input_file, parameters, resultTable) => {
+const THAL_BETA_RESULT = (sample_name, input_file, parameters, resultTable, qc_status, qc_message, alignment_score) => {
   return {
     sample_name: sample_name,
     input_file: input_file,
     parameters: parameters,
-    resultTable: resultTable
+    resultTable: resultTable,
+    qc_status: qc_status,
+    qc_message: qc_message,
+    alignment_score: alignment_score
   }
 }
 
@@ -626,6 +638,8 @@ const onSubmit = async () => {
   // 儲存所有分析結果的陣列
   const allbetaThalResults = [];
   const allbetaThalExportResults = [];
+  const allbetaThalQcStatus = [];
+  const allbetaThalQcMessage = [];
   let tmp_resultObj = null;
   let tmp_plot_peak_data = {};
   let tmp_plot_basecall_data = {};
@@ -665,7 +679,10 @@ const onSubmit = async () => {
           resultObj.sample_name,
           resultObj.input_file.join(','),
           resultObj.parameters,
-          resultObj.result
+          resultObj.result,
+          resultObj.qc_status,
+          resultObj.errMsg,
+          resultObj.alignment_score
         );
 
         // 製作 EXPORT_RESULT
@@ -678,6 +695,8 @@ const onSubmit = async () => {
         // 將結果加入陣列
         allbetaThalResults.push(THAL_BETA_Result);
         allbetaThalExportResults.push(exportResult);
+        allbetaThalQcStatus.push(`${resultObj.sample_name}: ${resultObj.qc_status}`);
+        allbetaThalQcMessage.push(`${resultObj.sample_name}: ${resultObj.errMsg}`);
       }
       else if (analysisResult.status == 'error') {
         throw new Error(`Sample name: ${sampleInput.sample_name} 分析失敗, Error: ${analysisResult.message}`);
@@ -702,8 +721,8 @@ const onSubmit = async () => {
     currentAnalysisID.value.analysis_uuid,
     tmp_resultObj.config,
     ["N/A"],
-    tmp_resultObj.qc_status,
-    tmp_resultObj.errMsg,
+    allbetaThalQcStatus.join(';'),
+    allbetaThalQcMessage.join(';'),
     allbetaThalResults,
     allbetaThalExportResults
   );
@@ -737,7 +756,6 @@ const onSubmit = async () => {
       path: '/page-preview',
     });
   }, 500);
-
 }
 
 // 載入 history 的資料
@@ -774,7 +792,7 @@ async function loadHistoryData() {
 }
 
 // 載入測試 Sample
-async function loadTestingSamples() {
+async function loadTestingSamples(dataset) {
 
   // 取得 database 中所有分析
   const search_path = `${dataset_list.testing_data}`;
@@ -784,7 +802,7 @@ async function loadTestingSamples() {
   const querySnapshot = await getDocs(collectionRef);
 
   // 載入測試樣本
-  const testing_sample_list = querySnapshot.docs.find(doc => doc._key.path.segments.includes('testing_data') && doc._key.path.segments.includes('beta_thal_testings')).data();
+  const testing_sample_list = querySnapshot.docs.find(doc => doc._key.path.segments.includes('testing_data') && doc._key.path.segments.includes(dataset)).data();
   sampleList_row.value = testing_sample_list.sample_list;
 }
 

@@ -1,9 +1,25 @@
 // Database 路徑
 const common_testing_db = 'testing_data';
-const beta_thal_testing_db = 'beta_thal_testings';
+
+// 檢查命令列參數
+if (process.argv.length !== 4) {
+  console.error('使用方式: node addTestsDB.js <database_path> <testing_sample_file>');
+  console.error('例如: node addTestsDB.js beta_thal_testings ../configs/beta_thal_testing_sample.json');
+  process.exit(1);
+}
+
+// 從命令列參數獲取值
+const testing_db_path = process.argv[2];
+const testing_sample_path = process.argv[3];
 
 // 讀取 configs 中的 json 檔案
-const beta_thal_testing_sample = require("../configs/beta_thal_testing_sample.json");
+let testing_sample;
+try {
+  testing_sample = require(testing_sample_path);
+} catch (error) {
+  console.error('無法讀取測試樣本檔案：', error.message);
+  process.exit(1);
+}
 
 // 初始化 Firebase Admin SDK
 const admin = require('firebase-admin');
@@ -49,4 +65,4 @@ async function addTestingData(data_content, database_path) {
 }
 
 // 執行函數
-addTestingData(beta_thal_testing_sample, beta_thal_testing_db);
+addTestingData(testing_sample, testing_db_path);

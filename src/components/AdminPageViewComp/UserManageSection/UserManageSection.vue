@@ -108,11 +108,7 @@ const current_filter_account_role_selected = ref(
     ? account_role_option.value.find(item => item.label === default_role).role
     : default_role
 );
-const role_option_for_filtering = ref(
-  account_role_option.value.length > 0
-    ? account_role_option.value.map(item => item.label)
-    : [default_role]
-);
+const role_option_for_filtering = ref(account_role_option.value);
 
 // 帳號開通選單 (篩選用)
 const default_account_active = '未選擇';
@@ -144,7 +140,7 @@ async function update_filter_selected_value(data) {
   // 更新篩選：帳號身份
   else if(data.name === 'filter_account_role') {
     if(data.new_value !== default_role) {
-      current_filter_account_role_selected.value = account_role_option.value.find(item => item.label === data.new_value).role;
+      current_filter_account_role_selected.value = account_role_option.value.find(item => item.label === data.new_value.label).role;
     }
     else {
       current_filter_account_role_selected.value = account_role_option.value.find(item => item.label === default_role).role;

@@ -235,6 +235,7 @@ function runExportJSON(exportObj) {
 
 // 解析 ThalBeta 的 row_content
 const parsedThalBetaRow = (row_content) => {
+  if (!row_content) return "";
   const seperator = '___SEP_ANNO___';
   if (row_content && row_content.includes(seperator)) {
     const split_content = row_content.split(seperator);
@@ -262,7 +263,7 @@ const addBetaThalTables = (workbook, result, index) => {
     row.type,
     row.genotype,
     parsedThalBetaRow(row.ClinicalSignificance),
-    row.Consequence ? parsedThalBetaRow(Consequence[row.Consequence].label) : "",
+    Consequence[row.Consequence] ? parsedThalBetaRow(Consequence[row.Consequence].label) : row.Consequence,
     parsedThalBetaRow(row.Name),
     parsedThalBetaRow(row.PhenotypeList),
   ]);
@@ -618,7 +619,7 @@ const onExport = async () => {
                 : currentSettingProps.value.product === 'thal' ? s.result.label.join(' ; ')
                 : s.result.label.join(' / '),
               assessment: s.assessment.label,
-              qc: s.assessment.value === 'inconclusive' ? 'Fail' : 'Pass',
+              qc: s.assessment.value === 'inconclusive' || s.assessment.value === 'QC Failed' ? 'Fail' : 'Pass',
               name: s.name,
               birth: s.birth,
               gender: s.gender,

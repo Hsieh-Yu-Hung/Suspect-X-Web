@@ -1,0 +1,32 @@
+{
+  "sample_list": [
+    {
+      "index": 1,
+      "sample_name": "MHBV_23410_M13F_HBV_022845_M13F",
+      "sequencing_files": [
+        {
+          "file_name": "MHBV_23410_M13F-1.ab1",
+          "file_path": "testing_data/thalassemia_test_data/Non_HBB_HighBG/MHBV_23410_M13F-1.ab1"
+        },
+        {
+          "file_name": "HBV_022845_M13F-1.ab1",
+          "file_path": "testing_data/thalassemia_test_data/Non_HBB_HighBG/HBV_022845_M13F-1.ab1"
+        }
+      ]
+    },
+    {
+      "index": 2,
+      "sample_name": "MHBV_30596_M13F_HBV_022845_M13F",
+      "sequencing_files": [
+        {
+          "file_name": "MHBV_30596_M13F-1.ab1",
+          "file_path": "testing_data/thalassemia_test_data/Non_HBB_HighBG/MHBV_30596_M13F-1.ab1"
+        },
+        {
+          "file_name": "HBV_022845_M13F-1.ab1",
+          "file_path": "testing_data/thalassemia_test_data/Non_HBB_HighBG/HBV_022845_M13F-1.ab1"
+        }
+      ]
+    }
+  ]
+}

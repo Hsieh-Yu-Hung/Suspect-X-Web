@@ -36,7 +36,7 @@ export async function submitWorkflow(AnalysisName, InputData, userInfo, currentS
   if (analysis_result.status === "success"){
     execute_status = {status:"success", message: analysis_result.message, result:analysis_result.result}
   } else {
-    execute_status = {status:"error", message: analysis_result.message, result:null}
+    execute_status = {status:"error", message: analysis_result.message, result:analysis_result.result}
   }
   return execute_status;
 }

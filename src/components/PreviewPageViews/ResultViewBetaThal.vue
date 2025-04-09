@@ -30,9 +30,13 @@
             <template v-slot:body-cell-assessment="props">
               <q-td :props="props">
                 <q-chip
-                  :color="props.row.assessment === 'Pathogenic Detected' ? 'red-8' : 'green-5'"
+                  :color="props.row.assessment === 'Pathogenic Detected' ? 'red-8'
+                        : props.row.assessment === 'QC Failed' ? 'deep-orange-6': 'green-5'"
                   text-color="white"
                   :label="props.row.assessment"
+                  :icon="props.row.assessment === 'QC Failed' ? 'warning'
+                        : props.row.assessment === 'Pathogenic Detected' ? 'report'
+                        : 'check_circle'"
                 />
               </q-td>
             </template>
@@ -56,28 +60,40 @@
         </div>
       </div>
 
-      <!-- Batch Summary 表格 -->
+      <!-- Basecall Viewer 圖表 -->
       <div class="q-mt-md" style="background-color: rgba(221, 232, 243, 0.2); border-radius: 10px; padding: 10px;">
 
         <!-- 標題和 Basecall File 選擇器 -->
-        <div class="row text-h6" style="display: flex; justify-content: space-between; align-items: center;">
-          <span> Basecall Viewer </span>
-          <div class="q-pa-md" style="display: flex; flex-direction: row; align-items: center; gap: 1em;">
-            <span class="text-subtitle1" style="font-weight: bold;">Current Displayed File:</span>
-            <q-btn-dropdown no-caps flat color="primary" :label="currentDisplayBasecallFile">
-              <q-list>
-                <q-item clickable v-close-popup @click="onBasecallFileClick(file)" v-for="file in currentBasecallFileList" :key="file">
-                  <q-item-section>
-                    <q-item-label>{{ file }}</q-item-label>
-                  </q-item-section>
-                </q-item>
-              </q-list>
-            </q-btn-dropdown>
+        <div style="margin-bottom: 1em;">
+          <div class="row text-h6" style="display: flex; justify-content: space-between; align-items: center;">
+            <span> Basecall Viewer </span>
+            <div class="q-pa-md" style="display: flex; flex-direction: row; align-items: center; gap: 0.5em;">
+              <span class="text-subtitle1" style="font-weight: bold;">Current Displayed File:</span>
+              <q-btn-dropdown no-caps flat color="primary" :label="currentDisplayBasecallFile" style="border: 1px solid #dedede; background-color: rgba(241, 255, 254, 0.2);">
+                <q-list>
+                  <q-item clickable v-close-popup @click="onBasecallFileClick(file)" v-for="file in currentBasecallFileList" :key="file">
+                    <q-item-section>
+                      <q-item-label>{{ file }}</q-item-label>
+                    </q-item-section>
+                  </q-item>
+                </q-list>
+              </q-btn-dropdown>
+              <q-icon name="swipe_vertical" color="primary" />
+            </div>
+          </div>
+          <div class="row" style="display: flex; flex-direction: column; justify-content: flex-start; align-items: flex-start; gap: 0.5em;">
+            <span class="text-subtitle2 text-blue-grey-7" style="font-weight: bold;">Alignment Score1: {{ getCurrentDisplayAlign1Score }} </span>
+            <span class="text-subtitle2 text-blue-grey-7" style="font-weight: bold;">Alignment Score2: {{ getCurrentDisplayAlign2Score }} </span>
           </div>
         </div>
 
         <!-- 顯示 Basecalling peaks-->
-        <div id="basecall_peaks" class="row flex flex-center" style="height:40em; width: 100%;"></div>
+        <div ref="basecall_peaks_plot_container" id="basecall_peaks" class="row flex flex-center" style="height:40em; width: 100%;"></div>
+
+        <!-- 沒有圖顯示提示 -->
+        <div ref="fail_to_plot_hint" class="row flex flex-center text-subtitle1 text-red-7 text-weight-bold" style="display: none;">
+          <span> 檔案分析失敗, 請檢查原始檔案 </span>
+        </div>
 
       </div>
 
@@ -119,16 +135,21 @@
             </div>
             <div class="col text-h5 text-bold text-subtitle2 text-left" style="margin-block: 1em;">
               <q-chip
-                :color="displayAssessment === 'Pathogenic Detected' ? 'red-8' : 'green-5'"
+                :color="displayAssessment === 'Pathogenic Detected' ? 'red-8'
+                        : displayAssessment === 'QC Failed' ? 'deep-orange-6'
+                        : 'green-5'"
                 text-color="white"
                 :label="displayAssessment"
+                :icon="displayAssessment === 'QC Failed' ? 'warning'
+                        : displayAssessment === 'Pathogenic Detected' ? 'report'
+                        : 'check_circle'"
               />
             </div>
           </div>
         </div>
 
         <!-- 結果表格 -->
-        <div class="q-pa-md">
+        <div class="q-pa-md" :style="{display: currentSampleQCStatus === 'QC Failed' || currentSampleQCStatus === 'fail-the-criteria' ? 'none' : 'block'}">
 
           <!-- 顯示表格按鈕 -->
           <div class="col-2" style="display: flex; justify-content: right; align-items: center; margin-block: 1.3em;">
@@ -164,7 +185,7 @@
                   v-for="item in props.row.ClinSigList"
                     :key="item"
                     :label="item"
-                    :color="ClinicalSignificance[item.replace(' ', '_')].color"
+                    :color="ClinicalSignificance[item.replaceAll(' ', '_')].color"
                     text-color="white"
                   />
                 </div>
@@ -366,7 +387,9 @@ const resultColumns = [
     name: "variantType",
     align: "center",
     label: "Variant Type",
-    field: (row) => row.Consequence ? Consequence[row.Consequence].label : ''
+    field: (row) => row.Consequence === null ? 'N/A'
+                  : (Consequence[row.Consequence] === undefined ? row.Consequence
+                  : Consequence[row.Consequence].label)
   },
   {
     name: "variantName",
@@ -389,6 +412,7 @@ const resultColumns = [
 const currentSelectedSampleIndex = ref(1);
 const currentSelectedSampleName = ref('');
 const currentAnalysisFile = ref([]);
+const currentSampleQCStatus = ref('');
 
 // 當前選擇顯示的 Basecall File
 const currentBasecallFileList = ref([]);
@@ -397,6 +421,28 @@ const currentDisplayBasecallFile = ref('');
 // 從 store 取得 plot_peak_data 和 plot_basecall_data
 const plot_peak_data = computed(() => store.getters["Beta_thal_analysis_data/getPlotPeakData"]);
 const plot_basecall_data = computed(() => store.getters["Beta_thal_analysis_data/getPlotBasecallData"]);
+const basecall_peaks_plot_container = ref(null);
+const fail_to_plot_hint = ref(null);
+
+// 取得當前顯示圖表的 Alignment Score
+const getCurrentDisplayAlign1Score = computed(() => {
+  if (!currentAnalysisResult.value) return "N/A";
+  const currentDisplayFile = currentDisplayBasecallFile.value
+  const currentSampleName = currentSelectedSampleName.value
+  const selected_alignment_scores = currentAnalysisResult.value.resultObj.find(item => item.sample_name === currentSampleName).alignment_score
+  const alignment_Score = Object.keys(selected_alignment_scores).find(key => currentDisplayFile.includes(key))
+  const alignment_ScoreDict = selected_alignment_scores[alignment_Score]
+  return alignment_ScoreDict ? alignment_ScoreDict["align1Score"] : "N/A"
+});
+const getCurrentDisplayAlign2Score = computed(() => {
+  if (!currentAnalysisResult.value) return "N/A";
+  const currentDisplayFile = currentDisplayBasecallFile.value
+  const currentSampleName = currentSelectedSampleName.value
+  const selected_alignment_scores = currentAnalysisResult.value.resultObj.find(item => item.sample_name === currentSampleName).alignment_score
+  const alignment_Score = Object.keys(selected_alignment_scores).find(key => currentDisplayFile.includes(key))
+  const alignment_ScoreDict = selected_alignment_scores[alignment_Score]
+  return alignment_ScoreDict? alignment_ScoreDict["align2Score"] : "N/A"
+});
 
 // 更新 summaryRows
 function updateSummaryRows() {
@@ -421,7 +467,7 @@ function updateSummaryRows() {
 
       // 計算嚴重度(取最嚴重)
       if (row.ClinSigList.length > 0) {
-        const severity = row.ClinSigList.map(item => ClinicalSignificance[item.replace(' ', '_')].severity_level);
+        const severity = row.ClinSigList.map(item => ClinicalSignificance[item.replaceAll(' ', '_')].severity_level);
         row["Severity"] = Math.max(...severity);
       }
       else {
@@ -433,11 +479,17 @@ function updateSummaryRows() {
     const selected_Row = result_rows.sort((a, b) => b.Severity - a.Severity)[0];
 
     // 結果為 selected_Row 的 Name
-    const ResultLabel = selected_Row.Name;
+    let ResultLabel = selected_Row ? (selected_Row.Name ? selected_Row.Name : 'Not detected') : 'Not detected';
 
     // 如果 selected_Row (最嚴重) 有包含 "Pathogenic" 或 "Likely pathogenic" 則回報 "β-thalassemia", 否則回報 "Not detected"
     const key_word_pathogenic = [ClinicalSignificance["Pathogenic"].value, ClinicalSignificance["Likely_pathogenic"].value];
-    const AssessmentLabel = selected_Row.ClinSigList.some(item => key_word_pathogenic.includes(item)) ? "Pathogenic Detected" : "Not detected";
+    let AssessmentLabel = selected_Row ? (selected_Row.ClinSigList.some(item => key_word_pathogenic.includes(item)) ? "Pathogenic Detected" : "Not detected") : "Not detected";
+
+    // 如果 qc_status 是 'fail-the-criteria' 則 result = N/A assessment = QC Failed
+    if (item.qc_status === 'fail-the-criteria') {
+      ResultLabel = 'N/A';
+      AssessmentLabel = 'QC Failed';
+    }
 
     return {
       index: index + 1,
@@ -498,10 +550,11 @@ const adjustTableDisplay = () => {
 function updateExportResults() {
   let export_result = JSON.parse(JSON.stringify(currentAnalysisResult.value.exportResult));
   export_result.forEach(item => {
-    item.assessment = displayAssessment.value;
-    item.assessmentLabel = displayAssessment.value;
-    item.result = displayResult.value;
-    item.resultLabel = [displayResult.value];
+    const target_summary_row = summaryRows.value.find(row => row.sampleName === item.sampleId);
+    item.assessment = target_summary_row.assessment;
+    item.assessmentLabel = target_summary_row.assessment;
+    item.result = target_summary_row.result;
+    item.resultLabel = [target_summary_row.result];
   });
 
   // 更新 export results
@@ -523,7 +576,16 @@ function plotBaseCallPeaks(plot_data, basecall_data) {
 
   // 獲取繪圖容器
   const container = document.getElementById('basecall_peaks');
-  if (!container || !plot_data || !basecall_data) return;
+  if (!container || !plot_data || !basecall_data) {
+    // 移除當前的圖表
+    basecall_peaks_plot_container.value.style.display = 'none';
+    fail_to_plot_hint.value.style.display = 'flex';
+    return;
+  }
+  else {
+    basecall_peaks_plot_container.value.style.display = 'block';
+    fail_to_plot_hint.value.style.display = 'none';
+  }
 
   // 確保 x 軸長度一致
   if (plot_data.x_axis.length !== basecall_data.x_axis.length) {
@@ -802,6 +864,9 @@ onMounted(async () => {
   // 更新 currentBasecallFileList
   currentBasecallFileList.value = currentAnalysisFile.value.map(file => simplifyFilePath(file));
   currentDisplayBasecallFile.value = currentBasecallFileList.value[0];
+
+  // 更新 currentSampleQCStatus
+  currentSampleQCStatus.value = currentAnalysisResult.value.resultObj[currentSelectedSampleIndex.value - 1].qc_status;
 });
 
 // 監控 toggleDisplayRecords 的變化
@@ -840,7 +905,7 @@ watch(currentSelectedSampleIndex, () => {
 
       // 計算嚴重度(取最嚴重)
       if (row.ClinSigList.length > 0) {
-        const severity = row.ClinSigList.map(item => ClinicalSignificance[item.replace(' ', '_')].severity_level);
+        const severity = row.ClinSigList.map(item => ClinicalSignificance[item.replaceAll(' ', '_')].severity_level);
         row["Severity"] = Math.max(...severity);
       }
       else {
@@ -852,11 +917,17 @@ watch(currentSelectedSampleIndex, () => {
     const selected_Row = result_rows.sort((a, b) => b.Severity - a.Severity)[0];
 
     // 結果為 selected_Row 的 Name
-    const ResultLabel = selected_Row.Name;
+    let ResultLabel = selected_Row ? (selected_Row.Name ? selected_Row.Name : 'Not detected') : 'Not detected';
 
     // 如果 selected_Row (最嚴重) 有包含 "Pathogenic" 或 "Likely pathogenic" 則回報 "β-thalassemia", 否則回報 "Not detected"
     const key_word_pathogenic = [ClinicalSignificance["Pathogenic"].value, ClinicalSignificance["Likely_pathogenic"].value];
-    const AssessmentLabel = selected_Row.ClinSigList.some(item => key_word_pathogenic.includes(item)) ? "Pathogenic Detected" : "Not detected";
+    let AssessmentLabel = selected_Row ? (selected_Row.ClinSigList.some(item => key_word_pathogenic.includes(item)) ? "Pathogenic Detected" : "Not detected") : "Not detected";
+
+    // 如果 qc_status 是 'fail-the-criteria' 則 result = N/A assessment = QC Failed
+    if (item.qc_status === 'fail-the-criteria') {
+      ResultLabel = 'N/A';
+      AssessmentLabel = 'QC Failed';
+    }
 
     return {
       index: index + 1,
@@ -873,6 +944,9 @@ watch(currentSelectedSampleIndex, () => {
   // 更新 currentBasecallFileList 和 currentDisplayBasecallFile
   currentBasecallFileList.value = currentAnalysisFile.value.map(file => simplifyFilePath(file));
   currentDisplayBasecallFile.value = currentBasecallFileList.value[0];
+
+  // 更新 currentSampleQCStatus
+  currentSampleQCStatus.value = summarize[currentSelectedSampleIndex.value - 1].assessment;
 });
 
 // 監控 currentDisplayBasecallFile 的變化

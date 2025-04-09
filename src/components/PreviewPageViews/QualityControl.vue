@@ -79,10 +79,34 @@
         <div class="col">
           <q-card class="text-center" flat>
             <q-card-section>
+
+              <!-- 標題 -->
               <div class="text-grey-7 text-overline">Result</div>
-              <div class="text-weight-bolder" :class="getQCResultColor">
+
+              <!-- 處理 QC 結果為字串的情況 -->
+              <div class="text-weight-bolder" :class="getQCResultColor" v-if="typeof getQCResultLabel === 'string'">
                 {{ getQCResultLabel }}
               </div>
+
+              <!-- 處理 QC 結果為陣列的情況 -->
+              <div class="text-weight-bolder" v-else-if="Array.isArray(getQCResultLabel)" style="display: flex; flex-direction: row; justify-content: center; align-items: center; gap: 0.5em;">
+                <div>
+                  <div v-for="item in getQCResultLabel" :key="item.index">
+                    <span class="col-1 text-weight-bolder" :class="getQCResultColor">{{ item.split(': ')[0] }}</span>
+                  </div>
+                </div>
+                <div>
+                  <div v-for="item in getQCResultLabel" :key="item.index" style="display: flex; justify-content: flex-start; align-items: center; gap: 0.5em;">
+                    <span class="col-1 text-weight-bolder" :class="getQCResultColor">:</span>
+                  </div>
+                </div>
+                <div>
+                  <div v-for="item in getQCResultLabel" :key="item.index" style="display: flex; justify-content: flex-start; align-items: center; gap: 0.5em;">
+                    <span class="col-1 text-weight-bolder" :class="getQCResultColorLabel(item.split(': ')[1])">{{ item.split(': ')[1] }}</span>
+                  </div>
+                </div>
+              </div>
+
             </q-card-section>
           </q-card>
         </div>
@@ -108,10 +132,12 @@
         <div class="col">
           <q-card flat>
             <q-card-section class="q-gutter-x-md" style="display: flex; align-items: center;">
-              <div class="text-grey-7 text-overline" style="display: flex;">QC Message:</div>
-              <div class="text-deep-orange-4 text-weight-bolder">
-                <div v-for="message in getQCMessageContent" :key="message.index">
-                  {{ message.message }}
+              <div style="display: flex; flex-direction: row; align-items: flex-start; gap: 1.5em;">
+                <div class="text-grey-7 text-weight-bold" style="display: flex;">QC Message:</div>
+                <div class="text-deep-orange-4 text-weight-bolder">
+                  <div v-for="message in getQCMessageContent" :key="message.index">
+                    {{ message.message }}
+                  </div>
                 </div>
               </div>
             </q-card-section>
@@ -247,13 +273,31 @@ const getReagentName = computed(() => {
 
 // QC 結果名稱轉換
 const getQCResultLabel = computed(() => {
-  switch (props.QCResult) {
-    case 'meet-the-criteria':
-      return 'Meet the criteria';
-    case 'fail-the-criteria':
-      return 'Fail the criteria';
-    default:
-      return props.QCResult;
+  if (!props.QCResult) {
+    return 'N/A';
+  }
+  else if (props.QCResult.includes(';')) {
+    return props.QCResult.split(';').map(result => {
+      const [id, status] = result.split(': ');
+      switch (status) {
+        case 'meet-the-criteria':
+          return `${id}: Meet the criteria`;
+        case 'fail-the-criteria':
+          return `${id}: Fail the criteria`;
+        default:
+          return result;
+      }
+    });
+  }
+  else {
+    switch (props.QCResult) {
+      case 'meet-the-criteria':
+        return 'Meet the criteria';
+      case 'fail-the-criteria':
+        return 'Fail the criteria';
+      default:
+        return props.QCResult;
+    }
   }
 })
 
@@ -268,6 +312,18 @@ const getQCResultColor = computed(() => {
       return 'text-grey-7';
   }
 })
+
+// QC 結果名稱顏色轉換
+const getQCResultColorLabel = (qc_label) => {
+  switch (qc_label) {
+    case 'Meet the criteria':
+      return 'text-green-7';
+    case 'Fail the criteria':
+      return 'text-red-7';
+    default:
+      return 'text-grey-7';
+  }
+}
 
 // QC Message 內容
 const getQCMessageContent = computed(() => {
