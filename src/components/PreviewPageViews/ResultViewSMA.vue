@@ -15,7 +15,7 @@
           <q-card flat>
 
             <!-- 選擇器區域 -->
-            <q-card-section class="col q-pb-none">
+            <q-card-section class="col q-pb-none" :style="{ display: is_developer_mode ? 'block' : 'none' }">
               <div class="row">
                 <div class="text-weight-medium self-center text-blue-grey-8">Exported SMN1 Result:</div>
                 <q-radio
@@ -50,7 +50,7 @@
             <q-card-section style="border: 1px solid rgba(200, 200, 200, 0.3);">
               <q-table
                 :rows="resultTableSmaProps"
-                :columns="columns"
+                :columns="is_developer_mode ? columns : display_column"
                 :v-model:pagination="{ rowsPerPage: 10 }"
                 :rows-per-page-options="[10]"
                 row-key="sampleId"
@@ -265,7 +265,7 @@
 import { ref, computed, watch, onMounted } from "vue";
 import { useStore } from "vuex";
 import { updateGetUserInfo } from '@/composables/accessStoreUserInfo';
-import { update_userAnalysisData } from '@/firebase/firebaseDatabase';
+import { update_userAnalysisData, getUsers_from_firestore } from '@/firebase/firebaseDatabase';
 import { getCurrentDisplayAnalysisID, getCurrentAnalysisResult } from '@/composables/checkAnalysisStatus.js';
 
 // 定義 store
@@ -274,6 +274,14 @@ const store = useStore();
 // 使用者身份
 const is_login = ref(false);
 const user_info = ref(null);
+
+// 取得當前使用者的權限動作列表
+const current_user_actions = ref([]);
+
+// 判斷是否開啟開發者模式
+const is_developer_mode = computed(() => {
+  return current_user_actions.value.some(action => action.action_name === "dev_mode" && action.action_active);
+});
 
 // 保存當前分析結果
 const showResult = ref(true);
@@ -415,6 +423,10 @@ const columns = [
     name: "showFigure",
   },
 ];
+
+//
+const display_column_names = ["sampleId", "well", "smnType", "assessment", "showFigure"]
+const display_column = computed(() => columns.filter(column => display_column_names.includes(column.name)));
 
 const figColumns = [
   {
@@ -675,6 +687,10 @@ onMounted(async () => {
 
   // 更新 export results
   updateExportResults();
+
+  // 更新當前使用者的權限動作列表
+  const current_user_info = await getUsers_from_firestore(user_info.value.uid);
+  current_user_actions.value = current_user_info.actions;
 });
 
 // 監聽器

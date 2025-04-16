@@ -20,7 +20,7 @@
 
     <!-- SMA v1-3 devMode 面板 -->
     <div v-if="currentDisplayAnalysis.analysis_name === 'SMA'" class="row justify-between q-mt-lg q-mx-xl">
-      <SMAReanalysisParamSettings />
+      <SMAReanalysisParamSettings :style="{ display: is_developer_mode ? 'block' : 'none' }" />
     </div>
 
     <!-- SMA v4 devMode 面板 -->
@@ -93,6 +93,7 @@ import { useStore } from 'vuex';
 // 導入模組 composable
 import { useValidateAccountStatus, updateGetUserInfo } from '@/composables/accessStoreUserInfo.js';
 import { getCurrentDisplayAnalysisID, getCurrentAnalysisResult } from '@/composables/checkAnalysisStatus.js';
+import { getUsers_from_firestore } from '@/firebase/firebaseDatabase';
 
 // 導入元件
 import QualityControlPanel from '@/components/PreviewPageViews/QualityControl.vue';
@@ -113,7 +114,9 @@ const router = useRouter();
 const store = useStore();
 
 // 使用者身份
-const { login_status } = updateGetUserInfo();
+// 使用者身份
+const is_login = ref(false);
+const user_info = ref(null);
 
 // 定義 QC panel display value
 const DEFAULT_QC_PANEL_DISPLAY = {
@@ -139,6 +142,14 @@ const currentSettingProps = ref(null);
 const currentDisplayAnalysis = ref({
   analysis_uuid: '',
   analysis_name: '',
+});
+
+// 取得當前使用者的權限動作列表
+const current_user_actions = ref([]);
+
+// 判斷是否開啟開發者模式
+const is_developer_mode = computed(() => {
+  return current_user_actions.value.some(action => action.action_name === "dev_mode" && action.action_active);
 });
 
 // 管理 ResultViewSMAv4
@@ -184,13 +195,13 @@ function updateQC_PANEL_DISPLAY(currentAnalysisResult){
     else {
       QC_PANEL_DISPLAY.value.analysis_id = currentAnalysisResult.analysis_id;
       QC_PANEL_DISPLAY.value.product = currentAnalysisResult.analysis_name;
-      QC_PANEL_DISPLAY.value.instrument = currentAnalysisResult.config.instrument;
-      QC_PANEL_DISPLAY.value.reagent = currentAnalysisResult.config.reagent;
+      QC_PANEL_DISPLAY.value.instrument = currentAnalysisResult.config?currentAnalysisResult.config.instrument:"N/A";
+      QC_PANEL_DISPLAY.value.reagent = currentAnalysisResult.config?currentAnalysisResult.config.reagent:"N/A";
       QC_PANEL_DISPLAY.value.analysis_method = "ACCUiN BioTech Analyzer";
-      QC_PANEL_DISPLAY.value.controlId = currentAnalysisResult.control_ids;
-      QC_PANEL_DISPLAY.value.QCResult = currentAnalysisResult.qc_status;
-      QC_PANEL_DISPLAY.value.assessmentTime = currentAnalysisResult.analysis_time;
-      QC_PANEL_DISPLAY.value.QCMessage = currentAnalysisResult.qc_message;
+      QC_PANEL_DISPLAY.value.controlId = currentAnalysisResult?currentAnalysisResult.control_ids:"N/A";
+      QC_PANEL_DISPLAY.value.QCResult = currentAnalysisResult?currentAnalysisResult.qc_status:"N/A";
+      QC_PANEL_DISPLAY.value.assessmentTime = currentAnalysisResult?currentAnalysisResult.analysis_time:"N/A";
+      QC_PANEL_DISPLAY.value.QCMessage = currentAnalysisResult?currentAnalysisResult.qc_message:"N/A";
     }
   }
 
@@ -213,11 +224,20 @@ function call_updatePeakSettings(newPeakSettings){
 // 掛載時
 onMounted(async () => {
 
+  // 取得使用者身份
+  const { login_status } = updateGetUserInfo();
+  is_login.value = login_status.value.is_login;
+  user_info.value = login_status.value.user_info;
+
   // 檢查帳號狀態, 若未開通則跳轉到 not-active
   useValidateAccountStatus($q, router, store);
 
   // 取得 currentDisplayAnalysisID
   currentDisplayAnalysis.value = getCurrentDisplayAnalysisID();
+
+  if (!currentDisplayAnalysis.value.analysis_uuid){
+    return;
+  }
 
   // 取得 setting props (為了特殊處理 SMAv4)
   currentSettingProps.value = store.getters["analysis_setting/getSettingProps"];
@@ -227,6 +247,10 @@ onMounted(async () => {
 
   // 更新 QC_PANEL_DISPLAY
   updateQC_PANEL_DISPLAY(currentAnalysisResult.value);
+
+  // 取得當前使用者的權限動作列表
+  const current_user_info = await getUsers_from_firestore(user_info.value.uid);
+  current_user_actions.value = current_user_info.actions;
 });
 
 </script>

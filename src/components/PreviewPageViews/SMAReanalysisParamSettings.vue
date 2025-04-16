@@ -367,7 +367,7 @@ import CustomSlider from '@/components/CustomSlider.vue';
 import { submitWorkflow } from '@/composables/submitWorkflow';
 import { setAnalysisID } from '@/composables/checkAnalysisStatus';
 import { updateGetUserInfo } from '@/composables/accessStoreUserInfo.js';
-import { ANALYSIS_RESULT, EXPORT_RESULT, update_userAnalysisData, simplifyFilePath } from '@/firebase/firebaseDatabase';
+import { ANALYSIS_RESULT, EXPORT_RESULT, update_userAnalysisData, simplifyFilePath, getUsers_from_firestore } from '@/firebase/firebaseDatabase';
 import { getCurrentDisplayAnalysisID, getCurrentAnalysisResult } from '@/composables/checkAnalysisStatus.js';
 
 // 使用者身份
@@ -381,6 +381,14 @@ const router = useRouter();
 // 使用者身份
 const is_login = ref(false);
 const user_info = ref(null);
+
+// 取得當前使用者的權限動作列表
+const current_user_actions = ref([]);
+
+// 判斷是否開啟開發者模式
+const is_developer_mode = computed(() => {
+  return current_user_actions.value.some(action => action.action_name === "dev_mode" && action.action_active);
+});
 
 // 保存當前分析結果
 const showResult = ref(true);
@@ -1041,6 +1049,10 @@ onMounted(async () => {
   const getSMAVersion = store.getters["SMA_analysis_data/displaySMNVersion"];
   smn1_analyzer_version.value = getSMAVersion.smn1;
   smn2_analyzer_version.value = getSMAVersion.smn2;
+
+  // 更新當前使用者的權限動作列表
+  const current_user_info = await getUsers_from_firestore(user_info.value.uid);
+  current_user_actions.value = current_user_info.actions;
 
   nextTick(() => {
 

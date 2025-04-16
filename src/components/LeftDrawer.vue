@@ -10,7 +10,6 @@ import { useStore } from 'vuex';
 
 // Import modules
 import { updateGetUserInfo } from '@/composables/accessStoreUserInfo';
-import { getAnalysisResult } from '@/firebase/firebaseDatabase.js';
 
 // 使用者身份
 const { login_status } = updateGetUserInfo();
@@ -22,21 +21,7 @@ const store = useStore();
 
 // Test check file format
 async function debug() {
-  // 取得 currentSettingProps
-  const currentSettingProps = store.getters["analysis_setting/getSettingProps"];
-  // 取得 currentDisplayAnalysis
-  const currentDisplayAnalysis = {
-    analysis_uuid: store.getters["analysis_setting/getCurrentDisplayAnalysisID"].analysis_uuid,
-    analysis_name: store.getters["analysis_setting/getCurrentDisplayAnalysisID"].analysis_name,
-  }
-  const analysis_name_to_get = currentSettingProps.reagent === "accuinSma4" ? "SMAv4" : currentDisplayAnalysis.analysis_name;
-  // 取得當前的分析結果
-  const currentAnalysisResult = await getAnalysisResult(
-    login_status.value.user_info.uid,
-    analysis_name_to_get,
-    currentDisplayAnalysis.analysis_uuid,
-  );
-  console.log("currentAnalysisResult: ", currentAnalysisResult);
+  console.log("DEBUG");
 }
 
 // Get user info

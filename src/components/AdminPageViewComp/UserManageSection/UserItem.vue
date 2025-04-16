@@ -69,7 +69,7 @@
 
         <!-- 下拉式選單選擇權限 -->
         <div class="col-1" style="display: flex; flex-direction: row; height: 100%; gap: 0.3em;">
-          <q-btn rounded dense glossy icon="download_for_offline" color="purple-7" @click="inherit_permission" />
+          <q-btn rounded dense glossy icon="download_for_offline" color="purple-7" @click="inherit_permission(props.user_info.id)" />
           <q-btn-dropdown rounded dense glossy dropdown-icon="add" color="primary" label="">
             <q-list>
               <q-item @click="add_action(props.user_info.id, permission)" clickable v-close-popup v-for="(permission, index) in permission_list" :key="index">
@@ -153,6 +153,7 @@
 // 導入模組
 import { ref, onMounted, computed } from 'vue';
 import { getUsers_from_firestore, update_userData, ACTION, getPermissionDatabase } from '@/firebase/firebaseDatabase';
+import { getOrganizationDatabase, getRoleDatabase } from '@/firebase/firebaseDatabase';
 
 // 導入元件
 import DropDownList from '@/components/DropDownList.vue';
@@ -198,6 +199,10 @@ const current_account_role = ref(account_role_option.value.find(option => option
 
 // 權限清單
 const permission_list = ref([]);
+
+// 取得 Role 和 Organization 資料
+const rolelist = ref([]);
+const organizationlist = ref([]);
 
 /* functions */
 
@@ -289,13 +294,44 @@ function toggle_action_active(user_id, index) {
 }
 
 // 繼承權限
-function inherit_permission() {
-  console.log('繼承權限');
+function inherit_permission(user_id) {
+
+  // 初始化繼承權限清單
+  let inherit_permission_list = [];
+
+  // 取得該用戶的所屬組織和帳號身份
+  const user_organization = display_user_info.value.organization;
+  const user_role = display_user_info.value.role;
+
+  // 更新該用戶的權限
+  const selected_organization = organizationlist.value.find(organization => organization.organization_name === user_organization);
+  const selected_role = rolelist.value.find(role => role.role_name === user_role);
+
+  // 將組織和角色的權限合併, 移除重複的權限
+  if(selected_organization) {
+    inherit_permission_list.push(...selected_organization.permission);
+  }
+  if(selected_role) {
+    inherit_permission_list.push(...selected_role.role_permission);
+  }
+  inherit_permission_list = inherit_permission_list.filter((permission, index, self) =>
+    index === self.findIndex((t) => t.action_name === permission.action_name)
+  );
+
+  // 更新該用戶的權限
+  const emit_data = {
+    id: user_id,
+    actions: inherit_permission_list,
+  };
+  emit('update_user_info', emit_data);
 }
 
-// 掛載
+// 掛載時
 onMounted(async () => {
+  // 從 Database 取得需要的資料
   permission_list.value = await getPermissionDatabase();
+  rolelist.value = await getRoleDatabase();
+  organizationlist.value = await getOrganizationDatabase();
 });
 
 </script>

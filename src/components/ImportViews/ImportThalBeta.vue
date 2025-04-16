@@ -168,9 +168,9 @@
             </div>
 
             <!-- 開發設定版面 -->
-            <div style="margin-block: 2em; background-color: rgba(221, 232, 243, 0.2); border-radius: 10px; padding: 10px;">
+            <div style="margin-block: 2em; background-color: rgba(221, 232, 243, 0.2); border-radius: 10px; padding: 10px;" :style="{ 'display': is_developer_mode ? 'block' : 'none' }">
               <!-- 開發設定標題 -->
-              <div class="row" style="display: flex; flex-direction: row; justify-content: space-between; align-items: center;">
+              <div class="row" style="display: flex; flex-direction: row; justify-content: space-between; align-items: flex-start;">
                 <span class="text-bold text-h6 text-blue-grey-7">
                   Development Settings
                 </span>
@@ -271,7 +271,7 @@
 
 <script setup>
 // 引入套件
-import { ref, watch, onMounted } from 'vue';
+import { ref, watch, onMounted, computed } from 'vue';
 import { useStore } from 'vuex';
 import { v4 as uuidv4 } from 'uuid';
 import { useRouter } from 'vue-router';
@@ -284,7 +284,7 @@ import { submitWorkflow } from '@/composables/submitWorkflow';
 import { updateGetUserInfo } from '@/composables/accessStoreUserInfo';
 import { CATEGORY_LIST, upload_files_to_storage } from '@/composables/storageManager';
 import { setAnalysisID } from '@/composables/checkAnalysisStatus';
-import { ANALYSIS_RESULT, EXPORT_RESULT, update_userAnalysisData, dataset_list, Database } from '@/firebase/firebaseDatabase';
+import { ANALYSIS_RESULT, EXPORT_RESULT, update_userAnalysisData, dataset_list, Database, getUsers_from_firestore } from '@/firebase/firebaseDatabase';
 
 // 引入元件
 import WarningDialog from '@/components/WarningDialog.vue';
@@ -456,6 +456,14 @@ async function uploadSampleListFile(index) {
   addFileSampleIndex.value = index;
   uploaded_sampleList_file_input.value.pickFiles();
 }
+
+// 取得當前使用者的權限動作列表
+const current_user_actions = ref([]);
+
+// 判斷是否開啟開發者模式
+const is_developer_mode = computed(() => {
+  return current_user_actions.value.some(action => action.action_name === "dev_mode" && action.action_active);
+});
 
 // Functions
 
@@ -827,6 +835,10 @@ onMounted(async () => {
 
   // 讀取 database 的樣本列表
   await loadDatabaseSampleList();
+
+  // 更新當前使用者的權限動作列表
+  const current_user_info = await getUsers_from_firestore(user_info.value.uid);
+  current_user_actions.value = current_user_info.actions;
 });
 
 // 監聽 controlSampleFile

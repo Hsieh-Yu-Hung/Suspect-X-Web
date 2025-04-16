@@ -929,8 +929,6 @@ function showQCMessage(qcStatus, qcMessage) {
     displayed_qc_message.value = qcMessage;
     show_qc_message_dialog.value = true;
   }
-
-  console.log(processed_qc_message.value);
 }
 
 // 掛載時執行
