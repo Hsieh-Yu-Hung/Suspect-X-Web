@@ -314,6 +314,7 @@ def readQPCRData(input_file_path, FAM_file_path, VIC_file_path, instrument, CT_T
 
     # 轉換 dataframe 為 QPCRRecord 列表
     for index, row in qpcr_data.data.iterrows():
+      if pd.isna(row["Well Position"]): continue
       qpcr_record_list.append(QPCRRecord(
         well_position=WELL(row["Well Position"]),
         sample_name=row["Sample Name"],

@@ -287,6 +287,10 @@ def SMA(input_file_path, FAM_file_path, VIC_file_path, CY5_file_path, SC1_well, 
     sma_output.qc_status = qc_status
     sma_output.errMsg = qc_message
 
+    # 如果 QC 失敗也將每個 Sample 的空結果回傳
+    failed_result = [SMAResult(data.sample_name, data.well_position, 0, 0, 0, 0) for data in dataMatrix["sample"]]
+    sma_output.resultList = failed_result
+
   # 若 QC 未分析, 也跳過 Sample Assessment
   else:
     tmp_source = "sma.py line. 268"
