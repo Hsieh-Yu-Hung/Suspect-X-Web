@@ -313,7 +313,7 @@ const reagentArray = (product, instrument) => {
     ]
   } else if (product == 'sma' && instrument == 'qsep100') {
     return [
-      { label: "ACCUiN BioTech SMA v4", val: "accuinSma4" },
+      { label: "SMA CE v1", val: "accuinSma4" },
     ]
   } else if (product == 'mthfr-import' && instrument == 'z480') {
     return [

@@ -24,6 +24,7 @@
     </div>
 
     <!-- SMA v4 devMode 面板 -->
+    <!--
     <div v-else-if="currentDisplayAnalysis.analysis_name === 'SMAv4'" class="row justify-between q-mt-lg q-mx-xl">
       <div class="col">
         <SMAv4ReanalysePanel
@@ -33,6 +34,7 @@
         />
       </div>
     </div>
+    -->
 
     <!-- Analysis Results 面板-->
     <div class="row justify-between q-mt-lg q-mx-xl q-pb-lg">
@@ -69,7 +71,7 @@
 
       <!-- SMA v4 -->
       <div class="col" v-else-if="currentDisplayAnalysis.analysis_name === 'SMAv4'">
-        <ResultViewSMAv4 ref="ref_resultViewSMAv4" @updatePeakSettings="call_updatePeakSettings" />
+        <ResultViewSMAv4 ref="ref_resultViewSMAv4" />
       </div>
 
       <!-- THAL_BETA -->
@@ -96,6 +98,7 @@ import { getCurrentDisplayAnalysisID, getCurrentAnalysisResult } from '@/composa
 import { getUsers_from_firestore } from '@/firebase/firebaseDatabase';
 
 // 導入元件
+// (DEPRECATED) import SMAv4ReanalysePanel from '@/components/PreviewPageViews/SMAv4ReanalysePanel.vue';
 import QualityControlPanel from '@/components/PreviewPageViews/QualityControl.vue';
 import ResultViewAPOE from '@/components/PreviewPageViews/ResultViewAPOE.vue';
 import ResultViewFXS from '@/components/PreviewPageViews/ResultViewFXS.vue';
@@ -104,7 +107,6 @@ import ResultViewMTHFR from '@/components/PreviewPageViews/ResultViewMTHFR.vue';
 import ResultViewNUDT15 from '@/components/PreviewPageViews/ResultViewNUDT15.vue';
 import ResultViewSMA from '@/components/PreviewPageViews/ResultViewSMA.vue';
 import ResultViewSMAv4 from '@/components/PreviewPageViews/ResultViewSMAv4.vue';
-import SMAv4ReanalysePanel from '@/components/PreviewPageViews/SMAv4ReanalysePanel.vue';
 import SMAReanalysisParamSettings from '@/components/PreviewPageViews/SMAReanalysisParamSettings.vue';
 import ResultViewBetaThal from '@/components/PreviewPageViews/ResultViewBetaThal.vue';
 
@@ -250,7 +252,9 @@ onMounted(async () => {
 
   // 取得當前使用者的權限動作列表
   const current_user_info = await getUsers_from_firestore(user_info.value.uid);
-  current_user_actions.value = current_user_info.actions;
+  if (current_user_info){
+    current_user_actions.value = current_user_info.actions;
+  }
 });
 
 </script>

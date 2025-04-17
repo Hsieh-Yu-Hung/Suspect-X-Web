@@ -81,13 +81,10 @@ class SMAInputData(QPCRInputData):
 class SMAv4InputData():
   smn1_std1: str
   smn1_std2: str
-  smn1_std3: str
   smn2_std1: str
   smn2_std2: str
-  smn2_std3: str
   smn1_samples: list[str]
   smn2_samples: list[str]
-  peak_condition: dict
   analysis_name: str
 
 # 定義 Thal Beta input 資料格式
@@ -472,16 +469,13 @@ class InputParser:
     # 取得 input 檔案
     smn1_std1 = sma_input_data['file_path']['smn1_std1']
     smn1_std2 = sma_input_data['file_path']['smn1_std2']
-    smn1_std3 = sma_input_data['file_path']['smn1_std3']
     smn2_std1 = sma_input_data['file_path']['smn2_std1']
     smn2_std2 = sma_input_data['file_path']['smn2_std2']
-    smn2_std3 = sma_input_data['file_path']['smn2_std3']
     smn1_samples = sma_input_data['file_path']['smn1_samples']
     smn2_samples = sma_input_data['file_path']['smn2_samples']
-    peak_condition = sma_input_data['peak_condition']
 
     # 下載 SC 標準品檔案
-    for file in [smn1_std1, smn1_std2, smn1_std3, smn2_std1, smn2_std2, smn2_std3]:
+    for file in [smn1_std1, smn1_std2, smn2_std1, smn2_std2]:
       if file:
         self.download_file_from_storage(file)
 
@@ -495,19 +489,15 @@ class InputParser:
       smn1_std1 = os.path.join(PATH_OF_DATA, smn1_std1)
     if smn1_std2:
       smn1_std2 = os.path.join(PATH_OF_DATA, smn1_std2)
-    if smn1_std3:
-      smn1_std3 = os.path.join(PATH_OF_DATA, smn1_std3)
     if smn2_std1:
       smn2_std1 = os.path.join(PATH_OF_DATA, smn2_std1)
     if smn2_std2:
       smn2_std2 = os.path.join(PATH_OF_DATA, smn2_std2)
-    if smn2_std3:
-      smn2_std3 = os.path.join(PATH_OF_DATA, smn2_std3)
     smn1_samples = [os.path.join(PATH_OF_DATA, sample) for sample in smn1_samples if sample]
     smn2_samples = [os.path.join(PATH_OF_DATA, sample) for sample in smn2_samples if sample]
 
     # 檢查 input 檔案格式
-    sampleList = [smn1_std1, smn1_std2, smn1_std3, smn2_std1, smn2_std2, smn2_std3] + smn1_samples + smn2_samples
+    sampleList = [smn1_std1, smn1_std2, smn2_std1, smn2_std2] + smn1_samples + smn2_samples
     check_status = list(map(lambda x: self.fileFormatChecker.check_qsep100_format(x), sampleList))
     if not all(check_status):
       error_message = self.fileFormatChecker.error_message
@@ -517,13 +507,10 @@ class InputParser:
     return SMAv4InputData(
       smn1_std1 = smn1_std1,
       smn1_std2 = smn1_std2,
-      smn1_std3 = smn1_std3,
       smn2_std1 = smn2_std1,
       smn2_std2 = smn2_std2,
-      smn2_std3 = smn2_std3,
       smn1_samples = smn1_samples,
       smn2_samples = smn2_samples,
-      peak_condition = peak_condition,
       analysis_name = AnalysisName.SMAv4
     )
 
