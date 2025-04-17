@@ -10,6 +10,14 @@
         :error_message="dialog_error_message"
       />
 
+      <!-- 開發模式面板： Peak 範圍設定 -->
+      <div>
+        <peakSetting ref="peakSettingRef"
+          @update_PeakSelectRange="update_current_peak_condition"
+          @apply_PeakSelectRange="saveConfigBtn.click();"
+        ></peakSetting>
+      </div>
+
       <!-- 標題 -->
       <div class="text-h5 text-uppercase text-bold text-blue-grey-7" style="margin-top: 1em;">
         Import
@@ -81,23 +89,29 @@
 
                     <!-- Experiment type Dropdown button -->
                     <div style="margin-left: 15px;">
-                      <q-btn-dropdown :color="typeColor[file.expType]" :label="getFormalSCName(file.expType)">
+                      <q-btn-dropdown :color="typeColor[file.expType]" :label="file.expType">
                         <q-list>
                           <q-item clickable v-close-popup @click="file.expType = 'std1'">
                             <q-item-section>
-                              <q-item-label>{{ getFormalSCName("std1") }}</q-item-label>
+                              <q-item-label>std1</q-item-label>
                             </q-item-section>
                           </q-item>
 
                           <q-item clickable v-close-popup @click="file.expType = 'std2'">
                             <q-item-section>
-                              <q-item-label>{{ getFormalSCName("std2") }}</q-item-label>
+                              <q-item-label>std2</q-item-label>
+                            </q-item-section>
+                          </q-item>
+
+                          <q-item clickable v-close-popup @click="file.expType = 'std3'">
+                            <q-item-section>
+                              <q-item-label>std3</q-item-label>
                             </q-item-section>
                           </q-item>
 
                           <q-item clickable v-close-popup @click="file.expType = 'sample'">
                             <q-item-section>
-                              <q-item-label>{{ getFormalSCName("sample") }}</q-item-label>
+                              <q-item-label>sample</q-item-label>
                             </q-item-section>
                           </q-item>
                         </q-list>
@@ -193,6 +207,7 @@ import { submitWorkflow } from '@/composables/submitWorkflow';
 import loggerV2 from '@/composables/loggerV2';
 
 // import component
+import peakSetting from './peakSetting.vue';
 import WarningDialog from '@/components/WarningDialog.vue';
 
 // 定義 Database 路徑
@@ -223,6 +238,7 @@ const validateErrorMessage = ref('');
 const typeColor = {
   std1: 'red-4',
   std2: 'pink-4',
+  std3: 'deep-purple-5',
   sample: 'teal-4',
 }
 
@@ -274,6 +290,12 @@ async function updateConfigs() {
     configs.value.push(DISPLAY_CONFIG(load_config.id));
     loadedConfigs.value.push(load_config);
   });
+
+  // 取得當前顯示的 Config
+  const currentConf = loadedConfigs.value.find((config) => config.id === currentDisplayedConfig.value);
+  if (currentConf) {
+    peakSettingRef.value.update_current_settings(currentConf.peak_condition);
+  }
 }
 
 // 儲存 Config
@@ -287,8 +309,8 @@ async function saveConfig(config_name, clear_smav4Files = true, mute = true) {
   // 如果 name 不存在, 新增 Config
   if (config_name === '') {
 
-    // (DEPRECATED) 重置 peakSetting
-    // peakSettingRef.value.resetSettings();
+    // 重置 peakSetting
+    peakSettingRef.value.resetSettings();
 
     // 如果 clear_smav4Files 為 true, 則清空 smav4Files
     if (clear_smav4Files) {
@@ -432,7 +454,7 @@ const DEFINED_SMAV4FILE = (file_name, file_path) => {
     file_name: file_name,
     path: file_path,
     smnType: 'smn1',
-    expType: 'sample',
+    expType: 'std1',
   }
   return defined_file;
 }
@@ -543,29 +565,13 @@ async function deleteSMAv4File(file) {
 }
 
 /* 開發模式參數設置 */
-// (DEPRECATED) const peakSettingRef = ref(null);
+const peakSettingRef = ref(null);
 const saveConfigBtn = ref(null);
 const currentPeakCondition = ref(null);
 
-// (DEPRECATED) 更新峰值選擇範圍
-/*
+// 更新峰值選擇範圍
 function update_current_peak_condition(new_peak_condition) {
   currentPeakCondition.value = new_peak_condition;
-}
-*/
-
-// 取得正式的 SC 名稱
-const getFormalSCName = (name) => {
-  switch (name) {
-    case 'std1':
-      return 'SC-C';
-    case 'std2':
-      return 'SC-N';
-    case 'sample':
-      return 'Sample';
-    default:
-      return name;
-  }
 }
 
 // 驗證 SMA v4 輸入
@@ -577,9 +583,9 @@ const validateSMAv4Input = (file_list) => {
     return false;
   }
 
-  // 2. 檢查是否有選擇 SMN1-std1, SMN1-std2, SMN2-std1, SMN2-std2, 且數量都是 1
+  // 2. 檢查是否有選擇 SMN1-std1, SMN1-std2, SMN1-std3, SMN2-std1, SMN2-std2, SMN2-std3, 且數量都是 1
   for (const smn of ['smn1', 'smn2']) {
-    for (const std of ['std1', 'std2']) {
+    for (const std of ['std1', 'std2', 'std3']) {
       const file_count = file_list.filter(file => file.smnType === smn && file.expType === std).length;
       if (file_count !== 1) {
         validateErrorMessage.value = `* ${smn}-${std} 檔案數量不正確, 標準品數量應為 1.`;
@@ -597,8 +603,10 @@ const parseSMAv4Input = (file_list) => {
   let smav4InputFilesObj = {
     smn1_std1: null,
     smn1_std2: null,
+    smn1_std3: null,
     smn2_std1: null,
     smn2_std2: null,
+    smn2_std3: null,
     smn1_samples: [],
     smn2_samples: []
   };
@@ -611,6 +619,9 @@ const parseSMAv4Input = (file_list) => {
     else if (file.smnType === 'smn1' && file.expType === 'std2') {
       smav4InputFilesObj.smn1_std2 = file.path;
     }
+    else if (file.smnType === 'smn1' && file.expType === 'std3') {
+      smav4InputFilesObj.smn1_std3 = file.path;
+    }
     else if (file.smnType === 'smn1' && file.expType === 'sample') {
       smav4InputFilesObj.smn1_samples.push(file.path);
     }
@@ -619,6 +630,9 @@ const parseSMAv4Input = (file_list) => {
     }
     else if (file.smnType === 'smn2' && file.expType === 'std2') {
       smav4InputFilesObj.smn2_std2 = file.path;
+    }
+    else if (file.smnType === 'smn2' && file.expType === 'std3') {
+      smav4InputFilesObj.smn2_std3 = file.path;
     }
     else if (file.smnType === 'smn2' && file.expType === 'sample') {
       smav4InputFilesObj.smn2_samples.push(file.path);
@@ -669,8 +683,10 @@ const getControlID = (smav4InputFilesObj) => {
   return [
     simplifyFilePath(smav4InputFilesObj.smn1_std1),
     simplifyFilePath(smav4InputFilesObj.smn1_std2),
+    simplifyFilePath(smav4InputFilesObj.smn1_std3),
     simplifyFilePath(smav4InputFilesObj.smn2_std1),
     simplifyFilePath(smav4InputFilesObj.smn2_std2),
+    simplifyFilePath(smav4InputFilesObj.smn2_std3),
   ]
 }
 
@@ -727,7 +743,10 @@ async function onSubmit() {
   const control_id = getControlID(smav4InputFilesObj);
 
   // inputData
-  const InputData = { file_path: smav4InputFilesObj };
+  const InputData = {
+    file_path: smav4InputFilesObj,
+    peak_condition: currentPeakCondition.value,
+  }
 
   // 取得 settingProps
   const currentSettingProps = store.getters["analysis_setting/getSettingProps"];

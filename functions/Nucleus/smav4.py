@@ -35,6 +35,19 @@ class SMAv4Peak(Qsep100Peak):
     self.rfu_cutoff = rfu_cutoff
     self.pass_cutoff = False
     self.CutRFU()
+
+  def __str__(self):
+    return (
+      f"SMAv4Peak(\n"
+      f"  peak_size={self.peak_size},\n"
+      f"  peak_rfu={self.peak_rfu},\n"
+      f"  smn={self.smn},\n"
+      f"  peak_group={self.peak_group},\n"
+      f"  rfu_cutoff={self.rfu_cutoff},\n"
+      f"  pass_cutoff={self.pass_cutoff}\n"
+      f")"
+    )
+
   # 篩選 RFU
   def CutRFU(self):
     if self.peak_rfu >= self.rfu_cutoff:
@@ -59,10 +72,23 @@ class SMAv4Data:
     self.set_data_qc()
     self.calculate_rfu_diff()
 
+  def __str__(self):
+    return (
+      f"SMAv4Data(\n"
+      f"  smn={self.smn},\n"
+      f"  group={self.group},\n"
+      f"  ic_peak={self.ic_peak},\n"
+      f"  tg_peak={self.tg_peak},\n"
+      f"  rfu_diff={self.rfu_diff},\n"
+      f"  data_qc={self.data_qc},\n"
+      f"  qc_message={self.qc_message}\n"
+      f")"
+    )
+
   # 計算 rfu_diff
   def calculate_rfu_diff(self):
     if self.ic_peak and self.tg_peak:
-      self.rfu_diff = round(self.tg_peak.peak_rfu / self.ic_peak.peak_rfu, 3)
+      self.rfu_diff = round(self.tg_peak.peak_rfu / self.ic_peak.peak_rfu, 2)
 
   # 設定 data_qc
   def set_data_qc(self):
@@ -95,7 +121,6 @@ class SMAv4Result:
   smn1_copy_number: int
   smn2_copy_number: int
   typeStr: str = ''
-  assessment_result: AssessmentStatus = AssessmentStatus.NOT_SET
 
   def __init__(self, sample_name, smn1_copy_number, smn2_copy_number):
     self.sample_name = sample_name
@@ -103,50 +128,15 @@ class SMAv4Result:
     self.smn2_copy_number = smn2_copy_number
     self.typeStr = f"{self.smn1_copy_number}:{self.smn2_copy_number}"
 
-    # 初始化 normal_List, carrier_List, affected, affected_weho, affected_dubo, affected_kuwel, invalid_List
-    self.normal_List = [
-      "2:0", "2:1", "2:2", "2:3", "2:4",
-      "3:0", "3:1", "3:2", "3:3", "3:4",
-      "4:1", "4:2", "4:3", "4:4"
-    ]
-
-    # 定義 Carrier
-    self.carrier_List = [
-      "1:0", "1:1", "1:2", "1:3", "1:4"
-    ]
-
-    # 定義 Affected
-    self.affected       = "0:1"
-    self.affected_weho  = "0:2"
-    self.affected_dubo  = "0:3"
-    self.affected_kuwel = "0:4"
-
-    # 定義 Invalid
-    self.invalid_List = ["0:0"]
-
-    self.assessment_result = self.getAssessmentResult()
-
   def __str__(self):
-    return f"SMAv4Result(sample_name={self.sample_name}, smn1_copy_number={self.smn1_copy_number}, smn2_copy_number={self.smn2_copy_number}, typeStr={self.typeStr}, assessment_result={self.assessment_result.value})"
-
-  # 設定 assessment
-  def getAssessmentResult(self):
-    if self.typeStr in self.normal_List:
-      return AssessmentStatus.NORMAL
-    elif self.typeStr in self.carrier_List:
-      return AssessmentStatus.CARRIER
-    elif self.typeStr == self.affected:
-      return AssessmentStatus.AFFECTED
-    elif self.typeStr == self.affected_weho:
-      return AssessmentStatus.AFFECTED_WEHO
-    elif self.typeStr == self.affected_dubo:
-      return AssessmentStatus.AFFECTED_DUBO
-    elif self.typeStr == self.affected_kuwel:
-      return AssessmentStatus.AFFECTED_KUWEL
-    elif self.typeStr in self.invalid_List:
-      return AssessmentStatus.INVALID
-    else:
-      return AssessmentStatus.INVALID
+    return (
+      f"SMAv4Result(\n"
+      f"  sample_name={self.sample_name},\n"
+      f"  smn1_copy_number={self.smn1_copy_number},\n"
+      f"  smn2_copy_number={self.smn2_copy_number},\n"
+      f"  typeStr={self.typeStr}\n"
+      f")"
+    )
 
 # 定義 SMAv4 Output Object
 @dataclass
@@ -160,47 +150,57 @@ class SMAv4Output(AnalysisOutput):
 # 預設 SMA v4 parameters
 DEFAULT_PEAK_CONDITION = {
   "RANGE": {
-    "SMA1_IC_SIZE_RANGE": {"min": 217, "max": 265}, # SMA1_IC +/- 10%
-    "SMA1_TG_SIZE_RANGE": {"min": 111, "max": 135}, # SMA1_TG +/- 10%
-    "SMA2_SEARCH_RANGE": {"min": 275, "max": 374}   # SMA2_IC +/- 10%
+    "SMN1_IC_SIZE_RANGE": {"min": 198, "max": 242}, # 實驗室確定版
+    "SMN1_TG_SIZE_RANGE": {"min": 107, "max": 131}, # 實驗室確定版
+    "SMN2_IC_SIZE_RANGE": {"min": 313, "max": 352}, # 實驗室確定版
+    "SMN2_TG_SIZE_RANGE": {"min": 266, "max": 312}, # 實驗室確定版
   },
   "RFU_THRESHOLD": {
-    "SMN1_IC": 1,
-    "SMN1_TG": 1,
-    "SMN2": 1
+    "SMN1_IC": 1.5,
+    "SMN1_TG": 0,
+    "SMN2_IC": 1.5,
+    "SMN2_TG": 0
   },
   "PEAK_NUMBER_CHECK": {
-    "SMA1": 1,
-    "SMA2": 2
+    "SMN1": 1,
+    "SMN2": 1
+  },
+  "SC_DIFF_RATIO": {
+    "SMN1_MIN": 1.3,
+    "SMN1_MAX": 2.5,
+    "SMN2_MIN": 1.3,
+    "SMN2_MAX": 2.5,
   },
   "PEAK_SIZE":{
-    "SMA1_IC": 241,
-    "SMA1_TG": 123,
-    "SMA2_IC": 340,
-    "SMA2_TG": 306
+    "SMN1_IC": 229,
+    "SMN1_TG": 118,
+    "SMN2_IC": 337,
+    "SMN2_TG": 297
   },
-  "PEAK_RANGE_DIV":{
-    "SMA1_IC": {
-      "Negative_range": 10,
-      "Positive_range": 10
+  "SC_RATIO_RANGE":{
+    "SMN1_MIN": 1.3,
+    "SMN1_MAX": 2.5,
+    "SMN2_MIN": 1.2,
+    "SMN2_MAX": 2.4
+  },
+  "COPY_NUMBER_RANGE": {
+    "SMN1": {
+      "copy_1": {"min": 0.5, "max": 1.2},
+      "copy_2": {"min": 1.4, "max": 1.8},
+      "invalid": 1.3
     },
-    "SMA1_TG": {
-      "Negative_range": 10,
-      "Positive_range": 10
-    },
-    "SMA2": {
-      "Negative_range": 10,
-      "Positive_range": 10
+    "SMN2": {
+      "copy_1": {"min": 0.5, "max": 1.1},
+      "copy_2": {"min": 1.3, "max": 1.8},
+      "invalid": 1.2
     }
   }
 }
 
 # SMAv4 分析腳本
 def SMAv4(
-    smn1_std1, smn1_std2, smn1_std3,
-    smn2_std1, smn2_std2, smn2_std3,
-    smn1_samples, smn2_samples,
-    peak_condition, user_info
+    smn1_std1, smn1_std2, smn2_std1, smn2_std2,
+    smn1_samples, smn2_samples, user_info
   ):
 
   # Logger settings
@@ -223,43 +223,48 @@ def SMAv4(
   # 初始化 SMAv4Output
   smav4_output = SMAv4Output(config=config)
 
-  # 決定使用哪個 peak condition
-  use_condition = peak_condition if peak_condition != {} else DEFAULT_PEAK_CONDITION
+  # (DEPRECATED) 決定使用哪個 peak condition
+  # use_condition = peak_condition if peak_condition != {} else DEFAULT_PEAK_CONDITION
 
-  # 如果 use_condition 為前端格式，則轉換為後端格式
-  if use_condition.keys() != DEFAULT_PEAK_CONDITION.keys():
-    use_condition = convert_peak_condition(use_condition)
+  # (DEPRECATED) 如果 use_condition 為前端格式，則轉換為後端格式
+  # if use_condition.keys() != DEFAULT_PEAK_CONDITION.keys():
+  #   use_condition = convert_peak_condition(use_condition)
 
-  # 更新 smav4_output
+  # Condition 直接使用實驗室確定的版本
+  use_condition = DEFAULT_PEAK_CONDITION
   smav4_output.PARAMETERS = use_condition
 
   # 取得 peak 篩選範圍
   SMN1_IC_PEAK_RANGE = Range(
-    MIN=use_condition["RANGE"]["SMA1_IC_SIZE_RANGE"]["min"],
-    MAX=use_condition["RANGE"]["SMA1_IC_SIZE_RANGE"]["max"]
+    MIN=use_condition["RANGE"]["SMN1_IC_SIZE_RANGE"]["min"],
+    MAX=use_condition["RANGE"]["SMN1_IC_SIZE_RANGE"]["max"]
   )
   SMN1_TARGET_PEAK_RANGE = Range(
-    MIN=use_condition["RANGE"]["SMA1_TG_SIZE_RANGE"]["min"],
-    MAX=use_condition["RANGE"]["SMA1_TG_SIZE_RANGE"]["max"]
+    MIN=use_condition["RANGE"]["SMN1_TG_SIZE_RANGE"]["min"],
+    MAX=use_condition["RANGE"]["SMN1_TG_SIZE_RANGE"]["max"]
   )
-  SMN2_SEARCH_RANGE = Range(
-    MIN=use_condition["RANGE"]["SMA2_SEARCH_RANGE"]["min"],
-    MAX=use_condition["RANGE"]["SMA2_SEARCH_RANGE"]["max"]
+  SMN2_IC_PEAK_RANGE = Range(
+    MIN=use_condition["RANGE"]["SMN2_IC_SIZE_RANGE"]["min"],
+    MAX=use_condition["RANGE"]["SMN2_IC_SIZE_RANGE"]["max"]
+  )
+  SMN2_TARGET_PEAK_RANGE = Range(
+    MIN=use_condition["RANGE"]["SMN2_TG_SIZE_RANGE"]["min"],
+    MAX=use_condition["RANGE"]["SMN2_TG_SIZE_RANGE"]["max"]
   )
 
   # 讀取 Qsep100 檔案
-  std_control_objs, sample_objs = read_qsep100_file(smn1_std1, smn1_std2, smn1_std3, smn2_std1, smn2_std2, smn2_std3, smn1_samples, smn2_samples)
+  std_control_objs, sample_objs = read_qsep100_file(smn1_std1, smn1_std2, smn2_std1, smn2_std2, smn1_samples, smn2_samples)
 
   # 整理 STD data 和 Sample data
-  std_data_objs = summary_std_data(std_control_objs, use_condition, SMN1_IC_PEAK_RANGE, SMN1_TARGET_PEAK_RANGE, SMN2_SEARCH_RANGE)
-  sample_data_objs = summary_sample_data(sample_objs, use_condition, SMN1_IC_PEAK_RANGE, SMN1_TARGET_PEAK_RANGE, SMN2_SEARCH_RANGE)
+  std_data_objs = summary_std_data(std_control_objs, use_condition, SMN1_IC_PEAK_RANGE, SMN1_TARGET_PEAK_RANGE, SMN2_IC_PEAK_RANGE, SMN2_TARGET_PEAK_RANGE)
+  sample_data_objs = summary_sample_data(sample_objs, use_condition, SMN1_IC_PEAK_RANGE, SMN1_TARGET_PEAK_RANGE, SMN2_IC_PEAK_RANGE, SMN2_TARGET_PEAK_RANGE)
 
   # 更新 smav4_output
   smav4_output.STD_DATA = std_data_objs
   smav4_output.SAMPLE_DATA = sample_data_objs
 
   # 進行 QC
-  QC_result, QC_message = QC(std_data_objs)
+  QC_result, QC_message = QC(std_data_objs, use_condition)
   tmp_source = "smav4.py line. 248"
   if QC_result == QCStatus.FAILED:
     logger.warn(f"QC Result: {QC_result}, QC Message: {QC_message}", tmp_source)
@@ -273,7 +278,7 @@ def SMAv4(
   # 若可能繼續分析則不跳過
 
   # 計算 Copy Number Ranges
-  copy_number_ranges = determine_range(std_data_objs)
+  copy_number_ranges = use_condition["COPY_NUMBER_RANGE"]
   tmp_source = "smav4.py line. 259"
   logger.analysis(f"Copy Number Ranges: {copy_number_ranges}", tmp_source)
 
@@ -284,8 +289,11 @@ def SMAv4(
   assessment_results = {}
   sampleList = [sample for sample in sample_data_objs["smn1"]]
   for sample in sampleList:
-    smn1_copy_number = getCopyNumber(sample_data_objs["smn1"][sample].rfu_diff, "smn1", copy_number_ranges)
-    smn2_copy_number = getCopyNumber(sample_data_objs["smn2"][sample].rfu_diff, "smn2", copy_number_ranges)
+    # 計算 samle 與 SC1 的 rfu_diff 比值
+    SMN1_SC_RATIO = sample_data_objs["smn1"][sample].rfu_diff / std_data_objs["smn1"]["std1"].rfu_diff
+    SMN2_SC_RATIO = sample_data_objs["smn2"][sample].rfu_diff / std_data_objs["smn2"]["std1"].rfu_diff
+    smn1_copy_number = getCopyNumber(SMN1_SC_RATIO, "SMN1", copy_number_ranges)
+    smn2_copy_number = getCopyNumber(SMN2_SC_RATIO, "SMN2", copy_number_ranges)
     result = SMAv4Result(
       sample_name=sample,
       smn1_copy_number=smn1_copy_number,
@@ -305,7 +313,7 @@ def SMAv4(
   return smav4_output.toJson()
 
 # 讀取 Qsep100 檔案
-def read_qsep100_file(smn1_std1, smn1_std2, smn1_std3, smn2_std1, smn2_std2, smn2_std3, smn1_samples, smn2_samples):
+def read_qsep100_file(smn1_std1, smn1_std2, smn2_std1, smn2_std2, smn1_samples, smn2_samples):
 
   # 實體化 FileParser
   fileParser = FileParser()
@@ -314,13 +322,11 @@ def read_qsep100_file(smn1_std1, smn1_std2, smn1_std3, smn2_std1, smn2_std2, smn
   std_control_objs = {
     "smn1":{
       "std1": fileParser.parseQsep100File(smn1_std1),
-      "std2": fileParser.parseQsep100File(smn1_std2),
-      "std3": fileParser.parseQsep100File(smn1_std3)
+      "std2": fileParser.parseQsep100File(smn1_std2)
     },
     "smn2":{
       "std1": fileParser.parseQsep100File(smn2_std1),
-      "std2": fileParser.parseQsep100File(smn2_std2),
-      "std3": fileParser.parseQsep100File(smn2_std3)
+      "std2": fileParser.parseQsep100File(smn2_std2)
     }
   }
 
@@ -336,8 +342,8 @@ def read_qsep100_file(smn1_std1, smn1_std2, smn1_std3, smn2_std1, smn2_std2, smn
 
   return std_control_objs, sample_objs
 
-# 整理 SMN1 data
-def summary_smn1_data(dataframe, group, ic_peak_range, tg_peak_range, ic_rfu_cutoff, tg_rfu_cutoff, top_n):
+# 整理 SMN data
+def summary_smn_data(dataframe, group, smn, ic_peak_range, tg_peak_range, ic_rfu_cutoff, tg_rfu_cutoff, top_n, sample_name=None):
 
   # Call peaks
   ic_peak_list = CallPeak(dataframe, ic_peak_range, top_n=top_n)
@@ -346,7 +352,7 @@ def summary_smn1_data(dataframe, group, ic_peak_range, tg_peak_range, ic_rfu_cut
   # 如果 ic_peak_list 為空, 則回傳 None
   if len(ic_peak_list) == 0:
     tmp_source = "smav4.py line. 330"
-    logger.warn(f"{group} 找不到 IC peak", tmp_source)
+    logger.warn(f"{group} ({sample_name}) {smn} 找不到 IC peak", tmp_source)
     ic_peak_obj = None
   else:
     # 實體化 SMAv4Peak
@@ -361,7 +367,7 @@ def summary_smn1_data(dataframe, group, ic_peak_range, tg_peak_range, ic_rfu_cut
   # 如果 tg_peak_list 為空, 則回傳 None
   if len(tg_peak_list) == 0:
     tmp_source = "smav4.py line. 345"
-    logger.warn(f"{group} 找不到 TG peak", tmp_source)
+    logger.warn(f"{group} ({sample_name}) {smn} 找不到 TG peak", tmp_source)
     target_peak_obj = None
   else:
     # 實體化 SMAv4Peak
@@ -372,55 +378,11 @@ def summary_smn1_data(dataframe, group, ic_peak_range, tg_peak_range, ic_rfu_cut
       peak_group="target",
       rfu_cutoff=tg_rfu_cutoff
     )
-  data = SMAv4Data(smn="smn1", group=group, ic_peak=ic_peak_obj, tg_peak=target_peak_obj)
-  return data
-
-# 整理 SMN2 data
-def summary_smn2_data(dataframe, group, peak_size, selected_peak_range, rfu_cutoff, top_n):
-
-  # Call peaks
-  called_peaks = CallPeak(dataframe, selected_peak_range, top_n=top_n)
-
-  if len(called_peaks) < top_n:
-    tmp_source = "smav4.py line. 367"
-    logger.warn(f"{group} 範圍內找不到 {top_n} 個 peak", tmp_source)
-    data = SMAv4Data(smn="smn2", group=group, ic_peak=None, tg_peak=None) # 回傳 None
-    return data
-
-  # 使用 peak_size 排序 called_peaks
-  called_peaks = sorted(called_peaks, key=lambda x: x.peak_size, reverse=True)
-
-  # 檢查 peak_size 中 SMA2_IC 和 SMA2_TG 大小
-
-  # SMA2_IC > SMA2_TG, 則 called_peaks[0] 為 SMA2_IC, called_peaks[1] 為 SMA2_TG
-  if peak_size["SMA2_IC"] > peak_size["SMA2_TG"]:
-    ic_peak = called_peaks[0]
-    tg_peak = called_peaks[1]
-  # SMA2_IC < SMA2_TG, 則 called_peaks[0] 為 SMA2_TG, called_peaks[1] 為 SMA2_IC
-  else:
-    tg_peak = called_peaks[0]
-    ic_peak = called_peaks[1]
-
-  # 實體化 SMAv4Peak
-  ic_peak_obj = SMAv4Peak(
-    peak_size=ic_peak.peak_size,
-    peak_rfu=ic_peak.peak_rfu,
-    smn="smn2",
-    peak_group="internalControl",
-    rfu_cutoff=rfu_cutoff
-  )
-  tg_peak_obj = SMAv4Peak(
-    peak_size=tg_peak.peak_size,
-    peak_rfu=tg_peak.peak_rfu,
-    smn="smn2",
-    peak_group="target",
-    rfu_cutoff=rfu_cutoff
-  )
-  data = SMAv4Data(smn="smn2", group=group, ic_peak=ic_peak_obj, tg_peak=tg_peak_obj)
+  data = SMAv4Data(smn=smn, group=group, ic_peak=ic_peak_obj, tg_peak=target_peak_obj)
   return data
 
 # 整理 STD data
-def summary_std_data(std_control_objs, use_condition, smn1_ic_peak_range, smn1_target_peak_range, smn2_search_range):
+def summary_std_data(std_control_objs, use_condition, smn1_ic_peak_range, smn1_target_peak_range, smn2_ic_peak_range, smn2_target_peak_range):
 
   # 初始化 std_data_objs
   std_data_objs = {
@@ -430,17 +392,17 @@ def summary_std_data(std_control_objs, use_condition, smn1_ic_peak_range, smn1_t
 
   smn1_ic_rfu_cutoff = use_condition["RFU_THRESHOLD"]["SMN1_IC"]
   smn1_tg_rfu_cutoff = use_condition["RFU_THRESHOLD"]["SMN1_TG"]
-  smn1_selected_peak_top_n = use_condition["PEAK_NUMBER_CHECK"]["SMA1"]
+  smn1_selected_peak_top_n = use_condition["PEAK_NUMBER_CHECK"]["SMN1"]
   # 整理 SMN1 data
   for std in std_control_objs["smn1"]:
-    std_data_objs["smn1"][std] = summary_smn1_data(std_control_objs["smn1"][std].data, std, smn1_ic_peak_range, smn1_target_peak_range, smn1_ic_rfu_cutoff, smn1_tg_rfu_cutoff, smn1_selected_peak_top_n)
+    std_data_objs["smn1"][std] = summary_smn_data(std_control_objs["smn1"][std].data, std, "smn1", smn1_ic_peak_range, smn1_target_peak_range, smn1_ic_rfu_cutoff, smn1_tg_rfu_cutoff, smn1_selected_peak_top_n)
 
   # 整理 SMN2 data
-  peak_size = use_condition["PEAK_SIZE"]
-  smn2_rfu_cutoff = use_condition["RFU_THRESHOLD"]["SMN2"]
-  smn2_selected_peak_top_n = use_condition["PEAK_NUMBER_CHECK"]["SMA2"]
+  smn2_ic_rfu_cutoff = use_condition["RFU_THRESHOLD"]["SMN2_IC"]
+  smn2_tg_rfu_cutoff = use_condition["RFU_THRESHOLD"]["SMN2_TG"]
+  smn2_selected_peak_top_n = use_condition["PEAK_NUMBER_CHECK"]["SMN2"]
   for std in std_control_objs["smn2"]:
-    std_data_objs["smn2"][std] = summary_smn2_data(std_control_objs["smn2"][std].data, std, peak_size, smn2_search_range, smn2_rfu_cutoff, smn2_selected_peak_top_n)
+    std_data_objs["smn2"][std] = summary_smn_data(std_control_objs["smn2"][std].data, std, "smn2", smn2_ic_peak_range, smn2_target_peak_range, smn2_ic_rfu_cutoff, smn2_tg_rfu_cutoff, smn2_selected_peak_top_n)
 
   # 紀錄 std_data_objs
   for smn in std_data_objs:
@@ -451,7 +413,7 @@ def summary_std_data(std_control_objs, use_condition, smn1_ic_peak_range, smn1_t
   return std_data_objs
 
 # 整理 Sample data
-def summary_sample_data(sample_objs, use_condition, smn1_ic_peak_range, smn1_target_peak_range, smn2_search_range):
+def summary_sample_data(sample_objs, use_condition, smn1_ic_peak_range, smn1_target_peak_range, smn2_ic_peak_range, smn2_target_peak_range):
 
   # 初始化 sample_data_objs
   sample_data_objs = {
@@ -462,16 +424,16 @@ def summary_sample_data(sample_objs, use_condition, smn1_ic_peak_range, smn1_tar
   # 整理 SMN1 data
   smn1_ic_rfu_cutoff = use_condition["RFU_THRESHOLD"]["SMN1_IC"]
   smn1_tg_rfu_cutoff = use_condition["RFU_THRESHOLD"]["SMN1_TG"]
-  smn1_selected_peak_top_n = use_condition["PEAK_NUMBER_CHECK"]["SMA1"]
+  smn1_selected_peak_top_n = use_condition["PEAK_NUMBER_CHECK"]["SMN1"]
   for sample in sample_objs["smn1"]:
-    sample_data_objs["smn1"][sample] = summary_smn1_data(sample_objs["smn1"][sample].data, "sample", smn1_ic_peak_range, smn1_target_peak_range, smn1_ic_rfu_cutoff, smn1_tg_rfu_cutoff, smn1_selected_peak_top_n)
+    sample_data_objs["smn1"][sample] = summary_smn_data(sample_objs["smn1"][sample].data, "sample", "smn1", smn1_ic_peak_range, smn1_target_peak_range, smn1_ic_rfu_cutoff, smn1_tg_rfu_cutoff, smn1_selected_peak_top_n, sample)
 
   # 整理 SMN2 data
-  peak_size = use_condition["PEAK_SIZE"]
-  smn2_rfu_cutoff = use_condition["RFU_THRESHOLD"]["SMN2"]
-  smn2_selected_peak_top_n = use_condition["PEAK_NUMBER_CHECK"]["SMA2"]
+  smn2_ic_rfu_cutoff = use_condition["RFU_THRESHOLD"]["SMN2_IC"]
+  smn2_tg_rfu_cutoff = use_condition["RFU_THRESHOLD"]["SMN2_TG"]
+  smn2_selected_peak_top_n = use_condition["PEAK_NUMBER_CHECK"]["SMN2"]
   for sample in sample_objs["smn2"]:
-    sample_data_objs["smn2"][sample] = summary_smn2_data(sample_objs["smn2"][sample].data, "sample", peak_size, smn2_search_range, smn2_rfu_cutoff, smn2_selected_peak_top_n)
+    sample_data_objs["smn2"][sample] = summary_smn_data(sample_objs["smn2"][sample].data, "sample", "smn2", smn2_ic_peak_range, smn2_target_peak_range, smn2_ic_rfu_cutoff, smn2_tg_rfu_cutoff, smn2_selected_peak_top_n, sample)
 
   # 紀錄 sample_data_objs
   for smn in sample_data_objs:
@@ -482,7 +444,7 @@ def summary_sample_data(sample_objs, use_condition, smn1_ic_peak_range, smn1_tar
   return sample_data_objs
 
 # Std QC
-def QC(std_data_objs):
+def QC(std_data_objs, use_condition):
 
   # 初始化 QC_result
   QC_result = QCStatus.NOT_ANALYZED
@@ -495,14 +457,27 @@ def QC(std_data_objs):
         QC_result = QCStatus.FAILED
         QC_message += f"{smn} {group} {std_data_objs[smn][group].qc_message};"
 
-  # QC2: smn1 和 smn2 的 rfu_diff 必須逐漸遞增
-  if not std_data_objs['smn1']['std1'].rfu_diff < std_data_objs['smn1']['std2'].rfu_diff < std_data_objs['smn1']['std3'].rfu_diff:
-    QC_result = QCStatus.FAILED
-    QC_message += "smn1 的 rfu_diff 沒有逐漸遞增;"
+  # SC_RATIO_RANGE
+  smn1_sc_ratio_range = Range(
+    MIN=use_condition["SC_RATIO_RANGE"]["SMN1_MIN"],
+    MAX=use_condition["SC_RATIO_RANGE"]["SMN1_MAX"]
+  )
+  smn2_sc_ratio_range = Range(
+    MIN=use_condition["SC_RATIO_RANGE"]["SMN2_MIN"],
+    MAX=use_condition["SC_RATIO_RANGE"]["SMN2_MAX"]
+  )
 
-  if not std_data_objs['smn2']['std1'].rfu_diff < std_data_objs['smn2']['std2'].rfu_diff < std_data_objs['smn2']['std3'].rfu_diff:
+  # QC2: SMN1 的 SC2/SC1 比值必須介於 1.3 到 2.5 之間
+  SMN1_SC_RATIO = std_data_objs['smn1']['std2'].rfu_diff / std_data_objs['smn1']['std1'].rfu_diff
+  if not smn1_sc_ratio_range.inRange(SMN1_SC_RATIO):
     QC_result = QCStatus.FAILED
-    QC_message += "smn2 的 rfu_diff 沒有逐漸遞增;"
+    QC_message += f"SMN1 的 SC2/SC1 比值不在 {smn1_sc_ratio_range.MIN} 到 {smn1_sc_ratio_range.MAX} 之間;"
+
+  # QC3: SMN2 的 SC2/SC1 比值必須介於 1.2 到 2.4 之間
+  SMN2_SC_RATIO = std_data_objs['smn2']['std2'].rfu_diff / std_data_objs['smn2']['std1'].rfu_diff
+  if not smn2_sc_ratio_range.inRange(SMN2_SC_RATIO):
+    QC_result = QCStatus.FAILED
+    QC_message += f"SMN2 的 SC2/SC1 比值不在 {smn2_sc_ratio_range.MIN} 到 {smn2_sc_ratio_range.MAX} 之間;"
 
   # 如果 QC_result 沒有改變, 則設為 QCStatus.PASSED
   if QC_result == QCStatus.NOT_ANALYZED:
@@ -510,7 +485,8 @@ def QC(std_data_objs):
 
   return QC_result, QC_message
 
-# 計算 Copy Number Ranges
+# (DEPRECATED) 計算 Copy Number Ranges
+"""
 def determine_range(std_data_objs):
   # SMA1 (2:2 和 1:1 的差值) & (3:3 和 2:2 的差值)
   sma1_diff_2_1 = std_data_objs['smn1']['std2'].rfu_diff - std_data_objs['smn1']['std1'].rfu_diff
@@ -523,9 +499,9 @@ def determine_range(std_data_objs):
   # 計算判斷間距
   SMA1_D1 = std_data_objs['smn1']['std1'].rfu_diff
   SMA1_RANGES = {
-      '1': Range(MIN=SMA1_D1, MAX=SMA1_D1 + sma1_diff_2_1 / 2),
-      '2': Range(MIN=SMA1_D1 + sma1_diff_2_1 / 2, MAX=SMA1_D1 + sma1_diff_2_1 / 2 + sma1_diff_3_2 / 2),
-      '3': Range(MIN=SMA1_D1 + sma1_diff_2_1 / 2 + sma1_diff_3_2 / 2, MAX=float('inf')),
+    '1': Range(MIN=SMA1_D1, MAX=SMA1_D1 + sma1_diff_2_1 / 2),
+    '2': Range(MIN=SMA1_D1 + sma1_diff_2_1 / 2, MAX=SMA1_D1 + sma1_diff_2_1 / 2 + sma1_diff_3_2 / 2),
+    '3': Range(MIN=SMA1_D1 + sma1_diff_2_1 / 2 + sma1_diff_3_2 / 2, MAX=float('inf')),
   }
   SMA2_D1 = std_data_objs['smn2']['std1'].rfu_diff
   SMA2_RANGES = {
@@ -539,21 +515,38 @@ def determine_range(std_data_objs):
   }
 
   return SMA_RANGES
+"""
 
 # 取得 Copy Number
-def getCopyNumber(rfu_diff, smn, copy_number_ranges):
-  if rfu_diff >= copy_number_ranges[smn]['3'].MIN :
-    return 3
-  elif rfu_diff >= copy_number_ranges[smn]['2'].MIN :
-    return 2
-  elif rfu_diff >= copy_number_ranges[smn]['1'].MIN :
-    return 1
-  else:
+def getCopyNumber(SC_RATIO, smn, copy_number_ranges):
+
+  # 取得 selected_range_setting
+  selected_range_setting = copy_number_ranges[smn]
+  copy1_range = Range(MIN=selected_range_setting['copy_1']['min'], MAX=selected_range_setting['copy_1']['max'])
+  copy2_range = Range(MIN=selected_range_setting['copy_2']['min'], MAX=selected_range_setting['copy_2']['max'])
+  invalid_range = selected_range_setting['invalid']
+
+  # 四捨五路到小數點第 1 位, 用於比較
+  rounded_sc_ratio = round(SC_RATIO, 1)
+
+  # 判斷是否在範圍內
+  if rounded_sc_ratio < copy1_range.MIN:
     return 0
+  elif copy1_range.inRange(rounded_sc_ratio):
+    return 1
+  elif copy2_range.inRange(rounded_sc_ratio):
+    return 2
+  elif rounded_sc_ratio == float(invalid_range):
+    return "Invalid"
+  elif rounded_sc_ratio > copy2_range.MAX:
+    return 3
+  else:
+    return "Invalid"
 
-# 轉換前端格式為後端格式
+
+# (DEPRECATED) 轉換前端格式為後端格式
+"""
 def convert_peak_condition(peak_condition):
-
   converted_peak_condition = {
     "RANGE": {
       "SMA1_IC_SIZE_RANGE": {
@@ -601,6 +594,7 @@ def convert_peak_condition(peak_condition):
   }
 
   return converted_peak_condition
+"""
 
 # 處理 Sample Name
 def parse_file_name(full_file_path):
@@ -638,16 +632,13 @@ def parseConfig(configfile):
 
   smn1_std1 = config["input_files"]["smn1_std1"]
   smn1_std2 = config["input_files"]["smn1_std2"]
-  smn1_std3 = config["input_files"]["smn1_std3"]
   smn2_std1 = config["input_files"]["smn2_std1"]
   smn2_std2 = config["input_files"]["smn2_std2"]
-  smn2_std3 = config["input_files"]["smn2_std3"]
   smn1_samples = config["input_files"]["smn1_samples"]
   smn2_samples = config["input_files"]["smn2_samples"]
-  peak_condition = config["peak_condition"]
 
   # 檢查檔案是否存在
-  for file in [smn1_std1, smn1_std2, smn1_std3, smn2_std1, smn2_std2, smn2_std3, *smn1_samples, *smn2_samples]:
+  for file in [smn1_std1, smn1_std2, smn2_std1, smn2_std2, *smn1_samples, *smn2_samples]:
     if not os.path.exists(file):
       raise FileNotFoundError(f"檔案不存在: {file}")
 
@@ -659,15 +650,13 @@ def parseConfig(configfile):
   inputFiles = {
     "smn1_std1": smn1_std1,
     "smn1_std2": smn1_std2,
-    "smn1_std3": smn1_std3,
     "smn2_std1": smn2_std1,
     "smn2_std2": smn2_std2,
-    "smn2_std3": smn2_std3,
     "smn1_samples": smn1_samples,
     "smn2_samples": smn2_samples,
   }
 
-  return inputFiles, peak_condition
+  return inputFiles
 
 # SMAv4 CLI
 if __name__ == "__main__":
@@ -679,7 +668,7 @@ if __name__ == "__main__":
   args = parseParams()
 
   # 處理 Config 檔案
-  inputFiles, peak_condition = parseConfig(args.configfile)
+  inputFiles = parseConfig(args.configfile)
 
   # 設定 UserInfo
   userInfo = UserInfo(
@@ -692,13 +681,10 @@ if __name__ == "__main__":
   sma_output = SMAv4(
     smn1_std1=inputFiles["smn1_std1"],
     smn1_std2=inputFiles["smn1_std2"],
-    smn1_std3=inputFiles["smn1_std3"],
     smn2_std1=inputFiles["smn2_std1"],
     smn2_std2=inputFiles["smn2_std2"],
-    smn2_std3=inputFiles["smn2_std3"],
     smn1_samples=inputFiles["smn1_samples"],
     smn2_samples=inputFiles["smn2_samples"],
-    peak_condition=peak_condition,
     user_info=userInfo
   )
 

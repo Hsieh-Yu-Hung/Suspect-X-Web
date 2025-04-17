@@ -249,7 +249,7 @@ const getReagentName = computed(() => {
     case 'accuinSma3':
       return 'ACCUiN BioTech SMA v3';
     case 'accuinSma4':
-      return 'ACCUiN BioTech SMA v4';
+      return 'SMA CE v1';
     case 'accuinMTHFR1':
       return 'ACCUiN BioTech MTHFR v1';
     case 'accuinMTHFR2':

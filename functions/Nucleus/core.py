@@ -99,13 +99,10 @@ class Core:
         sma_result = SMAv4(
           smn1_std1 = sma_parsed_data.smn1_std1,
           smn1_std2 = sma_parsed_data.smn1_std2,
-          smn1_std3 = sma_parsed_data.smn1_std3,
           smn2_std1 = sma_parsed_data.smn2_std1,
           smn2_std2 = sma_parsed_data.smn2_std2,
-          smn2_std3 = sma_parsed_data.smn2_std3,
           smn1_samples = sma_parsed_data.smn1_samples,
           smn2_samples = sma_parsed_data.smn2_samples,
-          peak_condition = sma_parsed_data.peak_condition,
           user_info = user_info
         )
 
