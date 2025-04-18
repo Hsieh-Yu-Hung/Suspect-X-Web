@@ -7,15 +7,30 @@
         <div class="col" style="min-width: 500px;">
 
           <!-- 表格標題 -->
-          <div class="col text-h5 text-uppercase text-bold text-blue-grey-7">
-            Screening Result
+          <div class="row align-center">
+            <!-- 表格標題 -->
+            <div style="display: flex; align-items: center; justify-content: center;">
+              <span class="text-h5 text-uppercase text-bold text-blue-grey-7">Screening Result</span>
+            </div>
+            <!-- DevMode 開關-->
+            <div v-if="is_developer_mode">
+              <q-toggle
+                v-model="switch_dev_mode"
+                :label="switch_dev_mode"
+                true-value="DevMode: ON"
+                false-value="DevMode: OFF"
+                size="lg"
+                color="pink-7"
+                style="margin-inline: 3em;"
+              />
+            </div>
           </div>
 
           <!-- 表格內容 -->
           <q-card flat>
 
             <!-- 選擇器區域 -->
-            <q-card-section class="col q-pb-none" :style="{ display: is_developer_mode ? 'block' : 'none' }">
+            <q-card-section class="col q-pb-none" :style="{ display: switch_dev_mode === 'DevMode: ON' && is_developer_mode ? 'block' : 'none' }">
               <div class="row">
                 <div class="text-weight-medium self-center text-blue-grey-8">Exported SMN1 Result:</div>
                 <q-radio
@@ -50,7 +65,7 @@
             <q-card-section style="border: 1px solid rgba(200, 200, 200, 0.3);">
               <q-table
                 :rows="resultTableSmaProps"
-                :columns="is_developer_mode ? columns : display_column"
+                :columns="switch_dev_mode === 'DevMode: ON' && is_developer_mode ? columns : display_column"
                 :v-model:pagination="{ rowsPerPage: 10 }"
                 :rows-per-page-options="[10]"
                 row-key="sampleId"
@@ -264,7 +279,7 @@
 // 引入模組
 import { ref, computed, watch, onMounted } from "vue";
 import { useStore } from "vuex";
-import { updateGetUserInfo } from '@/composables/accessStoreUserInfo';
+import { updateGetUserInfo, isDevMode } from '@/composables/accessStoreUserInfo';
 import { update_userAnalysisData, getUsers_from_firestore } from '@/firebase/firebaseDatabase';
 import { getCurrentDisplayAnalysisID, getCurrentAnalysisResult } from '@/composables/checkAnalysisStatus.js';
 
@@ -276,12 +291,8 @@ const is_login = ref(false);
 const user_info = ref(null);
 
 // 取得當前使用者的權限動作列表
-const current_user_actions = ref([]);
-
-// 判斷是否開啟開發者模式
-const is_developer_mode = computed(() => {
-  return current_user_actions.value.some(action => action.action_name === "dev_mode" && action.action_active);
-});
+const is_developer_mode = ref(false);
+const switch_dev_mode = ref("DevMode: ON");
 
 // 保存當前分析結果
 const showResult = ref(true);
@@ -676,7 +687,6 @@ onMounted(async () => {
     return;
   }
 
-  /* TODO: 用 dev mode 開關控制*/
   // 取得 resultSMNVersion
   const getSMAVersion = store.getters["SMA_analysis_data/resultSMNVersion"];
   smn1Version.value = getSMAVersion.smn1;
@@ -689,8 +699,7 @@ onMounted(async () => {
   updateExportResults();
 
   // 更新當前使用者的權限動作列表
-  const current_user_info = await getUsers_from_firestore(user_info.value.uid);
-  current_user_actions.value = current_user_info.actions;
+  is_developer_mode.value = await isDevMode();
 });
 
 // 監聽器

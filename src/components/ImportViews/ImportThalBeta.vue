@@ -69,14 +69,47 @@
                   style="display: none;"
                 />
 
-                <!-- 新增樣本 -->
-                <q-btn
-                  label="Add Sample"
-                  color="blue-4"
-                  text-color="white"
-                  icon="mdi-plus"
-                  @click="addSample"
-                />
+                <!-- 新增樣本/DevMode 開關 -->
+                <div class="q-pa-md" style="display: flex; flex-direction: row; gap: 2em; align-items: center;justify-content: center;">
+
+                  <!-- DevMode 開關-->
+                  <div v-if="is_dev_mode">
+                    <q-toggle
+                      v-model="switch_dev_mode"
+                      :label="switch_dev_mode"
+                      true-value="DevMode: ON"
+                      false-value="DevMode: OFF"
+                      size="lg"
+                      color="pink-7"
+                    />
+                  </div>
+
+                  <!-- 新增樣本按鈕 -->
+                  <q-btn
+                    label="Add Sample"
+                    color="blue-4"
+                    text-color="white"
+                    icon="mdi-plus"
+                    @click="addSample"
+                  />
+
+                </div>
+
+              </div>
+
+              <!-- 開發設定參數: peak_ratio -->
+              <div class="q-pa-md" style="width: 50%; display: flex; flex-direction: column; gap: 1em;">
+
+                <div style="width: fit-content; display: flex; flex-direction: row; gap: 1em;">
+                  <span class="text-subtitle1">
+                    Peak Ratio
+                  </span>
+                  <q-badge color="secondary">
+                    Peak Ratio: {{ peak_ratio }} (0 to 1)
+                  </q-badge>
+                </div>
+
+                <q-slider v-model="peak_ratio" :min="0" :max="1" :step="0.01"/>
               </div>
 
               <div v-if="sampleList_row.length > 0" style="margin-block: 1em;">
@@ -168,7 +201,7 @@
             </div>
 
             <!-- 開發設定版面 -->
-            <div style="margin-block: 2em; background-color: rgba(221, 232, 243, 0.2); border-radius: 10px; padding: 10px;" :style="{ 'display': is_developer_mode ? 'block' : 'none' }">
+            <div style="margin-block: 2em; background-color: rgba(221, 232, 243, 0.2); border-radius: 10px; padding: 10px;" :style="switch_dev_mode === 'DevMode: ON' && is_dev_mode ? 'display: block;' : 'display: none;'">
               <!-- 開發設定標題 -->
               <div class="row" style="display: flex; flex-direction: row; justify-content: space-between; align-items: flex-start;">
                 <span class="text-bold text-h6 text-blue-grey-7">
@@ -196,20 +229,6 @@
                 </div>
               </div>
 
-              <!-- 開發設定參數: peak_ratio -->
-              <div class="q-pa-md" style="width: 50%; display: flex; flex-direction: column; gap: 1em;">
-
-                <div style="width: fit-content; display: flex; flex-direction: row; gap: 1em;">
-                  <span class="text-subtitle1">
-                    Peak Ratio
-                  </span>
-                  <q-badge color="secondary">
-                    Peak Ratio: {{ peak_ratio }} (0 to 1)
-                  </q-badge>
-                </div>
-
-                <q-slider v-model="peak_ratio" :min="0" :max="1" :step="0.01"/>
-              </div>
             </div>
 
           </div>
@@ -281,7 +300,7 @@ import { useQuasar, QSpinnerFacebook } from 'quasar';
 import { doc, getDoc, collection, getDocs } from 'firebase/firestore';
 import { deleteFile, listAllFilesInFolder } from '@/firebase/firebaseStorage';
 import { submitWorkflow } from '@/composables/submitWorkflow';
-import { updateGetUserInfo } from '@/composables/accessStoreUserInfo';
+import { updateGetUserInfo, isDevMode } from '@/composables/accessStoreUserInfo';
 import { CATEGORY_LIST, upload_files_to_storage } from '@/composables/storageManager';
 import { setAnalysisID } from '@/composables/checkAnalysisStatus';
 import { ANALYSIS_RESULT, EXPORT_RESULT, update_userAnalysisData, dataset_list, Database, getUsers_from_firestore } from '@/firebase/firebaseDatabase';
@@ -328,9 +347,13 @@ const selected_sample = ref([]);
 const selected_history = ref(null);
 const history_options = ref([])
 
+// DevMode 開關
+const is_dev_mode = ref(false);
+const switch_dev_mode = ref("DevMode: ON");
+
 /* FileBucket */
 
-// 定
+// 定義 FileObj
 const FileObj = (file_path) => {
   return {
     file_name: file_path.split('/').pop(),
@@ -456,14 +479,6 @@ async function uploadSampleListFile(index) {
   addFileSampleIndex.value = index;
   uploaded_sampleList_file_input.value.pickFiles();
 }
-
-// 取得當前使用者的權限動作列表
-const current_user_actions = ref([]);
-
-// 判斷是否開啟開發者模式
-const is_developer_mode = computed(() => {
-  return current_user_actions.value.some(action => action.action_name === "dev_mode" && action.action_active);
-});
 
 // Functions
 
@@ -836,9 +851,8 @@ onMounted(async () => {
   // 讀取 database 的樣本列表
   await loadDatabaseSampleList();
 
-  // 更新當前使用者的權限動作列表
-  const current_user_info = await getUsers_from_firestore(user_info.value.uid);
-  current_user_actions.value = current_user_info.actions;
+  // 取得當前使用者的權限動作列表
+  is_dev_mode.value = await isDevMode();
 });
 
 // 監聽 controlSampleFile

@@ -1,10 +1,11 @@
 <template>
-  <q-card bordered style="width: 100%;" :style="{ display: showResult ? 'block' : 'none' }">
+  <q-card ref="dev_panel" bordered style="width: 100%;" :class="is_dev_panel_expanded ? 'show-dev-panel' : 'hide-dev-panel'" :style="{ display: showResult ? 'block' : 'none' }">
     <q-card-section>
 
       <!-- 標題 -->
-      <div class="text-h5 text-uppercase text-bold text-blue-grey-7">
-        Parameters Settings
+      <div class="row justify-between">
+        <span class="text-h5 text-uppercase text-bold text-blue-grey-7">Parameters Settings</span>
+        <q-btn flat color="primary" label="" :icon="is_dev_panel_expanded ? 'expand_less' : 'expand_more'" @click="ExpandDevPanel" />
       </div>
 
       <!-- SMA 設定是一個表單 -->
@@ -367,7 +368,7 @@ import CustomSlider from '@/components/CustomSlider.vue';
 import { submitWorkflow } from '@/composables/submitWorkflow';
 import { setAnalysisID } from '@/composables/checkAnalysisStatus';
 import { updateGetUserInfo } from '@/composables/accessStoreUserInfo.js';
-import { ANALYSIS_RESULT, EXPORT_RESULT, update_userAnalysisData, simplifyFilePath, getUsers_from_firestore } from '@/firebase/firebaseDatabase';
+import { ANALYSIS_RESULT, EXPORT_RESULT, update_userAnalysisData, simplifyFilePath } from '@/firebase/firebaseDatabase';
 import { getCurrentDisplayAnalysisID, getCurrentAnalysisResult } from '@/composables/checkAnalysisStatus.js';
 
 // 使用者身份
@@ -382,13 +383,9 @@ const router = useRouter();
 const is_login = ref(false);
 const user_info = ref(null);
 
-// 取得當前使用者的權限動作列表
-const current_user_actions = ref([]);
-
-// 判斷是否開啟開發者模式
-const is_developer_mode = computed(() => {
-  return current_user_actions.value.some(action => action.action_name === "dev_mode" && action.action_active);
-});
+// 開發設定版面
+const dev_panel = ref(null);
+const is_dev_panel_expanded = ref(false);
 
 // 保存當前分析結果
 const showResult = ref(true);
@@ -1013,6 +1010,11 @@ function updateSMA_Parameters() {
   SMN1_SMN2_DIFFERENCE.smn2 = parseInt(Math.abs(SC_CT_VALUE.value.SC1.smn2 - SC_CT_VALUE.value.SC2.smn2)*100);
 }
 
+// 展開開發設定版面
+function ExpandDevPanel() {
+  is_dev_panel_expanded.value = !is_dev_panel_expanded.value;
+}
+
 // 掛載時
 onMounted(async () => {
 
@@ -1049,10 +1051,6 @@ onMounted(async () => {
   const getSMAVersion = store.getters["SMA_analysis_data/displaySMNVersion"];
   smn1_analyzer_version.value = getSMAVersion.smn1;
   smn2_analyzer_version.value = getSMAVersion.smn2;
-
-  // 更新當前使用者的權限動作列表
-  const current_user_info = await getUsers_from_firestore(user_info.value.uid);
-  current_user_actions.value = current_user_info.actions;
 
   nextTick(() => {
 
@@ -1153,3 +1151,14 @@ watch(INTERVAL_RATIO, (newVal) => {
 }, { deep: true });
 
 </script>
+
+<style scoped>
+.hide-dev-panel {
+  height: 5em;
+  overflow-y: hidden;
+}
+.show-dev-panel {
+  height: 100%;
+  overflow-y: auto;
+}
+</style>

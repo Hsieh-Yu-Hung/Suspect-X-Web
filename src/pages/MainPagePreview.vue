@@ -93,7 +93,7 @@ import { useRouter } from 'vue-router';
 import { useStore } from 'vuex';
 
 // 導入模組 composable
-import { useValidateAccountStatus, updateGetUserInfo } from '@/composables/accessStoreUserInfo.js';
+import { useValidateAccountStatus, updateGetUserInfo, isDevMode } from '@/composables/accessStoreUserInfo.js';
 import { getCurrentDisplayAnalysisID, getCurrentAnalysisResult } from '@/composables/checkAnalysisStatus.js';
 import { getUsers_from_firestore } from '@/firebase/firebaseDatabase';
 
@@ -147,12 +147,7 @@ const currentDisplayAnalysis = ref({
 });
 
 // 取得當前使用者的權限動作列表
-const current_user_actions = ref([]);
-
-// 判斷是否開啟開發者模式
-const is_developer_mode = computed(() => {
-  return current_user_actions.value.some(action => action.action_name === "dev_mode" && action.action_active);
-});
+const is_developer_mode = ref(false);
 
 // 管理 ResultViewSMAv4
 const ref_resultViewSMAv4 = ref(null);
@@ -251,10 +246,7 @@ onMounted(async () => {
   updateQC_PANEL_DISPLAY(currentAnalysisResult.value);
 
   // 取得當前使用者的權限動作列表
-  const current_user_info = await getUsers_from_firestore(user_info.value.uid);
-  if (current_user_info){
-    current_user_actions.value = current_user_info.actions;
-  }
+  is_developer_mode.value = await isDevMode();
 });
 
 </script>
