@@ -1,5 +1,26 @@
 <template>
+
   <div style="margin-bottom: 0.3em; display: flex; flex-direction: column; justify-content: flex-start; align-items: flex-start; border: 1px solid #e0e0e0; padding: 0.5em; border-radius: 0.5em;">
+
+    <!-- 警告視窗 -->
+    <q-dialog v-model="warning_dialog" persistent>
+      <q-card>
+        <q-card-section>
+          <div class="flex flex-center" style="gap: 10px; margin-block: 20px">
+            <q-icon name="warning" color="red" size="lg" />
+            <span class="text-h6 text-deep-orange-8">Warning</span>
+          </div>
+          <div class="flex flex-center" style="margin-block: 20px; flex-direction: column; gap: 10px;">
+            <span class="text-subtitle1">刪除該次分析結果和所有相關檔案！</span>
+            <span class="text-subtitle1">此動作無法復原！</span>
+          </div>
+          <div class="flex flex-center" style="gap: 20px; margin-block: 20px">
+            <q-btn glossy icon="gpp_maybe" color="red" label="確定" @click="dialog_confirm(dialog_id.value)" />
+            <q-btn glossy icon="close" color="grey-9" label="取消" @click="warning_dialog = false" />
+          </div>
+        </q-card-section>
+      </q-card>
+    </q-dialog>
 
     <!-- 分析名稱/展開按鈕 -->
     <div style="display: flex; align-items: center; gap: 1em; justify-content: space-between; width: 100%; margin-bottom: 0.5em;">
@@ -48,6 +69,9 @@
             <q-td key="View" :props="props">
               <q-btn icon="visibility" glossy color="light-blue-1" dense rounded no-caps label="" text-color="indigo-6" @click="selectRecord(props.row.id)" />
             </q-td>
+            <q-td key="Delete" :props="props">
+              <q-btn icon="delete" color="red-1" dense rounded no-caps label="" text-color="red-6" @click="deleteRecord(props.row.id)" />
+            </q-td>
           </q-tr>
         </template>
       </q-table>
@@ -60,7 +84,8 @@
 import { ref, onMounted, computed } from 'vue';
 import { useStore } from 'vuex';
 import { useQuasar } from 'quasar';
-import { getAnalysisResult, update_userAnalysisData } from '@/firebase/firebaseDatabase';
+import { getAnalysisResult, update_userAnalysisData, delete_userAnalysisData } from '@/firebase/firebaseDatabase';
+import { deleteUserAnalysisFile } from '@/firebase/firebaseStorage';
 import { updateGetUserInfo } from '@/composables/accessStoreUserInfo';
 
 // 使用者身份
@@ -118,7 +143,8 @@ const analysisHistoryColumns = [
     label: 'Date',
     field: 'date',
     align: 'center',
-    headerClasses: 'text-bold text-blue-grey-7'
+    headerClasses: 'text-bold text-blue-grey-7',
+    sortable: true
   },
   {
     name: 'ID',
@@ -130,7 +156,8 @@ const analysisHistoryColumns = [
     label: 'Name',
     field: 'name',
     align: 'center',
-    headerClasses: 'text-bold text-blue-grey-7'
+    headerClasses: 'text-bold text-blue-grey-7',
+    sortable: true
   },
   {
     name: 'Config',
@@ -144,12 +171,19 @@ const analysisHistoryColumns = [
     label: 'QC',
     field: 'qc',
     align: 'center',
-    headerClasses: 'text-bold text-blue-grey-7'
+    headerClasses: 'text-bold text-blue-grey-7',
+    sortable: true
   },
   {
     name: 'View',
     label: '',
     field: 'view',
+    align: 'center'
+  },
+  {
+    name: 'Delete',
+    label: '',
+    field: 'delete',
     align: 'center'
   }
 ];
@@ -157,8 +191,11 @@ const displayAnalysisHistoryColumns = computed(() => {
   return analysisHistoryColumns.filter(column => column.name !== 'ID');
 });
 
-// 控制展開
-const isExpanded = ref(false);
+// 控制警告視窗
+const warning_dialog = ref(false);
+const dialog_id = ref(null);
+// Emits
+const emit = defineEmits(['updateTables']);
 
 // 取得當前分析資料庫路徑
 const getCurrentAnalysisDatabasePath = (analysis_name) => {
@@ -183,6 +220,58 @@ const getCurrentAnalysisDatabasePath = (analysis_name) => {
       return 'thalalpha_result';
     default:
       return analysis_name;
+  }
+}
+
+// 取得當前分析檔案路徑
+const getCurrentAnalysisFilePath = (product) => {
+  switch (product) {
+    case 'APOE':
+      return 'apoe_import';
+    case 'FXS':
+      return 'fx_import';
+    case 'HTD':
+      return 'htd_import';
+    case 'MTHFR':
+      return 'mthfr_import';
+    case 'NUDT15':
+      return 'nudt15_import';
+    case 'SMA':
+      return 'sma_import';
+    case 'SMAv4':
+      return 'sma_import';
+    case 'THAL_ALPHA':
+      return 'thal_alpha_import';
+    case 'THAL_BETA':
+      return 'thal_beta_import';
+    default:
+      return product;
+  }
+}
+
+// 取得 Result Storage 路徑
+const getResultStoragePath = (product) => {
+  switch (product) {
+    case 'APOE':
+      return 'APOE_results';
+    case 'FXS':
+      return 'FXS_results';
+    case 'HTD':
+      return 'HTD_results';
+    case 'MTHFR':
+      return 'MTHFR_results';
+    case 'NUDT15':
+      return 'NUDT15_results';
+    case 'SMA':
+      return 'SMA_results';
+    case 'SMAv4':
+      return 'SMAv4_results';
+    case 'THAL_ALPHA':
+      return 'THAL_ALPHA_results';
+    case 'THAL_BETA':
+      return 'THAL_BETA_results';
+    default:
+      return product;
   }
 }
 
@@ -365,6 +454,9 @@ function selectRecord(id) {
     analysis_uuid: id
   }
   store.commit('analysis_setting/updateCurrentDisplayAnalysisID', selectedAnalysisID);
+
+  // Emit
+  emit('updateTables');
 }
 
 // 更新當前選中呈現的 Record ID
@@ -379,6 +471,37 @@ function updateCurrentDisplayRecordID() {
   else {
     selectedRecordId.value = storeSelectedRecordId;
   }
+}
+
+// 刪除 Record
+async function deleteRecord(id) {
+  dialog_id.value = id;
+  warning_dialog.value = true;
+}
+
+// 確認刪除
+async function dialog_confirm() {
+
+  // 刪除 firestore 中的紀錄
+  await delete_userAnalysisData(login_status.value.user_info.uid, getCurrentAnalysisDatabasePath(props.analysisName), dialog_id.value);
+
+  // 更新當前選中呈現的 Record ID
+  selectedRecordId.value = null;
+
+  // 更新當前選中呈現的檔案表格
+  store.commit('analysis_history_data/set_current_display_record_id', null);
+
+  // 更新 Analysis 歷史列表
+  updateAnalysisHistoryRows();
+
+  // 更新當前選中呈現的 Record ID
+  updateCurrentDisplayRecordID();
+
+  // 刪除 firebase storage 中的檔案
+  await deleteUserAnalysisFile(login_status.value.user_info.uid, getCurrentAnalysisFilePath(props.analysisName), dialog_id.value);
+  await deleteUserAnalysisFile(login_status.value.user_info.uid, getResultStoragePath(props.analysisName), dialog_id.value);
+
+  warning_dialog.value = false;
 }
 
 // 掛載

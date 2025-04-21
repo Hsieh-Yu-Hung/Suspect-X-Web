@@ -37,33 +37,16 @@
         <div style="width: 50em;">
 
           <!-- APOE -->
-          <AnalysisHistoryPanel :analysisName="AnalysisNames.APOE" :style="{ display: currentDisplayProduct.value === AnalysisNames.APOE ? 'block' : 'none' }" />
-
-          <!-- FXS -->
-          <AnalysisHistoryPanel :analysisName="AnalysisNames.FXS" :style="{ display: currentDisplayProduct.value === AnalysisNames.FXS ? 'block' : 'none' }" />
-
-          <!-- SMA -->
-          <AnalysisHistoryPanel :analysisName="AnalysisNames.SMA" :style="{ display: currentDisplayProduct.value === AnalysisNames.SMA ? 'block' : 'none' }" />
-
-          <!-- HTD -->
-          <AnalysisHistoryPanel :analysisName="AnalysisNames.HTD" :style="{ display: currentDisplayProduct.value === AnalysisNames.HTD ? 'block' : 'none' }" />
-
-          <!-- MTHFR -->
-          <AnalysisHistoryPanel :analysisName="AnalysisNames.MTHFR" :style="{ display: currentDisplayProduct.value === AnalysisNames.MTHFR ? 'block' : 'none' }" />
-
-          <!-- NUDT15 -->
-          <AnalysisHistoryPanel :analysisName="AnalysisNames.NUDT15" :style="{ display: currentDisplayProduct.value === AnalysisNames.NUDT15 ? 'block' : 'none' }" />
-
-          <!-- SMAv4 -->
-          <AnalysisHistoryPanel :analysisName="AnalysisNames.SMAv4" :style="{ display: currentDisplayProduct.value === AnalysisNames.SMAv4 ? 'block' : 'none' }" />
-
-          <!-- THAL_BETA -->
-          <AnalysisHistoryPanel :analysisName="AnalysisNames.THAL_BETA" :style="{ display: currentDisplayProduct.value === AnalysisNames.THAL_BETA ? 'block' : 'none' }" />
-
-          <!-- THAL_ALPHA -->
-          <AnalysisHistoryPanel :analysisName="AnalysisNames.THAL_ALPHA" :style="{ display: currentDisplayProduct.value === AnalysisNames.THAL_ALPHA ? 'block' : 'none' }" />
+          <AnalysisHistoryPanel
+            :analysisName="analysisName"
+            :style="{ display: currentDisplayProduct.value === analysisName ? 'block' : 'none' }"
+            @updateTables="updateTables"
+            v-for="analysisName in Object.values(AnalysisNames)"
+            :key="analysisName"
+          />
 
         </div>
+
       </q-card-section>
 
     </q-card>
@@ -177,6 +160,12 @@ function updateCurrentDisplayProduct() {
   else {
     currentDisplayProduct.value = storeDisplayProduct;
   }
+}
+
+// 更新 Table Data
+function updateTables() {
+  inputTable.value.updateTables();
+  outputTable.value.updateTables();
 }
 
 // 掛載

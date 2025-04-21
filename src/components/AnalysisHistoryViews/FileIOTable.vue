@@ -99,24 +99,27 @@ const tableColumns = [
     label: 'File Name',
     field: 'fileName',
     align: 'center',
+    sortable: true,
   },
   {
     name: 'group',
     label: 'Group',
     field: 'group',
     align: 'center',
+    sortable: true,
   },
   {
     name: 'fileSize',
     label: 'File Size',
     field: 'fileSize',
     align: 'center',
+    sortable: true,
   },
   {
     name: 'fileURL',
     label: 'Download',
     field: 'fileURL',
-    align: 'center',
+    align: 'center'
   },
 ];
 
@@ -257,7 +260,9 @@ async function updateInputTableData(product) {
       const file_size = convertFileSizeToString(file_metadata.size);
       const file_url = await getFileDownloadURL(file.fullPath);
       const newRow = tableRow(file_name, Group, file_size, file_url);
-      tableData.value.push(newRow);
+      if (!tableData.value.some(row => row.id === newRow.id)) {
+        tableData.value.push(newRow);
+      }
     });
   }
 
@@ -370,7 +375,9 @@ async function updateOutputTableData(product) {
     const file_size = convertFileSizeToString(file_metadata.size);
     const file_url = await getFileDownloadURL(file);
     const newRow = tableRow(file_name, Group, file_size, file_url);
-    tableData.value.push(newRow);
+    if (!tableData.value.some(row => row.id === newRow.id)) {
+      tableData.value.push(newRow);
+    }
   }
 
   // 開啟 Loading
@@ -398,9 +405,24 @@ function clearTableData() {
   tableData.value = [];
 }
 
+// 更新 Table Data
+function updateTables(){
+  // 依照 Table Source 更新 Table Data
+  if (props.tableSource === 'input') {
+    updateInputTableData(selected_product.value);
+  }
+  else if (props.tableSource === 'output') {
+    updateOutputTableData(selected_product.value);
+  }
+  else {
+    console.error('Props Error: Invalid table source');
+  }
+}
+
 // Expose
 defineExpose({
   clearTableData,
+  updateTables,
 });
 
 // 掛載
@@ -410,31 +432,13 @@ onMounted(async () => {
   is_login.value = login_status.value.is_login;
   user_info.value = login_status.value.user_info;
 
-  // 依照 Table Source 更新 Table Data
-  if (props.tableSource === 'input') {
-    updateInputTableData(selected_product.value);
-  }
-  else if (props.tableSource === 'output') {
-    updateOutputTableData(selected_product.value);
-  }
-  else {
-    console.error('Props Error: Invalid table source');
-  }
+  // 更新 Table Data
+  updateTables();
 });
 
 // 監控 selected_record_id
 watch(selected_record_id, async () => {
-  // 依照 Table Source 更新 Table Data
-  if (props.tableSource === 'input') {
-    updateInputTableData(selected_product.value);
-  }
-  else if (props.tableSource === 'output') {
-    updateOutputTableData(selected_product.value);
-  }
-  else {
-    console.error('Props Error: Invalid table source');
-  }
-
+  updateTables();
 });
 
 </script>

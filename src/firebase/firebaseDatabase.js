@@ -595,6 +595,13 @@ export const getAnalysisResult = async (user_id, analysis_name, analysis_id=null
   }
 }
 
+// 刪除使用者分析資料
+export const delete_userAnalysisData = async (user_id, analysis_name, analysis_id) => {
+  const dataset = dataset_list.user_analysis;
+  const docRef = doc(collection(database, `${dataset}/${user_id}/${analysis_name}`), analysis_id);
+  await deleteDoc(docRef);
+}
+
 // 取得檔名並且移除附檔名
 export const simplifyFilePath = (file_path) => {
   if (!file_path) return '';

@@ -138,3 +138,31 @@ export const Storage = storage;
 export const getPATH_OF_DATA = () => {
   return PATH_OF_DATA;
 }
+
+// 刪除使用者分析檔案
+export const deleteUserAnalysisFile = async (user_id, analysis_name, analysis_id) => {
+  const folderPath = `${PATH_OF_DATA}/${user_id}/${analysis_name}/${analysis_id}`;
+  const folderRef = ref(storage, folderPath);
+
+  try {
+    // 列出資料夾中的所有檔案
+    const result = await listAll(folderRef);
+
+    // 刪除所有檔案
+    const deletePromises = result.items.map(item => deleteObject(item));
+    await Promise.all(deletePromises);
+
+    // 遞迴處理所有子資料夾
+    const subFolderPromises = result.prefixes.map(async (prefix) => {
+      const subResult = await listAll(prefix);
+      const subDeletePromises = subResult.items.map(item => deleteObject(item));
+      return Promise.all(subDeletePromises);
+    });
+
+    await Promise.all(subFolderPromises);
+  } catch (error) {
+    if (error.code !== 'storage/object-not-found') {
+      throw error;
+    }
+  }
+}
