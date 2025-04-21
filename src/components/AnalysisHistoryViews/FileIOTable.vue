@@ -141,9 +141,20 @@ const batchDownload = async () => {
 
     const zip = new JSZip();
     const downloadPromises = selected_files.value.map(async (file) => {
-      const response = await fetch(file.fileURL);
-      const blob = await response.blob();
-      zip.file(file.fileName, blob);
+      try {
+        // 從 URL 中提取檔案路徑
+        const url = new URL(file.fileURL);
+        const filePath = decodeURIComponent(url.pathname.split('/o/')[1].split('?')[0]);
+
+        // 使用 Firebase Storage SDK 下載檔案
+        const response = await getFileDownloadURL(filePath);
+        const result = await fetch(response);
+        const blob = await result.blob();
+        zip.file(file.fileName, blob);
+      } catch (error) {
+        console.error(`下載檔案 ${file.fileName} 時發生錯誤：`, error);
+        throw error;
+      }
     });
 
     await Promise.all(downloadPromises);
@@ -159,7 +170,7 @@ const batchDownload = async () => {
     console.error('下載檔案時發生錯誤：', error);
     $q.notify({
       type: 'negative',
-      message: '下載檔案時發生錯誤',
+      message: '下載檔案時發生錯誤，請確認您有足夠的權限存取這些檔案',
       position: 'top',
     });
   } finally {
