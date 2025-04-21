@@ -290,14 +290,14 @@
 
 <script setup>
 // 引入套件
-import { ref, watch, onMounted, computed } from 'vue';
+import { ref, watch, onMounted } from 'vue';
 import { useStore } from 'vuex';
 import { v4 as uuidv4 } from 'uuid';
 import { useRouter } from 'vue-router';
 import { useQuasar, QSpinnerFacebook } from 'quasar';
 
 // 導入 composable
-import { doc, getDoc, collection, getDocs } from 'firebase/firestore';
+import { doc, getDoc, collection, getDocs, deleteDoc } from 'firebase/firestore';
 import { deleteFile, listAllFilesInFolder } from '@/firebase/firebaseStorage';
 import { submitWorkflow } from '@/composables/submitWorkflow';
 import { updateGetUserInfo, isDevMode } from '@/composables/accessStoreUserInfo';
@@ -436,7 +436,8 @@ const THAL_BETA_RESULT = (sample_name, input_file, parameters, resultTable, qc_s
 
 // 更新 user database 的資料
 function updateDatabaseSampleList(new_sample_list) {
-  const data = {sample_list: new_sample_list};
+  const labelStr = history_options.value.find(h => h.value === currentAnalysisID.value.analysis_uuid).label;
+  const data = {sample_list: new_sample_list, analysis_label: labelStr};
   const setConfigName = currentAnalysisID.value.analysis_uuid;
   update_userAnalysisData(user_info.value.uid, databaseConfigPath, data, setConfigName);
 }
@@ -790,23 +791,28 @@ async function loadHistoryData() {
   // 取得所有文件
   const querySnapshot = await getDocs(collectionRef);
   const analysis_list = [];
+  let empty_analysis_index = [];
+  querySnapshot.forEach((doc, index) => {
 
-  querySnapshot.forEach((doc) => {
+    // 搜集空白的分析
+    const doc_data = doc.data();
+    if (doc_data.sample_list.length === 0) {
+      empty_analysis_index.push(index);
+    }
+
+    // 搜集有樣本的分析
     analysis_list.push({
-      label: doc.id,
+      label: doc_data.analysis_label,
       value: doc.id
     });
   });
 
-  // 更新 history options
-  analysis_list.forEach((analysis) => {
-    // 如果不在 history_options 中, 則加入
-    if (!history_options.value.some(h => h.value === analysis.value)) {
-      history_options.value.push({label: analysis.label, value: analysis.value});
-    }
+  // 將空白的分析移除
+  empty_analysis_index.forEach((index) => {
+    analysis_list.splice(index, 1);
   });
 
-  // 如果不在 history_options 中, 則加入
+  // 更新 history options
   analysis_list.forEach((analysis) => {
     if (!history_options.value.some(h => h.value === analysis.value)) {
       history_options.value.push({label: analysis.label, value: analysis.value});
@@ -829,6 +835,25 @@ async function loadTestingSamples(dataset) {
   sampleList_row.value = testing_sample_list.sample_list;
 }
 
+// 刪除空的分析
+async function deleteEmptyAnalysis() {
+  // 取得 database 中所有分析
+  const search_path = `${dataset_list.user_analysis}/${user_info.value.uid}/${databaseConfigPath}`;
+  const collectionRef = collection(Database, search_path);
+
+  // 取得所有文件
+  const querySnapshot = await getDocs(collectionRef);
+
+  // 刪除空的分析
+  querySnapshot.forEach(async (document) => {
+    const doc_data = document.data();
+    if (doc_data.sample_list.length === 0) {
+      const docRef = doc(Database, search_path, document.id);
+      await deleteDoc(docRef);
+    }
+  });
+}
+
 // 掛載時
 onMounted(async () => {
   // 取得使用者身份
@@ -839,6 +864,9 @@ onMounted(async () => {
   // 先嘗試取得當前的分析 ID, 如果沒有則建立新的分析 ID
   currentAnalysisID.value = store.getters['analysis_setting/getCurrentAnalysisID'];
   setAnalysisID(store, 'THAL_BETA');
+
+  // 刪除空的分析
+  await deleteEmptyAnalysis();
 
   // 載入 history 的資料
   history_options.value = [{label: currentAnalysisID.value.analysis_uuid, value: currentAnalysisID.value.analysis_uuid}];

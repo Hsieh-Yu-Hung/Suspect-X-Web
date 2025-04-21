@@ -87,7 +87,7 @@
 <script setup>
 
 // 導入模組
-import { onMounted, ref, computed } from 'vue';
+import { onMounted, ref } from 'vue';
 import { useQuasar } from 'quasar';
 import { useRouter } from 'vue-router';
 import { useStore } from 'vuex';
@@ -95,7 +95,6 @@ import { useStore } from 'vuex';
 // 導入模組 composable
 import { useValidateAccountStatus, updateGetUserInfo, isDevMode } from '@/composables/accessStoreUserInfo.js';
 import { getCurrentDisplayAnalysisID, getCurrentAnalysisResult } from '@/composables/checkAnalysisStatus.js';
-import { getUsers_from_firestore } from '@/firebase/firebaseDatabase';
 
 // 導入元件
 // (DEPRECATED) import SMAv4ReanalysePanel from '@/components/PreviewPageViews/SMAv4ReanalysePanel.vue';
@@ -152,19 +151,7 @@ const is_developer_mode = ref(false);
 // 管理 ResultViewSMAv4
 const ref_resultViewSMAv4 = ref(null);
 
-// 管理 SMAv4ReanalysePanel
-const ref_SMAv4ReanalysePanel = ref(null);
-
 /* Functions */
-
-const getUSE_CONFIG_NAME = computed(() => {
-  if (currentAnalysisResult.value){
-    return currentAnalysisResult.value.resultObj.USE_CONFIG_NAME;
-  }
-  else{
-    return "N/A";
-  }
-});
 
 // 更新 QC_PANEL_DISPLAY
 function updateQC_PANEL_DISPLAY(currentAnalysisResult){
@@ -208,15 +195,30 @@ function updateQC_PANEL_DISPLAY(currentAnalysisResult){
   }
 }
 
-// 重新分析 SMAv4
+/*
+// (DEPRECATED) 管理 SMAv4ReanalysePanel
+const ref_SMAv4ReanalysePanel = ref(null);
+
+// (DEPRECATED) 取得 SMAv4 的 USE_CONFIG_NAME
+const getUSE_CONFIG_NAME = computed(() => {
+  if (currentAnalysisResult.value){
+    return currentAnalysisResult.value.resultObj.USE_CONFIG_NAME;
+  }
+  else{
+    return "N/A";
+  }
+});
+
+// (DEPRECATED) SMAv4 重新分析
 function callReAnalysisSMAv4() {
   ref_resultViewSMAv4.value.reAnalysisSMAv4();
 }
 
-// 保存 Peak Settings
+// (DEPRECATED) 保存 SMAv4 Peak Settings
 function call_updatePeakSettings(newPeakSettings){
   ref_SMAv4ReanalysePanel.value.updatePeakSettings(newPeakSettings);
 }
+*/
 
 // 掛載時
 onMounted(async () => {

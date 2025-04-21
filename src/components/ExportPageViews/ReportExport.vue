@@ -62,6 +62,7 @@ import parseExportData from '@/composables/parseExportData.js';
 import parseInputExport from '@/composables/parseInputExport.js';
 import { Consequence } from '@/composables/useInterpretClinvar.js';
 import ExcelJS from 'exceljs';
+import { uploadFileToStorage } from '@/firebase/firebaseStorage';
 
 // 使用者身份
 const is_login = ref(false);
@@ -219,18 +220,34 @@ const getProductExportInfo = (product, reagent) => {
 };
 
 // 修改 runExportJSON 函數以直接下載 JSON 檔案
-function runExportJSON(exportObj) {
-  const jsonData = JSON.stringify(exportObj);
-  const blob = new Blob([jsonData], { type: 'application/json' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = `${exportObj.result.testing.sample.id}_${exportObj.product.name}.json`;
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  URL.revokeObjectURL(url);
-  return Promise.resolve({ isExported: true });
+async function runExportJSON(exportObj) {
+  try {
+    const jsonData = JSON.stringify(exportObj);
+    const blob = new Blob([jsonData], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${exportObj.result.testing.sample.id}_${exportObj.product.name}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    // 上傳到 Firebase Storage
+    const file = new File([blob], `${exportObj.result.testing.sample.id}_${exportObj.product.name}.json`, { type: 'application/json' });
+    const upload_path = `${user_info.value.uid}/${convertStorageFolderName(exportObj.product.name)}/${currentAnalysisResult.value.analysis_id}/${exportObj.result.testing.sample.id}_${exportObj.product.name}.json`;
+    const uploadResult = await uploadFileToStorage(file, upload_path);
+    if (uploadResult.status === 'error') {
+      console.error('Failed to upload file to Firebase Storage:', uploadResult.message);
+      $q.notify({
+        type: 'negative',
+        message: `Failed to upload file to Firebase Storage: ${uploadResult.message}`,
+      });
+    }
+    return Promise.resolve({ isExported: true });
+  } catch (err) {
+    console.error(err);
+    return Promise.reject({ isExported: false });
+  }
 }
 
 // 解析 ThalBeta 的 row_content
@@ -321,6 +338,34 @@ const addBetaThalTables = (workbook, result, index) => {
     { width: 30 },  // I 欄 - Disease
   ];
 };
+
+// 轉換firebase storage 存檔資料夾名稱
+const convertStorageFolderName = (product) => {
+  switch (product) {
+    case 'APOE_AD':
+      return 'APOE_results';
+    case 'FXSv1':
+      return 'FXS_results';
+    case 'FXSv2':
+      return 'FXS_results';
+    case 'HTD':
+      return 'HTD_results';
+    case 'MTHFR_c677':
+      return 'MTHFR_results';
+    case 'MTHFR_c677_c1298':
+      return 'MTHFR_results';
+    case 'NUDT15':
+      return 'NUDT15_results';
+    case 'SMA':
+      return 'SMA_results';
+    case 'SMAv4':
+      return 'SMAv4_results';
+    case 'THAL_ALPHA':
+      return 'THAL_ALPHA_results';
+    case 'THAL_BETA':
+      return 'THAL_BETA_results';
+  }
+}
 
 // 修改 downloadReportFile 函數以使用 ExcelJS
 async function downloadReportFile(data) {
@@ -492,9 +537,11 @@ async function downloadReportFile(data) {
       });
     });
 
-    // 下載 Excel 檔案
+    // 產生 Excel 檔案的 buffer
     const buffer = await workbook.xlsx.writeBuffer();
     const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+
+    // 下載 Excel 檔案
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
@@ -503,6 +550,19 @@ async function downloadReportFile(data) {
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
+
+    // 上傳到 Firebase Storage
+    const file = new File([blob], exportFilename, { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+    const upload_path = `${user_info.value.uid}/${convertStorageFolderName(product)}/${currentAnalysisResult.value.analysis_id}/${exportFilename}`;
+    const uploadResult = await uploadFileToStorage(file, upload_path);
+
+    if (uploadResult.status === 'error') {
+      console.error('Failed to upload file to Firebase Storage:', uploadResult.message);
+      $q.notify({
+        type: 'negative',
+        message: `Failed to upload file to Firebase Storage: ${uploadResult.message}`,
+      });
+    }
 
     return Promise.resolve(savePath);
   } catch (err) {

@@ -120,9 +120,11 @@ export const LOG_DATA = (id, log_level, log_message, log_time, log_source, log_u
 // 定義分析結果資料結構
 export const ANALYSIS_RESULT = (analysis_name, analysis_id, config, control_ids, qc_status, qc_message, resultObj, exportResult) => {
   const current_time = moment().format('YYYY-MM-DD HH:mm:ss');
+  const analysis_label = analysis_id;
   const analysisRes = {
     analysis_name: analysis_name,
     analysis_id: analysis_id,
+    analysis_label: analysis_label,
     config: config,
     control_ids: control_ids,
     qc_status: qc_status,
@@ -533,7 +535,7 @@ export const update_userAnalysisData = async (user_id, subDir, data, name) => {
 }
 
 // 取得 database 中分析結果
-export const getAnalysisResult = async (user_id, analysis_name, analysis_id) => {
+export const getAnalysisResult = async (user_id, analysis_name, analysis_id=null) => {
 
   // 用 analysis_name 決定路徑名稱
   const get_db_path = (analysis_name) => {
@@ -554,19 +556,43 @@ export const getAnalysisResult = async (user_id, analysis_name, analysis_id) => 
         return 'sma_v4_result';
       case 'THAL_BETA':
         return 'thalbeta_result';
+      case 'THAL_ALPHA':
+        return 'thalalpha_result';
       default:
         return analysis_name;
     }
   }
 
   const db_path = get_db_path(analysis_name);
-  const doc_ref = doc(collection(database, `${dataset_list.user_analysis}/${user_id}/${db_path}`), analysis_id);
-  const data = await getDoc(doc_ref).then((snapshot) => {
-    return snapshot.data();
-  }).catch((error) => {
-    console.error(` Get analysis result failed, ID: ${analysis_id}, Error: ${error}`);
-  });
-  return data;
+
+  if (!analysis_id) {
+    // 如果沒有提供 analysis_id，返回所有文檔
+    const collectionRef = collection(database, `${dataset_list.user_analysis}/${user_id}/${db_path}`);
+    try {
+      const querySnapshot = await getDocs(collectionRef);
+      const results = [];
+      querySnapshot.forEach((doc) => {
+        results.push({
+          id: doc.id,
+          ...doc.data()
+        });
+      });
+      return results;
+    } catch (error) {
+      console.error(` Get analysis results failed, Error: ${error}`);
+      return null;
+    }
+  } else {
+    // 如果提供了 analysis_id，返回特定文檔
+    const doc_ref = doc(collection(database, `${dataset_list.user_analysis}/${user_id}/${db_path}`), analysis_id);
+    try {
+      const snapshot = await getDoc(doc_ref);
+      return snapshot.data();
+    } catch (error) {
+      console.error(` Get analysis result failed, ID: ${analysis_id}, Error: ${error}`);
+      return null;
+    }
+  }
 }
 
 // 取得檔名並且移除附檔名
@@ -680,6 +706,7 @@ export const updateRoleDatabase = async (ROLE) => {
     }
   });
 }
+
 // 加入角色資料到 firestore
 export const addRoleDatabase = async (ROLE) => {
   addData(dataset_list.role_list, ROLE, ROLE.role_name).then((result) => {

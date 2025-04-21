@@ -1,6 +1,6 @@
 // 導入會用到的功能
 import app from "./firebaseApp";
-import { getStorage, ref, uploadBytesResumable, getDownloadURL, listAll, deleteObject } from "firebase/storage";
+import { getStorage, ref, uploadBytesResumable, getDownloadURL, listAll, deleteObject, getReference, getMetadata } from "firebase/storage";
 
 // 取得 storage
 const storage = getStorage(app);
@@ -79,6 +79,13 @@ export const listAllFilesInFolder = async (folder_path) => {
   return result.items;
 }
 
+// 取得路徑內資料夾列表
+export const listAllFoldersInPath = async (path) => {
+  const folderRef = ref(storage, `${PATH_OF_DATA}/${path}`);
+  const result = await listAll(folderRef);
+  return result.prefixes;
+}
+
 // 刪除資料夾內的檔案
 export const deleteFile = async (file_path) => {
   // 設定執行結果
@@ -108,6 +115,20 @@ export const deleteFile = async (file_path) => {
   }
 
   return execute_result;
+}
+
+// 取得檔案 metadata
+export const getFileMetadata = async (file_path) => {
+  const fileRef = ref(storage, file_path);
+  const metadata = await getMetadata(fileRef);
+  return metadata;
+}
+
+// 取得下載連結
+export const getFileDownloadURL = async (file_path) => {
+  const fileRef = ref(storage, file_path);
+  const url = await getDownloadURL(fileRef);
+  return url;
 }
 
 // 導出 storage

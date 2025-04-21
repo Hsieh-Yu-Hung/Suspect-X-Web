@@ -108,7 +108,7 @@
         </div>
 
         <!-- 顯示 Basecalling peaks-->
-        <div ref="basecall_peaks_plot_container" id="basecall_peaks" class="row flex flex-center" style="height:40em; width: 100%;"></div>
+        <div ref="basecall_peaks_plot_container" id="basecall_peaks" class="row flex flex-center" :style="expandBaseCallViewPlot ? 'height: 40em; width: 100%;' : 'height: 100%; width: 100%;'"></div>
 
         <!-- 沒有圖顯示提示 -->
         <div ref="fail_to_plot_hint" class="row flex flex-center text-subtitle1 text-red-7 text-weight-bold" style="display: none;">
@@ -499,6 +499,7 @@ const plot_peak_data = computed(() => store.getters["Beta_thal_analysis_data/get
 const plot_basecall_data = computed(() => store.getters["Beta_thal_analysis_data/getPlotBasecallData"]);
 const basecall_peaks_plot_container = ref(null);
 const fail_to_plot_hint = ref(null);
+const expandBaseCallViewPlot = ref(false);
 
 // 取得當前顯示圖表的 Alignment Score
 const getCurrentDisplayAlign1Score = computed(() => {
@@ -1055,8 +1056,20 @@ watch(currentSelectedSampleIndex, () => {
 
 // 監控 currentDisplayBasecallFile 的變化
 watch(currentDisplayBasecallFile, (newVal, oldVal) => {
+
+  const canPlot = () => {
+    if (newVal !== oldVal &&  plot_peak_data.value[currentSelectedSampleName.value]) {
+      expandBaseCallViewPlot.value = true;
+      return true;
+    }
+    else {
+      expandBaseCallViewPlot.value = false;
+      return false;
+    }
+  }
+
   // 繪製互動式圖表
-  if (newVal !== oldVal) {
+  if (canPlot()) {
     const selected_file_name = currentDisplayBasecallFile.value.split('.')[0];
     const toPlotPeakData = plot_peak_data.value[currentSelectedSampleName.value][selected_file_name];
     const toPlotBasecallData = plot_basecall_data.value[currentSelectedSampleName.value][selected_file_name];
