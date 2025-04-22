@@ -303,7 +303,7 @@ import { submitWorkflow } from '@/composables/submitWorkflow';
 import { updateGetUserInfo, isDevMode } from '@/composables/accessStoreUserInfo';
 import { CATEGORY_LIST, upload_files_to_storage } from '@/composables/storageManager';
 import { setAnalysisID } from '@/composables/checkAnalysisStatus';
-import { ANALYSIS_RESULT, EXPORT_RESULT, update_userAnalysisData, dataset_list, Database, getUsers_from_firestore } from '@/firebase/firebaseDatabase';
+import { ANALYSIS_RESULT, EXPORT_RESULT, update_userAnalysisData, dataset_list, Database } from '@/firebase/firebaseDatabase';
 
 // 引入元件
 import WarningDialog from '@/components/WarningDialog.vue';

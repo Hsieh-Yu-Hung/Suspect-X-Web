@@ -353,7 +353,9 @@ async function updateInputTableData(product) {
         const file_size = convertFileSizeToString(file_metadata.size);
         const file_url = await getFileDownloadURL(file.fullPath);
         const newRow = tableRow(file_name, 'sanger', file_size, file_url);
-        tableData.value.push(newRow);
+        if (!tableData.value.some(row => row.id === newRow.id)) {
+          tableData.value.push(newRow);
+        }
       });
       break;
 

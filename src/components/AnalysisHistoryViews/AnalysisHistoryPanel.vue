@@ -485,6 +485,11 @@ async function dialog_confirm() {
   // 刪除 firestore 中的紀錄
   await delete_userAnalysisData(login_status.value.user_info.uid, getCurrentAnalysisDatabasePath(props.analysisName), dialog_id.value);
 
+  // 如果是 betaThal 則刪除 betaThal_import_config
+  if (props.analysisName === 'THAL_BETA') {
+    await delete_userAnalysisData(login_status.value.user_info.uid, "thalbeta_import_config", dialog_id.value);
+  }
+
   // 更新當前選中呈現的 Record ID
   selectedRecordId.value = null;
 

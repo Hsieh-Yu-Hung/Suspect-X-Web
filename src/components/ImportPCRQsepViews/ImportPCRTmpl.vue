@@ -9,11 +9,26 @@
 
     <!-- 標題 -->
     <q-card-section>
-      <div class="text-h5 text-uppercase text-bold text-blue-grey-7">
-        Import
-      </div>
-      <div class="text-subtitle1">
-        Please select the corresponding control result and sample result.
+      <div class="flex justify-between items-center">
+        <div>
+          <div class="text-h5 text-uppercase text-bold text-blue-grey-7">
+            Import
+          </div>
+          <div class="text-subtitle1">
+            Please select the corresponding control result and sample result.
+          </div>
+        </div>
+        <!-- DevMode 開關-->
+        <div style="margin-right: 3em;" v-if="is_dev_mode">
+          <q-toggle
+            v-model="switch_dev_mode"
+            :label="switch_dev_mode"
+            true-value="DevMode: ON"
+            false-value="DevMode: OFF"
+            size="lg"
+            color="pink-7"
+          />
+        </div>
       </div>
     </q-card-section>
 
@@ -21,39 +36,54 @@
     <q-card-section>
       <q-form class="q-gutter-sm" @submit="onSubmit">
 
-        <!-- 控制組檔案 -->
-        <q-file
-          v-model="controlSampleFile"
-          use-chips
-          color="deep-orange-6"
-          stack-label
-          label="Control sample"
-          :rules="[(val) => val || `Please select ONE control sample`]"
-          accept=".xlsx"
-          lazy-rules
-        >
-          <template v-slot:before>
-            <q-icon name="mdi-microsoft-excel" />
-          </template>
-        </q-file>
+        <div class="row flex justify-between items-flex-start" style="flex-direction: row; height: 100%;">
 
-        <!-- 測試組檔案 -->
-        <q-file
-          v-model="testingSampleFile"
-          multiple
-          append
-          use-chips
-          color="deep-orange-6"
-          stack-label
-          label="Testing samples"
-          :rules="[(val) => (val && val.length != 0) || `Please select at least ONE testing sample`]"
-          accept=".xlsx"
-          lazy-rules
-        >
-          <template v-slot:before>
-            <q-icon name="mdi-microsoft-excel" />
-          </template>
-        </q-file>
+          <!-- 上傳檔案區 -->
+          <div class="col">
+            <!-- 控制組檔案 -->
+            <q-file
+              v-model="controlSampleFile"
+              use-chips
+              color="deep-orange-6"
+              stack-label
+              label="Control sample"
+              :rules="[(val) => val || `Please select ONE control sample`]"
+              accept=".xlsx"
+              lazy-rules
+            >
+              <template v-slot:before>
+                <q-icon name="mdi-microsoft-excel" />
+              </template>
+            </q-file>
+
+            <!-- 測試組檔案 -->
+            <q-file
+              v-model="testingSampleFile"
+              multiple
+              append
+              use-chips
+              color="deep-orange-6"
+              stack-label
+              label="Testing samples"
+              :rules="[(val) => (val && val.length != 0) || `Please select at least ONE testing sample`]"
+              accept=".xlsx"
+              lazy-rules
+            >
+              <template v-slot:before>
+                <q-icon name="mdi-microsoft-excel" />
+              </template>
+            </q-file>
+          </div>
+
+          <!-- 載入測試資料集 -->
+          <div class="flex flex-start" style="background-color: rgba(221, 232, 243, 0.2); margin: 1em; flex-direction: column; padding: 1em; border-radius: 1em;" :style="{ 'display': is_dev_mode && switch_dev_mode === 'DevMode: ON' ? 'flex' : 'none' }">
+            <span class="text-h6 text-bold text-blue-grey-7" style="margin-bottom: 1em;">Testing Datasets</span>
+            <q-btn flat dense label="TEST-Set1" color="indigo-7" icon="mdi-download" @click="loadTestingDataset('TEST-Set1')" />
+            <q-btn flat dense label="TEST-Set2" color="indigo-7" icon="mdi-download" @click="loadTestingDataset('TEST-Set2')" />
+            <q-btn flat dense label="TEST-Set3" color="indigo-7" icon="mdi-download" @click="loadTestingDataset('TEST-Set3')" />
+          </div>
+
+        </div>
 
         <!-- 分析按鈕 -->
         <div class="row q-mt-lg justify-end">
@@ -76,7 +106,7 @@ import { useRouter } from 'vue-router';
 
 // 導入 composable
 import { submitWorkflow } from '@/composables/submitWorkflow';
-import { updateGetUserInfo } from '@/composables/accessStoreUserInfo';
+import { updateGetUserInfo, isDevMode } from '@/composables/accessStoreUserInfo';
 import { CATEGORY_LIST, upload_files_to_storage } from '@/composables/storageManager';
 import { setAnalysisID } from '@/composables/checkAnalysisStatus';
 import { ANALYSIS_RESULT, EXPORT_RESULT, update_userAnalysisData, simplifyFilePath } from '@/firebase/firebaseDatabase';
@@ -108,6 +138,10 @@ const HTD_RESULT = (standard_control_data, result_and_data, errMsg) => {
 const store = useStore();
 const router = useRouter();
 const $q = useQuasar();
+
+// DevMode 開關
+const is_dev_mode = ref(false);
+const switch_dev_mode = ref("DevMode: ON");
 
 // props
 const props = defineProps({
@@ -449,8 +483,13 @@ async function uploadFile(files, type) {
   $q.loading.hide();
 }
 
+// 載入測試資料集
+async function loadTestingDataset(dataset_name) {
+  console.log("loadTestingDataset", dataset_name);
+}
+
 // 掛載時
-onMounted(() => {
+onMounted(async () => {
   // 取得使用者身份
   const { login_status } = updateGetUserInfo();
   is_login.value = login_status.value.is_login;
@@ -462,6 +501,9 @@ onMounted(() => {
 
   // 初始化 inputss
   initInputs();
+
+  // 取得當前使用者的權限動作列表
+  is_dev_mode.value = await isDevMode();
 });
 
 // 監聽 controlSampleFile
