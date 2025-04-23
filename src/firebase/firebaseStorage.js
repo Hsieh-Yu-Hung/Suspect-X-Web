@@ -7,15 +7,28 @@ const storage = getStorage(app);
 
 // 分析 Data 存放區
 const PATH_OF_DATA = 'analysis_data';
+const PATH_OF_TEST_DATASET = 'testing_data';
 
 // 上傳檔案到 Storage (接受 input 檔案, 放到使用者的 firebase storage 中)
-export const uploadFileToStorage = async (file, upload_path) => {
+export const uploadFileToStorage = async (file, upload_path, base=null) => {
+
+  // 取得 base path
+  const getBasePath = () => {
+    switch (base) {
+      case 'analysis':
+        return PATH_OF_DATA;
+      case 'test':
+        return PATH_OF_TEST_DATASET;
+      default:
+        return PATH_OF_DATA;
+    }
+  }
 
   // 設定執行結果
   let execute_result = {status: 'pending', message: 'Waiting for upload', file: file.name, storage_path: ''};
 
   // 設定 storage_path
-  const storage_path = `${PATH_OF_DATA}/${upload_path}`;
+  const storage_path = `${getBasePath()}/${upload_path}`;
   execute_result.storage_path = storage_path; // 設定 storage_path回傳
 
   // 檢查檔案是否存在
