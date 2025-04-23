@@ -107,6 +107,29 @@ const exportOptions = [
   { label: 'Excel', value: 'xlsx_enUS'},
 ];
 
+// 取得分析產品名稱
+const getAnalysisProductName = (analysis_name) => {
+  switch (analysis_name) {
+    case 'APOE':
+      return 'apoe-import';
+    case 'MTHFR':
+      return 'mthfr-import';
+    case 'NUDT15':
+      return 'nudt15';
+    case 'FXS':
+      return 'fx';
+    case 'HTD':
+      return 'hd';
+    case 'SMA':
+      return 'sma';
+    case 'THAL_BETA':
+      return 'thal-import-beta';
+    default:
+      return null;
+  }
+}
+
+
 // 取得產品匯出資訊
 const getProductExportInfo = (product, reagent) => {
   let exportSample;
@@ -609,7 +632,7 @@ const onExport = async () => {
 
     try {
       const { exportSample, productExport } = getProductExportInfo(
-        currentSettingProps.value.product,
+        currentAnalysisResult.value && currentSettingProps.value.instrument !== ""  && currentSettingProps.value.reagent !== "" ? getAnalysisProductName(currentAnalysisResult.value.analysis_name) : currentSettingProps.value.product,
         currentSettingProps.value.reagent,
       );
 
