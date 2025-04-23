@@ -163,7 +163,7 @@ def parse_input_analysis_lims(subject_file):
                 continue
 
             # 生成 ID
-            id_str = re.sub(r'/', '', str(s['orderingDate'])) + str(s['serialId'])
+            id_str = str(s['serialId'])
 
             # 轉換資料格式
             subject_info[id_str] = {
