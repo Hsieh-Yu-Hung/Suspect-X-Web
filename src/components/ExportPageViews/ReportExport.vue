@@ -64,6 +64,9 @@ import { Consequence } from '@/composables/useInterpretClinvar.js';
 import ExcelJS from 'exceljs';
 import { uploadFileToStorage } from '@/firebase/firebaseStorage';
 
+// 產品列表
+const productList = ['APOE_AD', 'FXSv1', 'FXSv2', 'HTD', 'MTHFR_c677', 'MTHFR_c677_c1298', 'NUDT15', 'SMA', 'SMAv4', 'THAL_ALPHA', 'THAL_BETA'];
+
 // 使用者身份
 const is_login = ref(false);
 const user_info = ref(null);
@@ -232,17 +235,21 @@ async function runExportJSON(exportObj) {
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
-    // 上傳到 Firebase Storage
-    const file = new File([blob], `${exportObj.result.testing.sample.id}_${exportObj.product.name}.json`, { type: 'application/json' });
-    const upload_path = `${user_info.value.uid}/${convertStorageFolderName(exportObj.product.name)}/${currentAnalysisResult.value.analysis_id}/${exportObj.result.testing.sample.id}_${exportObj.product.name}.json`;
-    const uploadResult = await uploadFileToStorage(file, upload_path);
-    if (uploadResult.status === 'error') {
-      console.error('Failed to upload file to Firebase Storage:', uploadResult.message);
-      $q.notify({
-        type: 'negative',
-        message: `Failed to upload file to Firebase Storage: ${uploadResult.message}`,
-      });
+
+    // 上傳到 Firebase Storage (如果 product 在 productList 中)
+    if (productList.includes(exportObj.product.name)) {
+      const file = new File([blob], `${exportObj.result.testing.sample.id}_${exportObj.product.name}.json`, { type: 'application/json' });
+      const upload_path = `${user_info.value.uid}/${convertStorageFolderName(exportObj.product.name)}/${currentAnalysisResult.value.analysis_id}/${exportObj.result.testing.sample.id}_${exportObj.product.name}.json`;
+      const uploadResult = await uploadFileToStorage(file, upload_path);
+      if (uploadResult.status === 'error') {
+        console.error('Failed to upload file to Firebase Storage:', uploadResult.message);
+        $q.notify({
+          type: 'negative',
+          message: `Failed to upload file to Firebase Storage: ${uploadResult.message}`,
+        });
+      }
     }
+
     return Promise.resolve({ isExported: true });
   } catch (err) {
     console.error(err);
@@ -366,6 +373,7 @@ const convertStorageFolderName = (product) => {
       return 'THAL_BETA_results';
   }
 }
+
 
 // 修改 downloadReportFile 函數以使用 ExcelJS
 async function downloadReportFile(data) {
@@ -551,17 +559,19 @@ async function downloadReportFile(data) {
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
 
-    // 上傳到 Firebase Storage
-    const file = new File([blob], exportFilename, { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-    const upload_path = `${user_info.value.uid}/${convertStorageFolderName(product)}/${currentAnalysisResult.value.analysis_id}/${exportFilename}`;
-    const uploadResult = await uploadFileToStorage(file, upload_path);
+    // 上傳到 Firebase Storage (如果 product 在 productList 中)
+    if (productList.includes(product)) {
+      const file = new File([blob], exportFilename, { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+      const upload_path = `${user_info.value.uid}/${convertStorageFolderName(product)}/${currentAnalysisResult.value.analysis_id}/${exportFilename}`;
+      const uploadResult = await uploadFileToStorage(file, upload_path);
 
-    if (uploadResult.status === 'error') {
-      console.error('Failed to upload file to Firebase Storage:', uploadResult.message);
-      $q.notify({
-        type: 'negative',
-        message: `Failed to upload file to Firebase Storage: ${uploadResult.message}`,
-      });
+      if (uploadResult.status === 'error') {
+        console.error('Failed to upload file to Firebase Storage:', uploadResult.message);
+        $q.notify({
+          type: 'negative',
+          message: `Failed to upload file to Firebase Storage: ${uploadResult.message}`,
+        });
+      }
     }
 
     return Promise.resolve(savePath);
@@ -692,13 +702,33 @@ const onExport = async () => {
           }),
           {
             product: productExport,
-            instrument: currentAnalysisResult.value.config.instrument,
-            analyzer: [ "ACCUiN BioTech Analyzer" ],
-            reagent: currentAnalysisResult.value.config.reagent,
-            assessmentTime: currentAnalysisResult.value.analysis_time,
-            controlId: Array.isArray(currentAnalysisResult.value.control_ids)
-              ? currentAnalysisResult.value.control_ids.join(', ')
-              : currentAnalysisResult.value.control_ids,
+            instrument: currentSettingProps.value.instrument !== "" &&
+              currentSettingProps.value.reagent !== "" ?
+              (currentAnalysisResult.value ?
+                currentAnalysisResult.value.config.instrument :
+                'N/A'
+              ) : 'NA',
+            analyzer: ["ACCUiN BioTech Analyzer"],
+            reagent: currentSettingProps.value.instrument !== "" &&
+              currentSettingProps.value.reagent !== "" ?
+              (currentAnalysisResult.value ?
+                currentAnalysisResult.value.config.reagent :
+                'N/A'
+              ) : 'NA',
+            assessmentTime: currentSettingProps.value.instrument !== "" &&
+              currentSettingProps.value.reagent !== "" ?
+              (currentAnalysisResult.value ?
+                currentAnalysisResult.value.analysis_time :
+                'N/A'
+              ) : 'NA',
+            controlId: currentSettingProps.value.instrument !== "" &&
+              currentSettingProps.value.reagent !== "" ?
+              (currentAnalysisResult.value ?
+                Array.isArray(currentAnalysisResult.value.control_ids) ?
+                  currentAnalysisResult.value.control_ids.join(', ') :
+                  currentAnalysisResult.value.control_ids :
+                'N/A'
+              ) : 'NA',
             labName: subjectOrder.value.labName,
             issuedPhysician: subjectOrder.value.issuedPhysician,
             issuedContact: subjectOrder.value.issuedContact,
