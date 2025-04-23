@@ -10,7 +10,7 @@ const PATH_OF_DATA = 'analysis_data';
 const PATH_OF_TEST_DATASET = 'testing_data';
 
 // 上傳檔案到 Storage (接受 input 檔案, 放到使用者的 firebase storage 中)
-export const uploadFileToStorage = async (file, upload_path, base=null) => {
+export const uploadFileToStorage = async (file, upload_path, base=null, override=false) => {
 
   // 取得 base path
   const getBasePath = () => {
@@ -34,9 +34,18 @@ export const uploadFileToStorage = async (file, upload_path, base=null) => {
   // 檢查檔案是否存在
   const file_exist = await checkFileExistInStorage(upload_path);
   if (file_exist) {
-    execute_result.status = 'skipped';
-    execute_result.message = `File already exists skip upload.`;
-    return execute_result;
+    if (!override) {
+      execute_result.status = 'skipped';
+      execute_result.message = `File already exists skip upload.`;
+      return execute_result;
+    }
+    else {
+      execute_result.status = 'Overwrite';
+      execute_result.message = `File already exists, overwrite upload.`;
+      console.log("Overwrite-file", storage_path);
+      // 若要覆寫則先刪除檔案
+      await deleteFile(storage_path);
+    }
   }
 
   // 取得 storageRef
@@ -114,9 +123,9 @@ export const deleteFile = async (file_path) => {
 
     // 刪除檔案
     await deleteObject(fileRef);
-
     execute_result.status = 'success';
-    execute_result.message = 'Delete file from storage success';
+    execute_result.message = "Delete-file from storage success";
+
   } catch (error) {
     execute_result.status = 'error';
     execute_result.message = `Error: ${error}`;

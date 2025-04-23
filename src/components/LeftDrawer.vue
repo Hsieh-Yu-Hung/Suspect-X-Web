@@ -2,7 +2,6 @@
   <div class="drawer-content">
     <q-btn glossy label="Debug" @click="debug" icon="bug_report" />
     <q-btn glossy label="USER" @click="print_user_info" icon="account_circle" />
-    <q-btn glossy label="TEST-DEV" @click="console.log('TEST-DEV')" icon="developer_mode" :style="isDevMode ? 'display: block;' : 'display: none;'" />
   </div>
 </template>
 
