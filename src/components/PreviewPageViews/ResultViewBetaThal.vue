@@ -27,6 +27,13 @@
               </q-th>
             </template>
 
+            <!-- 設定 Result 的顯示 -->
+            <template v-slot:body-cell-result="props">
+              <q-td :props="props">
+                {{ props.row.result.split(separator)[0] }}
+              </q-td>
+            </template>
+
             <!-- 設定 QC Status 的顯示 -->
             <template v-slot:body-cell-qcStatus="props">
               <q-td :props="props">
@@ -144,7 +151,7 @@
               Result:
             </div>
             <div class="col text-h5 text-bold text-subtitle2 text-left" style="margin-block: 1em;">
-              {{ displayResult }}
+              {{ displayResult.split(separator)[0] }}
             </div>
           </div>
 
@@ -204,8 +211,8 @@
                 <q-chip
                   v-for="item in props.row.ClinSigList"
                     :key="item"
-                    :label="item"
-                    :color="ClinicalSignificance[item.replaceAll(' ', '_')].color"
+                    :label="item.split(separator)[0]"
+                    :color="ClinicalSignificance[item.split(separator)[0].replaceAll(' ', '_')].color"
                     text-color="white"
                   />
                 </div>
@@ -544,7 +551,11 @@ function updateSummaryRows() {
 
       // 計算嚴重度(取最嚴重)
       if (row.ClinSigList.length > 0) {
-        const severity = row.ClinSigList.map(item => ClinicalSignificance[item.replaceAll(' ', '_')].severity_level);
+        const severity = row.ClinSigList.map(items => {
+          const item = items.split(separator);
+          const severity_level = item.map(i => ClinicalSignificance[i.replaceAll(' ', '_')].severity_level);
+          return Math.max(...severity_level);
+        });
         row["Severity"] = Math.max(...severity);
       }
       else {
