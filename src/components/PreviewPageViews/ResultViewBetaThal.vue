@@ -209,8 +209,8 @@
               <q-td :props="props">
                 <div style="display: flex; flex-direction: column; align-items: center; gap: 0.5em;">
                 <q-chip
-                  v-for="item in props.row.ClinSigList"
-                    :key="item"
+                  v-for="(item, index) in props.row.ClinSigList"
+                    :key="index"
                     :label="item.split(separator)[0]"
                     :color="ClinicalSignificance[item.split(separator)[0].replaceAll(' ', '_')].color"
                     text-color="white"
@@ -965,6 +965,8 @@ onMounted(async () => {
     return;
   }
 
+  console.log("currentAnalysisResult", currentAnalysisResult.value);
+
   // 更新 summaryRows
   updateSummaryRows();
 
@@ -1021,7 +1023,11 @@ watch(currentSelectedSampleIndex, () => {
 
       // 計算嚴重度(取最嚴重)
       if (row.ClinSigList.length > 0) {
-        const severity = row.ClinSigList.map(item => ClinicalSignificance[item.replaceAll(' ', '_')].severity_level);
+        const severity = row.ClinSigList.map(items => {
+          const item = items.split(separator);
+          const severity_level = item.map(i => ClinicalSignificance[i.replaceAll(' ', '_')].severity_level);
+          return Math.max(...severity_level);
+        });
         row["Severity"] = Math.max(...severity);
       }
       else {
