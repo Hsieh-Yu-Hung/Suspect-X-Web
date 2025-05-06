@@ -129,7 +129,7 @@ const other_section = ref(null);
 const displayAdmin = ref(false);
 
 // 目前選取的頁面
-const current_tab = ref('tab_permissions');
+const current_tab = ref('tab_other');
 // router
 const router = useRouter();
 

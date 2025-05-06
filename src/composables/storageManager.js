@@ -19,11 +19,11 @@ const CATEGORY_LIST = {
 export { CATEGORY_LIST };
 
 // 定義一個輔助函數來處理上傳的重試邏輯
-async function uploadWithRetry(file, upload_path, retries = 3, timeout = 5000) {
+async function uploadWithRetry(file, upload_path, retries = 3, timeout = 5000, override=false) {
   for (let attempt = 1; attempt <= retries; attempt++) {
     try {
       const response = await Promise.race([
-        uploadFileToStorage(file, upload_path),
+        uploadFileToStorage(file, upload_path, null, override),
         new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), timeout))
       ]);
       return response;
@@ -38,7 +38,7 @@ async function uploadWithRetry(file, upload_path, retries = 3, timeout = 5000) {
 }
 
 // 上傳檔案到 storage
-export async function upload_files_to_storage(file, user_id=null, category=CATEGORY_LIST.tmp, analysis_uuid=null, sub_dir=null) {
+export async function upload_files_to_storage(file, user_id=null, category=CATEGORY_LIST.tmp, analysis_uuid=null, sub_dir=null, override=false) {
 
   // 紀錄狀態
   let execute_result = {status: 'pending', message: 'Waiting for upload', file: '', storage_path: '', analysis_uuid: analysis_uuid};
@@ -62,7 +62,7 @@ export async function upload_files_to_storage(file, user_id=null, category=CATEG
         : `${userLayer}/${categoryLayer}/${file.name}`;
 
     try {
-      const response = await uploadWithRetry(file, upload_path);
+      const response = await uploadWithRetry(file, upload_path, 3, 5000, override);
       execute_result.status = response.status;
       execute_result.storage_path = response.storage_path;
       execute_result.message = response.message;
@@ -93,7 +93,7 @@ export async function upload_files_to_storage(file, user_id=null, category=CATEG
 }
 
 // 選擇後上傳檔案
-export async function uploadFile_to_category(files, user_uid, analysis_uuid, category) {
+export async function uploadFile_to_category(files, user_uid, analysis_uuid, category, override=false) {
 
   // 如果沒有檔案, 則返回
   if (!files) return;
@@ -101,7 +101,7 @@ export async function uploadFile_to_category(files, user_uid, analysis_uuid, cat
   // 上傳檔案
   const uploading = await Promise.all(files.map(async (file) => {
     return await upload_files_to_storage(
-      file, user_uid, category, analysis_uuid
+      file, user_uid, category, analysis_uuid, null, override
     ).then((response) => {return response;});
   }));
 
