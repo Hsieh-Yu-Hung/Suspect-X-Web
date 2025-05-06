@@ -392,6 +392,7 @@ function exportF2f5Props(inputData) {
 
 // PD
 function exportPdProps(inputData) {
+  console.log("GBA inputData", inputData);
   function assessmentExport(assessment) {
     const pdAssessment = {
       'low-risk': 'lowRisk',
@@ -408,7 +409,7 @@ function exportPdProps(inputData) {
     return {
       gba: result.slice(0, 2).replace(/(.)(.)/, '$1/$2'),
       lrrk21628: result.slice(2, 4).replace(/(.)(.)/, '$1/$2'),
-      lrrk22385: result.slice(2, 4).replace(/(.)(.)/, '$1/$2'),
+      lrrk22385: result.slice(4, 6).replace(/(.)(.)/, '$1/$2'),
     }
   };
 
