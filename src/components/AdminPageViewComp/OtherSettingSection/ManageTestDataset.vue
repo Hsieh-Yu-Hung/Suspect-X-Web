@@ -25,6 +25,7 @@
             <q-tab name="htd" label="HTD" />
             <q-tab name="mthfr" label="MTHFR" />
             <q-tab name="sma" label="SMA" />
+            <q-tab name="smav4" label="SMA-CE" />
             <q-tab name="apoe" label="APOE" />
             <q-tab name="nudt15" label="NUDT15" />
             <q-tab name="alpha_thal" label="ALPAH-THAL" />
@@ -47,6 +48,41 @@
               <FXS_Panel />
             </q-tab-panel>
 
+            <!-- HTD -->
+            <q-tab-panel name="htd">
+              <HTD_Panel />
+            </q-tab-panel>
+
+            <!-- APOE -->
+            <q-tab-panel name="apoe">
+              <APOE_Panel />
+            </q-tab-panel>
+
+            <!-- MTHFR -->
+            <q-tab-panel name="mthfr">
+              <MTHFR_Panel />
+            </q-tab-panel>
+
+            <!-- NUDT15 -->
+            <q-tab-panel name="nudt15">
+              <NUDT15_Panel />
+            </q-tab-panel>
+
+            <!-- SMA -->
+            <q-tab-panel name="sma">
+              <SMA_Panel />
+            </q-tab-panel>
+
+            <!-- SMA-CE -->
+            <q-tab-panel name="smav4">
+              <SMA_CE_Panel />
+            </q-tab-panel>
+
+            <!-- Beta-Thal -->
+            <q-tab-panel name="beta_thal">
+              <BetaThal_Panel />
+            </q-tab-panel>
+
           </q-tab-panels>
         </template>
 
@@ -62,9 +98,16 @@ import { ref } from 'vue'
 
 // 導入元件
 import FXS_Panel from '@/components/AdminPageViewComp/OtherSettingSection/TestDatasetPanels/FXS_Panel.vue'
+import HTD_Panel from '@/components/AdminPageViewComp/OtherSettingSection/TestDatasetPanels/HTD_Panel.vue'
+import APOE_Panel from '@/components/AdminPageViewComp/OtherSettingSection/TestDatasetPanels/APOE_Panel.vue'
+import MTHFR_Panel from '@/components/AdminPageViewComp/OtherSettingSection/TestDatasetPanels/MTHFR_Panel.vue'
+import NUDT15_Panel from '@/components/AdminPageViewComp/OtherSettingSection/TestDatasetPanels/NUDT15_Panel.vue'
+import SMA_Panel from '@/components/AdminPageViewComp/OtherSettingSection/TestDatasetPanels/SMA_Panel.vue'
+import BetaThal_Panel from '@/components/AdminPageViewComp/OtherSettingSection/TestDatasetPanels/BetaThal_Panel.vue'
+import SMA_CE_Panel from '@/components/AdminPageViewComp/OtherSettingSection/TestDatasetPanels/SMA_CE_Panel.vue'
 
 // 測試資料集
-const tab = ref('fxs')
+const tab = ref('smav4')
 const splitterModel = ref(10)
 
 

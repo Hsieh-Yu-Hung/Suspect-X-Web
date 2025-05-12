@@ -12,6 +12,6 @@ import QsepDatasetTmpl from '../TestDatasetTemplates/QsepDatasetTmpl.vue';
 const qsepDatasetTmpl = ref(null)
 
 // 定義 dataset_class
-const dataset_class = 'FXS'
+const dataset_class = 'APOE'
 
 </script>
