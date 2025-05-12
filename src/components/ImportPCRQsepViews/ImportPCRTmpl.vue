@@ -78,9 +78,7 @@
           <!-- 載入測試資料集 -->
           <div class="flex flex-start" style="background-color: rgba(221, 232, 243, 0.2); margin: 1em; flex-direction: column; padding: 1em; border-radius: 1em;" :style="{ 'display': is_dev_mode && switch_dev_mode === 'DevMode: ON' ? 'flex' : 'none' }">
             <span class="text-h6 text-bold text-blue-grey-7" style="margin-bottom: 1em;">Testing Datasets</span>
-            <q-btn flat dense label="TEST-Set1" color="indigo-7" icon="mdi-download" @click="loadTestingDataset('TEST-Set1')" />
-            <q-btn flat dense label="TEST-Set2" color="indigo-7" icon="mdi-download" @click="loadTestingDataset('TEST-Set2')" />
-            <q-btn flat dense label="TEST-Set3" color="indigo-7" icon="mdi-download" @click="loadTestingDataset('TEST-Set3')" />
+            <q-btn flat dense v-for="dataset_name in dataset_name_list" :key="dataset_name" :label="dataset_name" color="indigo-7" icon="mdi-download" @click="loadTestingDataset(dataset_name)" />
           </div>
 
         </div>
@@ -98,7 +96,7 @@
 
 <script setup>
 // 導入模組
-import { ref, onMounted, watch } from 'vue';
+import { ref, onMounted, watch, computed } from 'vue';
 import { useStore } from 'vuex';
 import { useQuasar, QSpinnerFacebook } from 'quasar';
 import { v4 as uuidv4 } from 'uuid';
@@ -142,11 +140,18 @@ const $q = useQuasar();
 // DevMode 開關
 const is_dev_mode = ref(false);
 const switch_dev_mode = ref("DevMode: ON");
+const dataset_name_list = computed(() => {
+  return props.testing_data?.map(item => item.dataset_name) || [];
+});
 
 // props
 const props = defineProps({
   analysis_name: {
     type: String,
+    required: true,
+  },
+  testing_data: {
+    type: Array,
     required: true,
   },
 });
@@ -301,7 +306,7 @@ async function onSubmit() {
         resultObj.result);
 
       // 製作 EXPORT_RESULT
-      const sample_ids = Object.keys(resultObj.result);
+      const sample_ids = resultObj.result ? Object.keys(resultObj.result) : [];
       const exportResult = sample_ids.map((sample_id, index) => {
         let result_list = resultObj.sample_data[sample_id].selected_fx_peaks.map(peak => peak.average_repeatNum);
         if (result_list.length === 1) {
@@ -427,6 +432,8 @@ async function onSubmit() {
 // 選擇後上傳檔案
 async function uploadFile(files, type) {
 
+  console.log("uploadFile", files, type);
+
   // 如果沒有檔案, 則返回
   if (!files) return;
 
@@ -485,7 +492,38 @@ async function uploadFile(files, type) {
 
 // 載入測試資料集
 async function loadTestingDataset(dataset_name) {
-  console.log("loadTestingDataset", dataset_name);
+
+  // 取得測試資料集
+  const testing_data = props.testing_data.find(item => item.dataset_name === dataset_name);
+
+  // 創建一個空的 Blob 物件作為檔案內容
+  const emptyBlob = new Blob([''], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+
+  // 載入 Control Sample - 創建模擬 File 物件
+  const controlFileName = testing_data.controlFile.split('/').pop();
+  const controlFileObj = new File([emptyBlob], controlFileName, {
+    type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+  });
+  // 添加 path 屬性
+  Object.defineProperty(controlFileObj, 'path', {
+    value: testing_data.controlFile,
+    writable: true
+  });
+  controlSampleFile.value = controlFileObj;
+
+  // 載入 Testing Samples - 創建模擬 File 物件
+  testingSampleFile.value = testing_data.sampleFiles.map(file => {
+    const fileName = file.split('/').pop();
+    const fileObj = new File([emptyBlob], fileName, {
+      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    });
+    // 添加 path 屬性
+    Object.defineProperty(fileObj, 'path', {
+      value: file,
+      writable: true
+    });
+    return fileObj;
+  });
 }
 
 // 掛載時
@@ -509,14 +547,18 @@ onMounted(async () => {
 // 監聽 controlSampleFile
 watch(controlSampleFile, async(newVal, oldVal) => {
   if (newVal !== oldVal) {
-    await uploadFile([newVal], 'control');
+    if (newVal && newVal.size) {
+      await uploadFile([newVal], 'control');
+    }
   }
 });
 
 // 監聽 testingSampleFile
 watch(testingSampleFile, async(newVal, oldVal) => {
   if (newVal !== oldVal) {
-    await uploadFile(newVal, 'samples');
+    if (newVal.length > 0 && newVal[0].size) {
+      await uploadFile(newVal, 'samples');
+    }
   }
 });
 
