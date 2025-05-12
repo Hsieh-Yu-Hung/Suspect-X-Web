@@ -44,9 +44,17 @@
                   <span class="text-subtitle2">Result File:</span>
                   <q-chip color="grey-2" dense class="text-subtitle2" :label="dataset.file.split('/').pop()" />
                 </div>
-                <div style="display: flex; flex-direction: row; align-items: center; gap: 0.5em;">
+                <div v-if="props.dataset_class !== 'SMA'" style="display: flex; flex-direction: row; align-items: center; gap: 0.5em;">
                   <span class="text-subtitle2">Control Well:</span>
                   <q-chip color="grey-2" dense class="text-subtitle2" :label="dataset.controlWell" />
+                </div>
+                <div v-if="props.dataset_class === 'SMA'" style="display: flex; flex-direction: row; align-items: center; gap: 0.5em;">
+                  <span class="text-subtitle2">SC1 Well:</span>
+                  <q-chip color="grey-2" dense class="text-subtitle2" :label="dataset.SC1Well" />
+                </div>
+                <div v-if="props.dataset_class === 'SMA'" style="display: flex; flex-direction: row; align-items: center; gap: 0.5em;">
+                  <span class="text-subtitle2">SC2 Well:</span>
+                  <q-chip color="grey-2" dense class="text-subtitle2" :label="dataset.SC2Well" />
                 </div>
                 <div style="display: flex; flex-direction: row; align-items: center; gap: 0.5em;">
                   <span class="text-subtitle2">NTC Well:</span>
@@ -66,9 +74,17 @@
                   <span class="text-subtitle2">CY5 File:</span>
                   <q-chip color="grey-2" dense class="text-subtitle2" :label="dataset?.CY5?.split('/').pop()" />
                 </div>
-                <div style="display: flex; flex-direction: row; align-items: center; gap: 0.5em;">
+                <div v-if="props.dataset_class !== 'SMA'" style="display: flex; flex-direction: row; align-items: center; gap: 0.5em;">
                   <span class="text-subtitle2">Control Well:</span>
                   <q-chip color="grey-2" dense class="text-subtitle2" :label="dataset?.controlWell" />
+                </div>
+                <div v-if="props.dataset_class === 'SMA'" style="display: flex; flex-direction: row; align-items: center; gap: 0.5em;">
+                  <span class="text-subtitle2">SC1 Well:</span>
+                  <q-chip color="grey-2" dense class="text-subtitle2" :label="dataset?.SC1Well" />
+                </div>
+                <div v-if="props.dataset_class === 'SMA'" style="display: flex; flex-direction: row; align-items: center; gap: 0.5em;">
+                  <span class="text-subtitle2">SC2 Well:</span>
+                  <q-chip color="grey-2" dense class="text-subtitle2" :label="dataset?.SC2Well" />
                 </div>
                 <div style="display: flex; flex-direction: row; align-items: center; gap: 0.5em;">
                   <span class="text-subtitle2">NTC Well:</span>
@@ -178,7 +194,47 @@
               />
             </div>
           </div>
-          <div style="display: flex; flex-direction: row; gap: 0.5em; width: 100%;">
+          <div v-if="props.dataset_class === 'SMA'" style="display: flex; flex-direction: row; gap: 0.5em; width: 100%;">
+            <span class="text-subtitle2" style="white-space: nowrap; margin-top: 0.6em;">SC1 Well: </span>
+            <q-select
+              v-model="SC1Well.X"
+              class="q-mb-md"
+              :options="optionX"
+              dense
+              filled
+              color="deep-orange-8"
+              style="width: 100%;"
+            />
+            <q-select
+              v-model="SC1Well.Y"
+              class="q-mb-md"
+              :options="optionY"
+              dense
+              filled
+              style="width: 100%;"
+            />
+          </div>
+          <div v-if="props.dataset_class === 'SMA'" style="display: flex; flex-direction: row; gap: 0.5em; width: 100%;">
+            <span class="text-subtitle2" style="white-space: nowrap; margin-top: 0.6em;">SC2 Well: </span>
+            <q-select
+              v-model="SC2Well.X"
+              class="q-mb-md"
+              :options="optionX"
+              dense
+              filled
+              color="deep-orange-8"
+              style="width: 100%;"
+            />
+            <q-select
+              v-model="SC2Well.Y"
+              class="q-mb-md"
+              :options="optionY"
+              dense
+              filled
+              style="width: 100%;"
+            />
+          </div>
+          <div v-if="props.dataset_class !== 'SMA'" style="display: flex; flex-direction: row; gap: 0.5em; width: 100%;">
             <span class="text-subtitle2" style="white-space: nowrap; margin-top: 0.6em;">Control Well: </span>
             <q-select
               v-model="controlWell.X"
@@ -198,7 +254,7 @@
               style="width: 100%;"
             />
           </div>
-          <div style="display: flex; flex-direction: row; gap: 0.5em; width: 100%;">
+          <div v-if="selectedInstrument !== 'SMA'" style="display: flex; flex-direction: row; gap: 0.5em; width: 100%;">
             <span class="text-subtitle2" style="white-space: nowrap; margin-top: 0.6em;">NTC Well: </span>
             <q-select
               v-model="NTCWell.X"
@@ -246,12 +302,14 @@ const TypeI_class = ['MTHFR', 'NUDT15']
 const TypeII_class = ['SMA']
 
 // 定義一個 Dataset 的資料結構
-const Dataset = (NAME, FILE, CONTRL_WELL, NTC_WELL, INSTRUMENT, REAGENT, VIC, FAM, CY5, STORAGE_PATH) => {
+const Dataset = (NAME, FILE, CONTRL_WELL, NTC_WELL, SC1_WELL, SC2_WELL, INSTRUMENT, REAGENT, VIC, FAM, CY5, STORAGE_PATH) => {
   return {
     name: NAME,
     file: FILE,
     controlWell: CONTRL_WELL,
     NTCWell: NTC_WELL,
+    SC1Well: SC1_WELL,
+    SC2Well: SC2_WELL,
     instrument: INSTRUMENT,
     reagent: REAGENT,
     edit: false,
@@ -271,6 +329,14 @@ const optionY = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12']
 // 定義結果檔案
 const resultFile = ref(null)
 const controlWell = ref({
+  X: null,
+  Y: null
+})
+const SC1Well = ref({
+  X: null,
+  Y: null
+})
+const SC2Well = ref({
   X: null,
   Y: null
 })
@@ -373,25 +439,66 @@ const deleteDataset = async (dataset) => {
 // 提交表單
 const onSubmit = async () => {
   // 檢查所有必填欄位
-  if (selectedInstrument.value === 'z480'){
-    if (props.dataset_class === 'SMA'){
-      if (!datasetName.value || !Z480_Files.value.VIC || !Z480_Files.value.FAM || !Z480_Files.value.CY5 || !controlWell.value.X || !controlWell.value.Y || !NTCWell.value.X || !NTCWell.value.Y) {
-        console.log('請檢查所有必填欄位Z480')
-        return
-      }
+  const isZ480 = selectedInstrument.value === 'z480';
+  const isSMA = props.dataset_class === 'SMA';
+
+  // 基本必填項目
+  let requiredFields = [datasetName.value];
+  let errorMessage = '請檢查所有必填欄位';
+
+  // 根據儀器和測試類型檢查必填項目
+  if (isZ480){
+    if (isSMA){
+      requiredFields.push(
+        Z480_Files.value.VIC,
+        Z480_Files.value.FAM,
+        Z480_Files.value.CY5,
+        NTCWell.value.X,
+        NTCWell.value.Y,
+        SC1Well.value.X,
+        SC1Well.value.Y,
+        SC2Well.value.X,
+        SC2Well.value.Y
+      );
     }
-    else{
-      if (!datasetName.value || !Z480_Files.value.VIC || !Z480_Files.value.FAM || !controlWell.value.X || !controlWell.value.Y || !NTCWell.value.X || !NTCWell.value.Y) {
-        console.log('請檢查所有必填欄位Z480')
-        return
-      }
+    else {
+      requiredFields.push(
+        Z480_Files.value.VIC,
+        Z480_Files.value.FAM,
+        NTCWell.value.X,
+        NTCWell.value.Y,
+        controlWell.value.X,
+        controlWell.value.Y
+      );
     }
   }
-  else{
-    if (!datasetName.value || !resultFile.value || !controlWell.value.X || !controlWell.value.Y || !NTCWell.value.X || !NTCWell.value.Y) {
-      console.log('請檢查所有必填欄位Other')
-      return
+  else {
+    if (isSMA){
+      requiredFields.push(
+        resultFile.value,
+        NTCWell.value.X,
+        NTCWell.value.Y,
+        SC1Well.value.X,
+        SC1Well.value.Y,
+        SC2Well.value.X,
+        SC2Well.value.Y
+      );
     }
+    else {
+      requiredFields.push(
+        resultFile.value,
+        controlWell.value.X,
+        controlWell.value.Y,
+        NTCWell.value.X,
+        NTCWell.value.Y
+      );
+    }
+  }
+
+  // 檢查是否有任何項目未填
+  if (requiredFields.some(field => !field)) {
+    console.log(errorMessage);
+    return;
   }
 
   // Storage Path, 隨機產生一組 uuid
@@ -422,6 +529,8 @@ const onSubmit = async () => {
     VIC: selectedInstrument.value === 'z480' ? `testing_data/${storage_path}/${Z480_Files.value.VIC.name}` : null,
     FAM: selectedInstrument.value === 'z480' ? `testing_data/${storage_path}/${Z480_Files.value.FAM.name}` : null,
     CY5: selectedInstrument.value === 'z480' ? `testing_data/${storage_path}/${Z480_Files.value.CY5?.name}` : null,
+    SC1Well: `${SC1Well.value.X}${SC1Well.value.Y}`,
+    SC2Well: `${SC2Well.value.X}${SC2Well.value.Y}`,
     controlWell: `${controlWell.value.X}${controlWell.value.Y}`,
     NTCWell: `${NTCWell.value.X}${NTCWell.value.Y}`,
     instrument: selectedInstrument.value,
@@ -464,6 +573,14 @@ const onReset = () => {
     X: null,
     Y: null
   }
+  SC1Well.value = {
+    X: null,
+    Y: null
+  }
+  SC2Well.value = {
+    X: null,
+    Y: null
+  }
   NTCWell.value = {
     X: null,
     Y: null
@@ -491,7 +608,15 @@ async function updateDatasetList() {
   querySnapshot.forEach(async (document) => {
     const doc_data = document.data();
     if (doc_data.dataset_class && doc_data.dataset_class === props.dataset_class) {
-      DatasetList.value.push(Dataset(doc_data.dataset_name, doc_data.resultFile, doc_data.controlWell, doc_data.NTCWell, doc_data.instrument, doc_data.reagent, doc_data.VIC, doc_data.FAM, doc_data.CY5, doc_data.storagePath))
+      DatasetList.value.push(Dataset(
+        doc_data.dataset_name,
+        doc_data.resultFile,
+        doc_data.controlWell,
+        doc_data.NTCWell,
+        doc_data.SC1Well,
+        doc_data.SC2Well,
+        doc_data.instrument,
+        doc_data.reagent, doc_data.VIC, doc_data.FAM, doc_data.CY5, doc_data.storagePath))
     }
   })
 }
