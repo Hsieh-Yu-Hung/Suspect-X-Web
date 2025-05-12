@@ -246,7 +246,7 @@ const TypeI_class = ['MTHFR', 'NUDT15']
 const TypeII_class = ['SMA']
 
 // 定義一個 Dataset 的資料結構
-const Dataset = (NAME, FILE, CONTRL_WELL, NTC_WELL, INSTRUMENT, REAGENT, VIC, FAM, CY5) => {
+const Dataset = (NAME, FILE, CONTRL_WELL, NTC_WELL, INSTRUMENT, REAGENT, VIC, FAM, CY5, STORAGE_PATH) => {
   return {
     name: NAME,
     file: FILE,
@@ -259,7 +259,8 @@ const Dataset = (NAME, FILE, CONTRL_WELL, NTC_WELL, INSTRUMENT, REAGENT, VIC, FA
     isSelected: false,
     VIC: VIC,
     FAM: FAM,
-    CY5: CY5
+    CY5: CY5,
+    storagePath: STORAGE_PATH
   }
 }
 
@@ -326,24 +327,27 @@ const editDataset = async (dataset) => {
 const deleteDataset = async (dataset) => {
   try {
     // 刪除 storage 中的檔案
-    const folderPath = `testing_data/${dataset.name}`;
+    const folderPath = `testing_data/${dataset.storagePath}`;
     const folderRef = storageRef(Storage, folderPath);
 
-    // 列出資料夾中的所有檔案
-    const result = await listAll(folderRef);
+    // 定義遞迴刪除函數
+    const recursiveDelete = async (ref) => {
+      const result = await listAll(ref);
 
-    // 刪除所有檔案
-    const deletePromises = result.items.map(item => deleteObject(item));
-    await Promise.all(deletePromises);
+      // 刪除當前資料夾中的所有檔案
+      const fileDeletePromises = result.items.map(item => deleteObject(item));
 
-    // 遞迴處理所有子資料夾
-    const subFolderPromises = result.prefixes.map(async (prefix) => {
-      const subResult = await listAll(prefix);
-      const subDeletePromises = subResult.items.map(item => deleteObject(item));
-      return Promise.all(subDeletePromises);
-    });
+      // 遞迴處理所有子資料夾
+      const folderDeletePromises = result.prefixes.map(async (prefix) => {
+        await recursiveDelete(prefix);
+      });
 
-    await Promise.all(subFolderPromises);
+      // 等待所有刪除操作完成
+      await Promise.all([...fileDeletePromises, ...folderDeletePromises]);
+    };
+
+    // 執行遞迴刪除
+    await recursiveDelete(folderRef);
 
     // 取得 database 中所有分析
     const search_path = `${dataset_list.testing_data}`;
@@ -421,7 +425,8 @@ const onSubmit = async () => {
     controlWell: `${controlWell.value.X}${controlWell.value.Y}`,
     NTCWell: `${NTCWell.value.X}${NTCWell.value.Y}`,
     instrument: selectedInstrument.value,
-    reagent: selectedReagent.value
+    reagent: selectedReagent.value,
+    storagePath: storage_path
   }
 
   // 先檢查資料庫是否有 datasetName 和 dataset_class === props.dataset_class 的資料
@@ -486,7 +491,7 @@ async function updateDatasetList() {
   querySnapshot.forEach(async (document) => {
     const doc_data = document.data();
     if (doc_data.dataset_class && doc_data.dataset_class === props.dataset_class) {
-      DatasetList.value.push(Dataset(doc_data.dataset_name, doc_data.resultFile, doc_data.controlWell, doc_data.NTCWell, doc_data.instrument, doc_data.reagent, doc_data.VIC, doc_data.FAM, doc_data.CY5))
+      DatasetList.value.push(Dataset(doc_data.dataset_name, doc_data.resultFile, doc_data.controlWell, doc_data.NTCWell, doc_data.instrument, doc_data.reagent, doc_data.VIC, doc_data.FAM, doc_data.CY5, doc_data.storagePath))
     }
   })
 }

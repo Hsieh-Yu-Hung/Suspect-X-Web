@@ -199,7 +199,7 @@ const selectedInstrument = ref('qsep100')
 const selectedReagent = ref('SMA CE v1')
 
 // 定義一個 Dataset 的資料結構
-const Dataset = (NAME, SMN1_SC_C, SMN1_SC_N, SMN1_Samples, SMN2_SC_C, SMN2_SC_N, SMN2_Samples, INSTRUMENT, REAGENT) => {
+const Dataset = (NAME, SMN1_SC_C, SMN1_SC_N, SMN1_Samples, SMN2_SC_C, SMN2_SC_N, SMN2_Samples, INSTRUMENT, REAGENT, STORAGE_PATH) => {
   let datasetObj = {
     name: NAME,
     originalName: NAME,
@@ -212,7 +212,8 @@ const Dataset = (NAME, SMN1_SC_C, SMN1_SC_N, SMN1_Samples, SMN2_SC_C, SMN2_SC_N,
     isSelected: false,
     edit: false,
     instrument: INSTRUMENT,
-    reagent: REAGENT
+    reagent: REAGENT,
+    storagePath: STORAGE_PATH
   }
   return datasetObj
 }
@@ -278,24 +279,27 @@ const editDataset = async (dataset) => {
 const deleteDataset = async (dataset) => {
   try {
     // 刪除 storage 中的檔案
-    const folderPath = `testing_data/${dataset.name}`;
+    const folderPath = `testing_data/${dataset.storagePath}`;
     const folderRef = storageRef(Storage, folderPath);
 
-    // 列出資料夾中的所有檔案
-    const result = await listAll(folderRef);
+    // 定義遞迴刪除函數
+    const recursiveDelete = async (ref) => {
+      const result = await listAll(ref);
 
-    // 刪除所有檔案
-    const deletePromises = result.items.map(item => deleteObject(item));
-    await Promise.all(deletePromises);
+      // 刪除當前資料夾中的所有檔案
+      const fileDeletePromises = result.items.map(item => deleteObject(item));
 
-    // 遞迴處理所有子資料夾
-    const subFolderPromises = result.prefixes.map(async (prefix) => {
-      const subResult = await listAll(prefix);
-      const subDeletePromises = subResult.items.map(item => deleteObject(item));
-      return Promise.all(subDeletePromises);
-    });
+      // 遞迴處理所有子資料夾
+      const folderDeletePromises = result.prefixes.map(async (prefix) => {
+        await recursiveDelete(prefix);
+      });
 
-    await Promise.all(subFolderPromises);
+      // 等待所有刪除操作完成
+      await Promise.all([...fileDeletePromises, ...folderDeletePromises]);
+    };
+
+    // 執行遞迴刪除
+    await recursiveDelete(folderRef);
 
     // 取得 database 中所有分析
     const search_path = `${dataset_list.testing_data}`;
@@ -348,6 +352,7 @@ const onSubmit = async () => {
     dataset_name: datasetName.value,
     instrument: selectedInstrument.value,
     reagent: selectedReagent.value,
+    storagePath: storage_path,
     SMN1_SC_C: uploadedFiles.value.filter(file => file.geneType === 'SMN1' && file.sampleType.value === 'SC-C').map(file => ({
       name: file.name,
       path: `testing_data/${storage_path}/${file.name}`,
@@ -407,7 +412,7 @@ const onSubmit = async () => {
   await addTestingSample(dataset_data, dataset_uid)
 
   // 重置表單
-  // onReset()
+  onReset()
 
   // 更新集合顯示
   await updateDatasetList()
@@ -450,7 +455,8 @@ async function updateDatasetList() {
         doc_data.SMN2_SC_N[0].name,
         doc_data.SMN2_Samples,
         doc_data.instrument,
-        doc_data.reagent
+        doc_data.reagent,
+        doc_data.storagePath
       ))
     }
   })

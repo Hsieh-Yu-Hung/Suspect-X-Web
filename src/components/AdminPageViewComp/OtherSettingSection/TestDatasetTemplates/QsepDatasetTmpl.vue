@@ -242,14 +242,15 @@ const selectedInstrument = ref(null)
 const selectedReagent = ref(null)
 
 // 定義一個 Dataset 的資料結構
-const Dataset = (NAME, CONTROL_FILE, SAMPLE_FILES, INSTRUMENT, REAGENT) => {
+const Dataset = (NAME, CONTROL_FILE, SAMPLE_FILES, INSTRUMENT, REAGENT, STORAGE_PATH) => {
   let datasetObj = {
     name: NAME,
     originalName: NAME,
     isSelected: false,
     edit: false,
     instrument: INSTRUMENT,
-    reagent: REAGENT
+    reagent: REAGENT,
+    storagePath: STORAGE_PATH
   }
 
   if (TypeI_class.includes(props.dataset_class)) {
@@ -323,24 +324,27 @@ const editDataset = async (dataset) => {
 const deleteDataset = async (dataset) => {
   try {
     // 刪除 storage 中的檔案
-    const folderPath = `testing_data/${dataset.name}`;
+    const folderPath = `testing_data/${dataset.storagePath}`;
     const folderRef = storageRef(Storage, folderPath);
 
-    // 列出資料夾中的所有檔案
-    const result = await listAll(folderRef);
+    // 定義遞迴刪除函數
+    const recursiveDelete = async (ref) => {
+      const result = await listAll(ref);
 
-    // 刪除所有檔案
-    const deletePromises = result.items.map(item => deleteObject(item));
-    await Promise.all(deletePromises);
+      // 刪除當前資料夾中的所有檔案
+      const fileDeletePromises = result.items.map(item => deleteObject(item));
 
-    // 遞迴處理所有子資料夾
-    const subFolderPromises = result.prefixes.map(async (prefix) => {
-      const subResult = await listAll(prefix);
-      const subDeletePromises = subResult.items.map(item => deleteObject(item));
-      return Promise.all(subDeletePromises);
-    });
+      // 遞迴處理所有子資料夾
+      const folderDeletePromises = result.prefixes.map(async (prefix) => {
+        await recursiveDelete(prefix);
+      });
 
-    await Promise.all(subFolderPromises);
+      // 等待所有刪除操作完成
+      await Promise.all([...fileDeletePromises, ...folderDeletePromises]);
+    };
+
+    // 執行遞迴刪除
+    await recursiveDelete(folderRef);
 
     // 取得 database 中所有分析
     const search_path = `${dataset_list.testing_data}`;
@@ -412,6 +416,7 @@ const onSubmitI = async () => {
     dataset_name: datasetName.value,
     instrument: selectedInstrument.value,
     reagent: selectedReagent.value,
+    storagePath: storage_path,
     controlFile: `testing_data/${control_file_storage_path}`,
     sampleFiles: sampleFiles.value.map(file => `testing_data/${storage_path}/${file.name}`)
   }
@@ -496,7 +501,8 @@ const onSubmitII = async () => {
     reagent: selectedReagent.value,
     sc1_files: sc1_file_paths,
     sc2_files: sc2_file_paths,
-    sample_files: sample_files_paths
+    sample_files: sample_files_paths,
+    storagePath: storage_path
   }
 
   // 檢查是否已存在相同名稱的資料集
@@ -556,7 +562,7 @@ async function updateDatasetList() {
     const doc_data = document.data();
     if (doc_data.dataset_class && doc_data.dataset_class === props.dataset_class) {
       if (TypeI_class.includes(props.dataset_class)) {
-        DatasetList.value.push(Dataset(doc_data.dataset_name, doc_data.controlFile, doc_data.sampleFiles, doc_data.instrument, doc_data.reagent))
+        DatasetList.value.push(Dataset(doc_data.dataset_name, doc_data.controlFile, doc_data.sampleFiles, doc_data.instrument, doc_data.reagent, doc_data.storagePath))
       } else {
         DatasetList.value.push(Dataset(
           doc_data.dataset_name,
@@ -566,7 +572,8 @@ async function updateDatasetList() {
             sample_files: doc_data.sample_files
           },
           doc_data.instrument,
-          doc_data.reagent
+          doc_data.reagent,
+          doc_data.storagePath
         ))
       }
     }

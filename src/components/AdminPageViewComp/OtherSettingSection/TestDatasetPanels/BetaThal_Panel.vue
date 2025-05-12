@@ -146,7 +146,7 @@ const selectedInstrument = ref('qsep100')
 const selectedReagent = ref('Beta-Thal_v1')
 
 // 定義一個 Dataset 的資料結構
-const Dataset = (NAME, SAMPLE_FILES, INSTRUMENT, REAGENT) => {
+const Dataset = (NAME, SAMPLE_FILES, INSTRUMENT, REAGENT, STORAGE_PATH) => {
   let datasetObj = {
     name: NAME,
     originalName: NAME,
@@ -154,7 +154,8 @@ const Dataset = (NAME, SAMPLE_FILES, INSTRUMENT, REAGENT) => {
     isSelected: false,
     edit: false,
     instrument: INSTRUMENT,
-    reagent: REAGENT
+    reagent: REAGENT,
+    storagePath: STORAGE_PATH
   }
   return datasetObj
 }
@@ -207,24 +208,27 @@ const editDataset = async (dataset) => {
 const deleteDataset = async (dataset) => {
   try {
     // 刪除 storage 中的檔案
-    const folderPath = `testing_data/${dataset.name}`;
+    const folderPath = `testing_data/${dataset.storagePath}`;
     const folderRef = storageRef(Storage, folderPath);
 
-    // 列出資料夾中的所有檔案
-    const result = await listAll(folderRef);
+    // 定義遞迴刪除函數
+    const recursiveDelete = async (ref) => {
+      const result = await listAll(ref);
 
-    // 刪除所有檔案
-    const deletePromises = result.items.map(item => deleteObject(item));
-    await Promise.all(deletePromises);
+      // 刪除當前資料夾中的所有檔案
+      const fileDeletePromises = result.items.map(item => deleteObject(item));
 
-    // 遞迴處理所有子資料夾
-    const subFolderPromises = result.prefixes.map(async (prefix) => {
-      const subResult = await listAll(prefix);
-      const subDeletePromises = subResult.items.map(item => deleteObject(item));
-      return Promise.all(subDeletePromises);
-    });
+      // 遞迴處理所有子資料夾
+      const folderDeletePromises = result.prefixes.map(async (prefix) => {
+        await recursiveDelete(prefix);
+      });
 
-    await Promise.all(subFolderPromises);
+      // 等待所有刪除操作完成
+      await Promise.all([...fileDeletePromises, ...folderDeletePromises]);
+    };
+
+    // 執行遞迴刪除
+    await recursiveDelete(folderRef);
 
     // 取得 database 中所有分析
     const search_path = `${dataset_list.testing_data}`;
@@ -305,7 +309,8 @@ const onSubmit = async () => {
     dataset_name: datasetName.value,
     instrument: selectedInstrument.value,
     reagent: selectedReagent.value,
-    sample_files: uploadedSamples
+    sample_files: uploadedSamples,
+    storagePath: storage_path
   }
 
   // 檢查是否已存在相同名稱的資料集
@@ -364,7 +369,8 @@ async function updateDatasetList() {
         doc_data.dataset_name,
         doc_data.sample_files,
         doc_data.instrument,
-        doc_data.reagent
+        doc_data.reagent,
+        doc_data.storagePath
       ))
     }
   })
