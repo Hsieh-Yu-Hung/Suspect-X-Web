@@ -123,6 +123,11 @@
 
     </div>
 
+    <!-- 測試面版 -->
+    <div class="row justify-between q-mt-lg q-mx-xl">
+      <TestingTable :current_product="currentProduct()" />
+    </div>
+
   </q-page>
 </template>
 
@@ -139,6 +144,7 @@ import { useValidateAccountStatus } from '@/composables/accessStoreUserInfo.js';
 
 // 導入其他元件
 import AnalysisSettings from '@/components/AnalysisSettings.vue';
+import TestingTable from '@/components/TestingTable.vue';
 
 // Import views
 import ImportApoe from '@/components/ImportViews/ImportApoe.vue';
@@ -200,6 +206,8 @@ watch(currentProduct, (newVal, oldVal) => {
                         : newVal === 'fx' ? 'FXS'
                         : newVal === 'hd' ? 'HTD'
                         : newVal === 'sma' ? 'SMA'
+                        : newVal === 'thal-import-alpha' ? 'THAL_ALPHA'
+                        : newVal === 'thal-import-beta' ? 'THAL_BETA'
                         : null;
 
     // 建立新的分析 ID
