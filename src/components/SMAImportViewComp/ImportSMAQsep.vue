@@ -23,7 +23,8 @@
 
         <!-- 功能按鈕區 -->
         <div style="margin-top: 1.5em;">
-          <q-btn style="margin-right: 5px;" color="primary" icon="mdi-upload" label="Upload" @click="smav4FileInputs.$el.click();"/>
+          <q-toggle style="margin-right: 1em;" v-model="usedSMN" :label="usedSMN === 'smn1' ? 'SMN1' : 'SMN2'" color="teal" false-value="smn1" true-value="smn2" />
+          <q-btn style="margin-right: 0.5em;" color="primary" icon="mdi-upload" label="Upload" @click="smav4FileInputs.$el.click();"/>
           <q-btn-group push>
             <q-btn color="deep-orange" push glossy icon="save_as" label="New" @click="saveConfig('', true, false)"/>
             <q-btn color="brown-5" push glossy icon="auto_mode" label="Save" @click="saveConfig(currentDisplayedConfig, false, false)" ref="saveConfigBtn"/>
@@ -225,6 +226,7 @@ const typeColor = {
   std2: 'pink-4',
   sample: 'teal-4',
 }
+const usedSMN = ref('smn1');
 
 /* Config 相關 */
 const searchConfig = ref('');                     // 搜尋列用 Config name
@@ -431,7 +433,7 @@ const DEFINED_SMAV4FILE = (file_name, file_path) => {
   const defined_file = {
     file_name: file_name,
     path: file_path,
-    smnType: 'smn1',
+    smnType: usedSMN.value,
     expType: 'sample',
   }
   return defined_file;
