@@ -1,8 +1,8 @@
 <template>
-  <q-page class="flex no-wrap">
+  <q-page class="flex">
 
     <!-- 分析歷史總覽區 -->
-    <q-card class="q-ma-sm" style="min-width: 52em; height: 100%; overflow: auto;">
+    <q-card class="q-ma-sm" style="width: 100%; height: 100%; overflow: auto;">
 
       <!-- 標題 -->
       <q-card-section style="display: flex; justify-content: space-between; align-items: center;">
@@ -34,7 +34,7 @@
       <q-card-section>
 
         <!-- 依照 Analysis 名稱分類 -->
-        <div style="width: 50em;">
+        <div style="width: 100%;">
 
           <!-- APOE -->
           <AnalysisHistoryPanel
@@ -52,7 +52,7 @@
     </q-card>
 
     <!-- 檔案列表區 -->
-    <q-card class="q-ma-sm" style="min-width: 53em; height: 100%">
+    <q-card class="q-ma-sm" style="width: 100%; height: 100%; overflow: auto;">
 
       <!-- 標題 -->
       <q-card-section>

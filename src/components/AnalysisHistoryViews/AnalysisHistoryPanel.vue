@@ -1,6 +1,6 @@
 <template>
 
-  <div style="margin-bottom: 0.3em; display: flex; flex-direction: column; justify-content: flex-start; align-items: flex-start; border: 1px solid #e0e0e0; padding: 0.5em; border-radius: 0.5em;">
+  <div style="width: 100%; margin-bottom: 0.3em; display: flex; flex-direction: column; justify-content: flex-start; align-items: flex-start; border: 1px solid #e0e0e0; padding: 0.5em; border-radius: 0.5em;">
 
     <!-- 警告視窗 -->
     <q-dialog v-model="warning_dialog" persistent>
