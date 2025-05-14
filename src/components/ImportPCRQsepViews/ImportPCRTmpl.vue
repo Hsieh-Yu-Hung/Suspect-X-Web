@@ -431,9 +431,6 @@ async function onSubmit() {
 
 // 選擇後上傳檔案
 async function uploadFile(files, type) {
-
-  console.log("uploadFile", files, type);
-
   // 如果沒有檔案, 則返回
   if (!files) return;
 

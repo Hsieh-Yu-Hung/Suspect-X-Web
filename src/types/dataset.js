@@ -48,6 +48,35 @@ export class SmnSample {
 }
 
 /**
+ * 結果矩陣類別
+ */
+export class ResultMatrix {
+  /**
+   * 建立結果矩陣
+   * @param {string} sample_id - 樣本ID
+   * @param {string} result - 結果
+   * @param {string} assessment - 評估
+   */
+  constructor(sample_id = '', result = '', assessment = '') {
+    this.sample_id = sample_id;
+    this.result = result;
+    this.assessment = assessment;
+  }
+
+  /**
+   * 將類別實例轉換為純 JavaScript 物件
+   * @returns {Object} - 純 JavaScript 物件
+   */
+  toPlainObject() {
+    return {
+      sample_id: this.sample_id,
+      result: this.result,
+      assessment: this.assessment
+    };
+  }
+}
+
+/**
  * 基本資料集類別 - 包含通用資料集屬性
  */
 export class BaseDataset {
@@ -57,8 +86,9 @@ export class BaseDataset {
    * @param {string} instrument - 使用的儀器
    * @param {string} reagent - 使用的試劑
    * @param {string} storagePath - 儲存路徑
+   * @param {Array<ResultMatrix>} result_matrix - 結果矩陣，預設為空陣列
    */
-  constructor(name, instrument, reagent, storagePath) {
+  constructor(name, instrument, reagent, storagePath, result_matrix = []) {
     this.name = name;
     this.originalName = name;
     this.isSelected = false;
@@ -66,6 +96,7 @@ export class BaseDataset {
     this.instrument = instrument;
     this.reagent = reagent;
     this.storagePath = storagePath;
+    this.result_matrix = result_matrix;
   }
 
   /**
@@ -77,6 +108,13 @@ export class BaseDataset {
     const plainObj = Object.keys(this).reduce((obj, key) => {
       // 跳過不必要的屬性
       if (['isSelected', 'edit', 'originalName'].includes(key)) {
+        return obj;
+      }
+
+      // 特殊處理 result_matrix
+      if (key === 'result_matrix') {
+        // result_matrix 中的元素是普通物件，直接使用
+        obj[key] = Array.isArray(this.result_matrix) ? [...this.result_matrix] : [];
         return obj;
       }
 
@@ -101,9 +139,8 @@ export class BetaThalDataset extends BaseDataset {
    * @param {string} reagent - 使用的試劑
    * @param {string} group - 分組
    * @param {string} qc - 品質控制結果
-   * @param {string} result - 測試結果
-   * @param {string} assessments - 評估
    * @param {string} storagePath - 儲存路徑
+   * @param {Array<ResultMatrix>} result_matrix - 結果矩陣
    */
   constructor(
     name,
@@ -112,16 +149,13 @@ export class BetaThalDataset extends BaseDataset {
     reagent,
     group,
     qc,
-    result,
-    assessments,
-    storagePath
+    storagePath,
+    result_matrix = []
   ) {
-    super(name, instrument, reagent, storagePath);
+    super(name, instrument, reagent, storagePath, result_matrix);
     this.sample_files = sample_files;
     this.group = group;
     this.qc = qc;
-    this.result = result;
-    this.assessments = assessments;
     this.dataset_class = "BETA-THAL";
   }
 
@@ -170,9 +204,8 @@ export class SmaCeDataset extends BaseDataset {
    * @param {string} reagent - 使用的試劑
    * @param {string} group - 分組
    * @param {string} qc - 品質控制結果
-   * @param {string} result - 測試結果
-   * @param {string} assessments - 評估
    * @param {string} storagePath - 儲存路徑
+   * @param {Array<ResultMatrix>} result_matrix - 結果矩陣
    */
   constructor(
     name,
@@ -186,11 +219,10 @@ export class SmaCeDataset extends BaseDataset {
     reagent,
     group,
     qc,
-    result,
-    assessments,
-    storagePath
+    storagePath,
+    result_matrix = []
   ) {
-    super(name, instrument, reagent, storagePath);
+    super(name, instrument, reagent, storagePath, result_matrix);
     this.smn1_sc_c = smn1_sc_c;
     this.smn1_sc_n = smn1_sc_n;
     this.smn1_samples = smn1_samples;
@@ -199,8 +231,6 @@ export class SmaCeDataset extends BaseDataset {
     this.smn2_samples = smn2_samples;
     this.group = group;
     this.qc = qc;
-    this.result = result;
-    this.assessments = assessments;
     this.dataset_class = "SMA_CE";
   }
 
@@ -291,11 +321,10 @@ export class QPCRDataset extends BaseDataset {
    * @param {string} FAM - FAM檔案路徑（僅Z480儀器）
    * @param {string} CY5 - CY5檔案路徑（僅Z480儀器且僅SMA測試）
    * @param {string} storagePath - 儲存路徑
-   * @param {string} result - 測試結果
-   * @param {string} assessments - 評估
    * @param {string} group - 分組
    * @param {string} qc - 品質控制結果
    * @param {string} dataset_class - 資料集類別
+   * @param {Array<ResultMatrix>} result_matrix - 結果矩陣
    */
   constructor(
     name,
@@ -310,13 +339,12 @@ export class QPCRDataset extends BaseDataset {
     FAM,
     CY5,
     storagePath,
-    result,
-    assessments,
     group,
     qc,
-    dataset_class
+    dataset_class,
+    result_matrix = []
   ) {
-    super(name, instrument, reagent, storagePath);
+    super(name, instrument, reagent, storagePath, result_matrix);
     this.file = file;
     this.controlWell = controlWell;
     this.NTCWell = NTCWell;
@@ -325,8 +353,6 @@ export class QPCRDataset extends BaseDataset {
     this.VIC = VIC;
     this.FAM = FAM;
     this.CY5 = CY5;
-    this.result = result;
-    this.assessments = assessments;
     this.group = group;
     this.qc = qc;
     this.dataset_class = dataset_class;
@@ -373,11 +399,10 @@ export class QSEPDataset extends BaseDataset {
    * @param {string} instrument - 使用的儀器
    * @param {string} reagent - 使用的試劑
    * @param {string} storagePath - 儲存路徑
-   * @param {string} result - 測試結果
-   * @param {string} assessments - 評估
+   * @param {string} dataset_class - 資料集類別
    * @param {string} group - 分組
    * @param {string} qc - 品質控制結果
-   * @param {string} dataset_class - 資料集類別
+   * @param {Array<ResultMatrix>} result_matrix - 結果矩陣
    */
   constructor(
     name,
@@ -390,20 +415,17 @@ export class QSEPDataset extends BaseDataset {
     reagent,
     storagePath,
     dataset_class,
-    result,
-    assessments,
     group,
-    qc
+    qc,
+    result_matrix = []
   ) {
-    super(name, instrument, reagent, storagePath);
+    super(name, instrument, reagent, storagePath, result_matrix);
     this.controlFile = controlFile;
     this.sampleFiles = sampleFiles;
     this.sc1_files = sc1_files;
     this.sc2_files = sc2_files;
     this.sample_files = sample_files;
     this.dataset_class = dataset_class;
-    this.result = result;
-    this.assessments = assessments;
     this.group = group;
     this.qc = qc;
   }
@@ -484,9 +506,8 @@ export function createSmnSample(name, path, expType, smnType) {
  * @param {string} reagent - 使用的試劑
  * @param {string} group - 分組
  * @param {string} qc - 品質控制結果
- * @param {string} result - 測試結果
- * @param {string} assessments - 評估
  * @param {string} storagePath - 儲存路徑
+ * @param {Array<ResultMatrix>} result_matrix - 結果矩陣
  * @returns {BetaThalDataset} - 貝塔地中海貧血資料集
  */
 export function createBetaThalDataset(
@@ -496,9 +517,8 @@ export function createBetaThalDataset(
   reagent,
   group,
   qc,
-  result,
-  assessments,
-  storagePath
+  storagePath,
+  result_matrix = []
 ) {
   return new BetaThalDataset(
     name,
@@ -507,9 +527,8 @@ export function createBetaThalDataset(
     reagent,
     group,
     qc,
-    result,
-    assessments,
-    storagePath
+    storagePath,
+    result_matrix
   );
 }
 
@@ -526,9 +545,8 @@ export function createBetaThalDataset(
  * @param {string} reagent - 使用的試劑
  * @param {string} group - 分組
  * @param {string} qc - 品質控制結果
- * @param {string} result - 測試結果
- * @param {string} assessments - 評估
  * @param {string} storagePath - 儲存路徑
+ * @param {Array<ResultMatrix>} result_matrix - 結果矩陣
  * @returns {SmaCeDataset} - 脊髓性肌肉萎縮症(SMA)毛細管電泳資料集
  */
 export function createSmaCeDataset(
@@ -543,9 +561,8 @@ export function createSmaCeDataset(
   reagent,
   group,
   qc,
-  result,
-  assessments,
-  storagePath
+  storagePath,
+  result_matrix = []
 ) {
   return new SmaCeDataset(
     name,
@@ -559,9 +576,8 @@ export function createSmaCeDataset(
     reagent,
     group,
     qc,
-    result,
-    assessments,
-    storagePath
+    storagePath,
+    result_matrix
   );
 }
 
@@ -579,11 +595,10 @@ export function createSmaCeDataset(
  * @param {string} FAM - FAM檔案路徑（僅Z480儀器）
  * @param {string} CY5 - CY5檔案路徑（僅Z480儀器且僅SMA測試）
  * @param {string} storagePath - 儲存路徑
- * @param {string} result - 測試結果
- * @param {string} assessments - 評估
  * @param {string} group - 分組
  * @param {string} qc - 品質控制結果
  * @param {string} dataset_class - 資料集類別
+ * @param {Array<ResultMatrix>} result_matrix - 結果矩陣
  * @returns {QPCRDataset} - qPCR資料集
  */
 export function createQPCRDataset(
@@ -599,11 +614,10 @@ export function createQPCRDataset(
   FAM,
   CY5,
   storagePath,
-  result,
-  assessments,
   group,
   qc,
-  dataset_class
+  dataset_class,
+  result_matrix = []
 ) {
   return new QPCRDataset(
     name,
@@ -618,33 +632,32 @@ export function createQPCRDataset(
     FAM,
     CY5,
     storagePath,
-    result,
-    assessments,
     group,
     qc,
-    dataset_class
+    dataset_class,
+    result_matrix
   );
 }
 
 /**
  * 創建Qsep資料集的工廠函數
- * @param {string} name - 資料集名稱
- * @param {string} controlFile - Type I: 對照檔案路徑
- * @param {Array<string>} sampleFiles - Type I: 樣本檔案路徑列表
- * @param {Array<string>} sc1_files - Type II: SC1 檔案路徑列表
- * @param {Array<string>} sc2_files - Type II: SC2 檔案路徑列表
- * @param {Array<{group: number, path: string}>} sample_files - Type II: 分組樣本檔案路徑列表
- * @param {string} instrument - 使用的儀器
- * @param {string} reagent - 使用的試劑
- * @param {string} storagePath - 儲存路徑
- * @param {string} dataset_class - 資料集類別
- * @param {string} result - 測試結果
- * @param {string} assessments - 評估
- * @param {string} group - 分組
- * @param {string} qc - 品質控制結果
+ * @param {Object} params - 參數物件
+ * @param {string} params.name - 資料集名稱
+ * @param {string} params.controlFile - Type I: 對照檔案路徑
+ * @param {Array<string>} params.sampleFiles - Type I: 樣本檔案路徑列表
+ * @param {Array<string>} params.sc1_files - Type II: SC1 檔案路徑列表
+ * @param {Array<string>} params.sc2_files - Type II: SC2 檔案路徑列表
+ * @param {Array<{group: number, path: string}>} params.sample_files - Type II: 分組樣本檔案路徑列表
+ * @param {string} params.instrument - 使用的儀器
+ * @param {string} params.reagent - 使用的試劑
+ * @param {string} params.storagePath - 儲存路徑
+ * @param {string} params.dataset_class - 資料集類別
+ * @param {string} params.group - 分組
+ * @param {string} params.qc - 品質控制結果
+ * @param {Array<ResultMatrix>} params.result_matrix - 結果矩陣，預設為空陣列
  * @returns {QSEPDataset} - Qsep資料集
  */
-export function createQSEPDataset(
+export function createQSEPDataset({
   name,
   controlFile,
   sampleFiles,
@@ -655,11 +668,10 @@ export function createQSEPDataset(
   reagent,
   storagePath,
   dataset_class,
-  result,
-  assessments,
   group,
-  qc
-) {
+  qc,
+  result_matrix = []
+}) {
   return new QSEPDataset(
     name,
     controlFile,
@@ -671,10 +683,9 @@ export function createQSEPDataset(
     reagent,
     storagePath,
     dataset_class,
-    result,
-    assessments,
     group,
-    qc
+    qc,
+    result_matrix
   );
 }
 

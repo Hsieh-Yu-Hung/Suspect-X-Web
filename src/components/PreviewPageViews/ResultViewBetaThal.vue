@@ -965,8 +965,6 @@ onMounted(async () => {
     return;
   }
 
-  console.log("currentAnalysisResult", currentAnalysisResult.value);
-
   // 更新 summaryRows
   updateSummaryRows();
 

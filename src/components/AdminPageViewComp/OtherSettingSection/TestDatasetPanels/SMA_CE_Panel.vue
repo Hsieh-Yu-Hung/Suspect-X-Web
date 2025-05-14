@@ -1,4 +1,7 @@
 <template>
+  <!-- ========================= -->
+  <!-- 主要資料集模板組件 -->
+  <!-- ========================= -->
   <GeneralDatasetTmpl
     dataset_class="SMA_CE"
     :datasetList="DatasetList"
@@ -7,48 +10,66 @@
     @updateDatasetList="updateDatasetList"
     ref="generalDatasetTmpl"
   >
+    <!-- ========================= -->
+    <!-- 資料集內容顯示區塊 -->
+    <!-- ========================= -->
     <template #dataset-content="slotProps">
-      <div class="sample-item">
-        <span class="text-subtitle2">SMN1 SC-C: </span>
-        <q-chip color="grey-3" dense class="text-subtitle2" :label="slotProps.dataset.smn1_sc_c" />
+      <!-- SMN1 相關資訊 -->
+      <div class="dataset-section">
+        <div class="info-item">
+          <span class="info-label">SMN1 SC-C: </span>
+          <q-chip color="grey-3" dense class="info-value" :label="slotProps.dataset.smn1_sc_c" />
+        </div>
+        <div class="info-item">
+          <span class="info-label">SMN1 SC-N: </span>
+          <q-chip color="grey-3" dense class="info-value" :label="slotProps.dataset.smn1_sc_n" />
+        </div>
+        <div class="samples-section">
+          <span class="info-label">SMN1 Samples: </span>
+          <div class="samples-list">
+            <q-chip
+              v-for="sample in slotProps.dataset.smn1_samples"
+              :key="sample"
+              color="grey-3"
+              dense
+              class="info-value"
+              :label="sample.name"
+            />
+          </div>
+        </div>
       </div>
-      <div class="sample-item">
-        <span class="text-subtitle2">SMN1 SC-N: </span>
-        <q-chip color="grey-3" dense class="text-subtitle2" :label="slotProps.dataset.smn1_sc_n" />
-      </div>
-      <div class="samples-container">
-        <span class="text-subtitle2">SMN1 Samples: </span>
-        <q-chip
-          v-for="sample in slotProps.dataset.smn1_samples"
-          :key="sample"
-          color="grey-3"
-          dense
-          class="text-subtitle2"
-          :label="sample.name"
-        />
-      </div>
-      <div class="sample-item">
-        <span class="text-subtitle2">SMN2 SC-C: </span>
-        <q-chip color="grey-3" dense class="text-subtitle2" :label="slotProps.dataset.smn2_sc_c" />
-      </div>
-      <div class="sample-item">
-        <span class="text-subtitle2">SMN2 SC-N: </span>
-        <q-chip color="grey-3" dense class="text-subtitle2" :label="slotProps.dataset.smn2_sc_n" />
-      </div>
-      <div class="samples-container">
-        <span class="text-subtitle2">SMN2 Samples: </span>
-        <q-chip
-          v-for="sample in slotProps.dataset.smn2_samples"
-          :key="sample"
-          color="grey-3"
-          dense
-          class="text-subtitle2"
-          :label="sample.name"
-        />
+
+      <!-- SMN2 相關資訊 -->
+      <div class="dataset-section">
+        <div class="info-item">
+          <span class="info-label">SMN2 SC-C: </span>
+          <q-chip color="grey-3" dense class="info-value" :label="slotProps.dataset.smn2_sc_c" />
+        </div>
+        <div class="info-item">
+          <span class="info-label">SMN2 SC-N: </span>
+          <q-chip color="grey-3" dense class="info-value" :label="slotProps.dataset.smn2_sc_n" />
+        </div>
+        <div class="samples-section">
+          <span class="info-label">SMN2 Samples: </span>
+          <div class="samples-list">
+            <q-chip
+              v-for="sample in slotProps.dataset.smn2_samples"
+              :key="sample"
+              color="grey-3"
+              dense
+              class="info-value"
+              :label="sample.name"
+            />
+          </div>
+        </div>
       </div>
     </template>
 
+    <!-- ========================= -->
+    <!-- 新增資料集表單區塊 -->
+    <!-- ========================= -->
     <template #add-content>
+      <!-- 上傳控制區 -->
       <div class="upload-controls">
         <q-btn
           dense
@@ -58,7 +79,7 @@
           @click="triggerFileUpload"
           class="upload-btn"
         />
-        <div class="q-ml-md">
+        <div class="gene-type-toggle">
           <q-toggle
             :label="useGeneType"
             color="pink"
@@ -70,53 +91,57 @@
         <q-file
           ref="fileInput"
           v-model="datasetFiles"
-          class="q-mb-md hidden-file-input"
+          class="hidden-file-input"
           dense
           accept=".xlsx,.xls"
           multiple
           @update:model-value="handleFileUpload"
         />
       </div>
-      <div
-        v-for="(file, index) in uploadedFiles"
-        :key="index"
-        class="full-width q-pa-sm file-item"
-      >
-        <div class="row items-center q-gutter-md">
-          <!-- 檔名 -->
-          <div class="col-4 file-name">
-            <span class="text-subtitle2">{{ file.name }}</span>
-          </div>
 
-          <!-- SMN1/SMN2 選項 -->
-          <div class="col-2">
-            <q-radio v-model="file.geneType" val="SMN1" label="SMN1" class="q-mr-md" />
-            <q-radio v-model="file.geneType" val="SMN2" label="SMN2" />
-          </div>
+      <!-- 已上傳檔案列表 -->
+      <div class="uploaded-files-list">
+        <div
+          v-for="(file, index) in uploadedFiles"
+          :key="index"
+          class="file-item"
+        >
+          <div class="file-item-content">
+            <!-- 檔案名稱 -->
+            <div class="file-name">
+              <span class="text-subtitle2">{{ file.name }}</span>
+            </div>
 
-          <!-- 樣本類型選擇 -->
-          <div class="col-3">
-            <q-select
-              v-model="file.sampleType"
-              :options="sampleTypeOptions"
-              dense
-              outlined
-              class="sample-type-select"
-            />
-          </div>
+            <!-- 基因類型選擇 -->
+            <div class="gene-type-selection">
+              <q-radio v-model="file.geneType" val="SMN1" label="SMN1" class="gene-type-radio" />
+              <q-radio v-model="file.geneType" val="SMN2" label="SMN2" />
+            </div>
 
-          <!-- 刪除按鈕 -->
-          <div class="col-1">
-            <q-btn
-              flat
-              round
-              color="red-9"
-              icon="delete"
-              size="sm"
-              @click="removeFile(index)"
-            >
-              <q-tooltip>刪除此檔案</q-tooltip>
-            </q-btn>
+            <!-- 樣本類型選擇 -->
+            <div class="sample-type-selection">
+              <q-select
+                v-model="file.sampleType"
+                :options="sampleTypeOptions"
+                dense
+                outlined
+                class="sample-type-select"
+              />
+            </div>
+
+            <!-- 操作按鈕 -->
+            <div class="file-actions">
+              <q-btn
+                flat
+                round
+                color="red-9"
+                icon="delete"
+                size="sm"
+                @click="removeFile(index)"
+              >
+                <q-tooltip>刪除此檔案</q-tooltip>
+              </q-btn>
+            </div>
           </div>
         </div>
       </div>
@@ -125,7 +150,9 @@
 </template>
 
 <script setup>
-// 導入模組
+// ============================
+// 導入相關模組
+// ============================
 import { v4 as uuidv4 } from 'uuid'
 import { ref, onMounted, computed } from 'vue'
 import { useQuasar } from 'quasar'
@@ -135,7 +162,9 @@ import { collection, getDocs, deleteDoc } from 'firebase/firestore'
 import GeneralDatasetTmpl from '@/components/AdminPageViewComp/OtherSettingSection/TestDatasetTemplates/GeneralDatasetTmpl.vue'
 import { createSmaCeDataset } from '@/types/dataset'
 
+// ============================
 // 常數定義
+// ============================
 const DATASET_CLASS = "SMA_CE"
 const NOTIFICATION_TIMEOUT = 2000
 
@@ -146,27 +175,30 @@ const sampleTypeOptions = [
   { label: 'SC-N', value: 'SC-N' }
 ]
 
-// 使用 Quasar 的通知
+// ============================
+// 響應式狀態
+// ============================
 const $q = useQuasar()
 const generalDatasetTmpl = ref(null)
-
-// 資料集資料相關響應式變數
 const DatasetList = ref([])
 const useGeneType = ref('SMN1')
 const fileInput = ref(null)
 const uploadedFiles = ref([])
 const datasetFiles = ref([])
 
-// 從子組件獲取值的計算屬性
+// ============================
+// 計算屬性
+// ============================
 const datasetName = computed(() => generalDatasetTmpl.value?.datasetName)
 const selectedInstrument = computed(() => generalDatasetTmpl.value?.selectedInstrument)
 const selectedReagent = computed(() => generalDatasetTmpl.value?.selectedReagent)
 const selectedGroup = computed(() => generalDatasetTmpl.value?.selectedGroup)
 const selectedQC = computed(() => generalDatasetTmpl.value?.selectedQC)
-const resultText = computed(() => generalDatasetTmpl.value?.resultText)
-const assessmentsText = computed(() => generalDatasetTmpl.value?.assessmentsText)
+const result_matrix = computed(() => generalDatasetTmpl.value?.result_matrix)
 
-// 顯示通知的輔助函數
+// ============================
+// 工具函數
+// ============================
 const showNotification = (type, message) => {
   $q.notify({
     type,
@@ -176,114 +208,124 @@ const showNotification = (type, message) => {
   })
 }
 
-// 驗證表單的輔助函數
+// ============================
+// 表單驗證與提交
+// ============================
 const validateForm = () => {
-  // 檢查資料集名稱和上傳的檔案
-  if (!datasetName.value) {
-    showNotification('negative', '請填寫資料集名稱')
+  try {
+    // 檢查資料集名稱和上傳的檔案
+    if (!datasetName.value) {
+      showNotification('negative', '請填寫資料集名稱')
+      return false
+    }
+
+    if (uploadedFiles.value.length === 0) {
+      showNotification('negative', '請上傳至少一個檔案')
+      return false
+    }
+
+    // 檢查 result_matrix
+    if (!result_matrix.value || !Array.isArray(result_matrix.value) || result_matrix.value.length === 0) {
+      showNotification('negative', '請至少添加一個結果資訊')
+      return false
+    }
+
+    // 檢查每個 result_matrix 項目
+    const isValidResultMatrix = result_matrix.value.every(item =>
+      item.sample_id && item.result && item.assessment
+    )
+
+    if (!isValidResultMatrix) {
+      showNotification('negative', '請確保每個結果資訊都已填寫完整')
+      return false
+    }
+
+    return true
+  } catch (error) {
+    console.error('驗證表單時出錯:', error)
+    showNotification('negative', '驗證表單時出錯')
     return false
   }
-
-  if (uploadedFiles.value.length === 0) {
-    showNotification('negative', '請上傳至少一個檔案')
-    return false
-  }
-
-  // 檢查 Result 和 Assessments
-  if (!resultText.value) {
-    showNotification('negative', '請填寫 Result 欄位')
-    return false
-  }
-
-  if (!assessmentsText.value) {
-    showNotification('negative', '請填寫 Assessments 欄位')
-    return false
-  }
-
-  return true
 }
 
-// 上傳檔案到 Storage
-const uploadFilesToStorage = async (storagePath) => {
+const onSubmit = async () => {
   try {
-    const uploadPromises = uploadedFiles.value.map(async (file) => {
+    // 驗證表單
+    if (!validateForm()) {
+      return
+    }
+
+    // 開啟 loading
+    $q.loading.show()
+
+    // Storage Path, 隨機產生一組 uuid
+    const storagePath = uuidv4()
+
+    // 分類檔案
+    const smn1_files = {
+      sc_c: uploadedFiles.value.find(f => f.geneType === 'SMN1' && f.sampleType.value === 'SC-C'),
+      sc_n: uploadedFiles.value.find(f => f.geneType === 'SMN1' && f.sampleType.value === 'SC-N'),
+      samples: uploadedFiles.value.filter(f => f.geneType === 'SMN1' && f.sampleType.value === 'Sample')
+    }
+
+    const smn2_files = {
+      sc_c: uploadedFiles.value.find(f => f.geneType === 'SMN2' && f.sampleType.value === 'SC-C'),
+      sc_n: uploadedFiles.value.find(f => f.geneType === 'SMN2' && f.sampleType.value === 'SC-N'),
+      samples: uploadedFiles.value.filter(f => f.geneType === 'SMN2' && f.sampleType.value === 'Sample')
+    }
+
+    // 上傳檔案到 Storage
+    const uploadFile = async (file) => {
+      if (!file) return null
       const filePath = `${storagePath}/${file.name}`
       await uploadFileToStorage(file.file, filePath, 'test')
-      return {
-        file_name: file.name,
-        file_path: `testing_data/${filePath}`
-      }
-    })
-    return await Promise.all(uploadPromises)
-  } catch (error) {
-    console.error('上傳檔案失敗:', error)
-    showNotification('negative', '上傳檔案失敗: ' + error.message)
-    throw error
-  }
-}
+      return file.name
+    }
 
-// 獲取分組檔案
-const getGroupedFiles = (storagePath) => {
-  return {
-    smn1_sc_c: uploadedFiles.value.filter(file =>
-      file.geneType === 'SMN1' && file.sampleType.value === 'SC-C'
-    ).map(file => ({
-      name: file.name,
-      path: `testing_data/${storagePath}/${file.name}`,
-      expType: "std1",
-      smnType: "smn1"
-    }))[0]?.name || '',
+    const uploadSamples = async (samples) => {
+      return await Promise.all(samples.map(async (sample) => {
+        const path = `${storagePath}/${sample.name}`
+        await uploadFileToStorage(sample.file, path, 'test')
+        return {
+          name: sample.name,
+          path: `testing_data/${path}`,
+          expType: 'sample',
+          smnType: sample.geneType.toLowerCase()
+        }
+      }))
+    }
 
-    smn1_sc_n: uploadedFiles.value.filter(file =>
-      file.geneType === 'SMN1' && file.sampleType.value === 'SC-N'
-    ).map(file => ({
-      name: file.name,
-      path: `testing_data/${storagePath}/${file.name}`,
-      expType: "std2",
-      smnType: "smn1"
-    }))[0]?.name || '',
+    // 執行檔案上傳
+    const [smn1_sc_c, smn1_sc_n, smn2_sc_c, smn2_sc_n] = await Promise.all([
+      uploadFile(smn1_files.sc_c),
+      uploadFile(smn1_files.sc_n),
+      uploadFile(smn2_files.sc_c),
+      uploadFile(smn2_files.sc_n)
+    ])
 
-    smn1_samples: uploadedFiles.value.filter(file =>
-      file.geneType === 'SMN1' && file.sampleType.value === 'Sample'
-    ).map(file => ({
-      name: file.name,
-      path: `testing_data/${storagePath}/${file.name}`,
-      expType: "sample",
-      smnType: "smn1"
-    })),
+    const [smn1_samples, smn2_samples] = await Promise.all([
+      uploadSamples(smn1_files.samples),
+      uploadSamples(smn2_files.samples)
+    ])
 
-    smn2_sc_c: uploadedFiles.value.filter(file =>
-      file.geneType === 'SMN2' && file.sampleType.value === 'SC-C'
-    ).map(file => ({
-      name: file.name,
-      path: `testing_data/${storagePath}/${file.name}`,
-      expType: "std1",
-      smnType: "smn2"
-    }))[0]?.name || '',
+    // 創建 SmaCeDataset 實例
+    const smaCeDataset = createSmaCeDataset(
+      datasetName.value,
+      smn1_sc_c,
+      smn1_sc_n,
+      smn1_samples,
+      smn2_sc_c,
+      smn2_sc_n,
+      smn2_samples,
+      selectedInstrument.value,
+      selectedReagent.value,
+      selectedGroup.value?.value,
+      selectedQC.value,
+      storagePath,
+      result_matrix.value
+    )
 
-    smn2_sc_n: uploadedFiles.value.filter(file =>
-      file.geneType === 'SMN2' && file.sampleType.value === 'SC-N'
-    ).map(file => ({
-      name: file.name,
-      path: `testing_data/${storagePath}/${file.name}`,
-      expType: "std2",
-      smnType: "smn2"
-    }))[0]?.name || '',
-
-    smn2_samples: uploadedFiles.value.filter(file =>
-      file.geneType === 'SMN2' && file.sampleType.value === 'Sample'
-    ).map(file => ({
-      name: file.name,
-      path: `testing_data/${storagePath}/${file.name}`,
-      expType: "sample",
-      smnType: "smn2"
-    }))
-  }
-}
-
-// 檢查資料集是否存在並獲取 UID
-const getDatasetUid = async (name) => {
-  try {
+    // 檢查資料庫中是否有相同名稱的資料集
     let datasetUid = ''
     const searchPath = `${dataset_list.testing_data}`
     const collectionRef = collection(Database, searchPath)
@@ -291,134 +333,45 @@ const getDatasetUid = async (name) => {
 
     for (const document of querySnapshot.docs) {
       const docData = document.data()
-      if (docData.dataset_name === name && docData.dataset_class === DATASET_CLASS) {
+      if (docData.name === datasetName.value && docData.dataset_class === DATASET_CLASS) {
         datasetUid = document.id
         await deleteDoc(document.ref)
         break
       }
     }
 
-    return datasetUid || uuidv4()
-  } catch (error) {
-    console.error('檢查資料集時出錯:', error)
-    showNotification('negative', '檢查資料集失敗: ' + error.message)
-    throw error
-  }
-}
+    // 如果沒有，則新增資料集
+    if (datasetUid === '') {
+      datasetUid = uuidv4()
+    }
 
-// 表單提交
-const onSubmit = async () => {
-  // 驗證表單
-  if (!validateForm()) return
+    // 將 SmaCeDataset 轉換為平面物件
+    const datasetData = smaCeDataset.toPlainObject()
 
-  // 開啟 loading
-  $q.loading.show()
+    // 新增資料集到資料庫
+    await addTestingSample(datasetData, datasetUid)
 
-  try {
-    // 生成隨機儲存路徑
-    const storagePath = uuidv4()
+    // 重置表單
+    onReset()
 
-    // 上傳檔案
-    await uploadFilesToStorage(storagePath)
-
-    console.log(uploadedFiles.value)
-
-    // 獲取分組後的檔案
-    const groupedFiles = getGroupedFiles(storagePath)
-
-    // 創建資料集
-    const datasetData = createSmaCeDataset(
-      datasetName.value,
-      groupedFiles.smn1_sc_c,
-      groupedFiles.smn1_sc_n,
-      groupedFiles.smn1_samples,
-      groupedFiles.smn2_sc_c,
-      groupedFiles.smn2_sc_n,
-      groupedFiles.smn2_samples,
-      selectedInstrument.value,
-      selectedReagent.value,
-      selectedGroup.value.value,
-      selectedQC.value,
-      resultText.value,
-      assessmentsText.value,
-      storagePath
-    )
-
-    // 檢查是否已存在相同名稱的資料集
-    const datasetUid = await getDatasetUid(datasetName.value)
-
-    // 轉換為純 JavaScript 物件並保存
-    const plainObject = datasetData.toPlainObject()
-    await addTestingSample(plainObject, datasetUid)
-
-    // 顯示成功通知
-    showNotification('positive', '資料集創建成功')
-
-    // 重置表單並更新列表
-    // onReset()
+    // 更新集合顯示
     await updateDatasetList()
+
+    // 顯示成功訊息
+    showNotification('positive', '資料集新增成功')
+
   } catch (error) {
-    console.error('提交表單時出錯:', error)
-    showNotification('negative', '創建資料集失敗: ' + error.message)
+    console.error('新增資料集時發生錯誤:', error)
+    showNotification('negative', '新增資料集時發生錯誤')
   } finally {
     // 關閉 loading
     $q.loading.hide()
   }
 }
 
-// 重置表單
-const onReset = () => {
-  uploadedFiles.value = []
-  datasetFiles.value = null
-
-  // 如果子組件可用，重置子組件的表單
-  if (generalDatasetTmpl.value) {
-    generalDatasetTmpl.value.datasetName = ''
-    generalDatasetTmpl.value.resultText = ''
-    generalDatasetTmpl.value.assessmentsText = ''
-  }
-}
-
-// 更新資料集列表
-const updateDatasetList = async () => {
-  try {
-    // 取得 database 中所有分析
-    const searchPath = `${dataset_list.testing_data}`
-    const collectionRef = collection(Database, searchPath)
-    const querySnapshot = await getDocs(collectionRef)
-
-    // 清空集合
-    DatasetList.value = []
-
-    // 載入測試樣本
-    querySnapshot.forEach(document => {
-      const docData = document.data()
-      if (docData.dataset_class === DATASET_CLASS) {
-        DatasetList.value.push(createSmaCeDataset(
-          docData.name,
-          docData.SMN1_SC_C[0]?.name || '',
-          docData.SMN1_SC_N[0]?.name || '',
-          docData.SMN1_Samples || [],
-          docData.SMN2_SC_C[0]?.name || '',
-          docData.SMN2_SC_N[0]?.name || '',
-          docData.SMN2_Samples || [],
-          docData.instrument,
-          docData.reagent,
-          docData.group,
-          docData.qc,
-          docData.result,
-          docData.assessments,
-          docData.storagePath
-        ))
-      }
-    })
-  } catch (error) {
-    console.error('更新資料集列表失敗:', error)
-    showNotification('negative', '更新資料集列表失敗: ' + error.message)
-  }
-}
-
-// 檔案操作相關函數
+// ============================
+// 檔案處理相關方法
+// ============================
 const triggerFileUpload = () => {
   fileInput.value.pickFiles()
 }
@@ -448,67 +401,186 @@ const removeFile = (index) => {
   uploadedFiles.value.splice(index, 1)
 }
 
-// 掛載元件
+// ============================
+// 資料集管理方法
+// ============================
+const onReset = () => {
+  uploadedFiles.value = []
+  datasetFiles.value = null
+
+  // 如果子組件可用，重置子組件的表單
+  if (generalDatasetTmpl.value) {
+    generalDatasetTmpl.value.datasetName = ''
+    generalDatasetTmpl.value.result_matrix = []
+  }
+}
+
+const updateDatasetList = async () => {
+  try {
+    // 取得 database 中所有分析
+    const searchPath = `${dataset_list.testing_data}`
+    const collectionRef = collection(Database, searchPath)
+    const querySnapshot = await getDocs(collectionRef)
+
+    // 清空集合
+    DatasetList.value = []
+
+    // 載入測試樣本
+    for (const document of querySnapshot.docs) {
+      const docData = document.data()
+      if (docData.dataset_class === DATASET_CLASS) {
+        const dataset = createSmaCeDataset(
+          docData.name,
+          docData.SMN1_SC_C[0]?.name || '',
+          docData.SMN1_SC_N[0]?.name || '',
+          docData.SMN1_Samples || [],
+          docData.SMN2_SC_C[0]?.name || '',
+          docData.SMN2_SC_N[0]?.name || '',
+          docData.SMN2_Samples || [],
+          docData.instrument,
+          docData.reagent,
+          docData.group,
+          docData.qc,
+          docData.storagePath,
+          docData.result_matrix
+        )
+        DatasetList.value.push(dataset)
+      }
+    }
+  } catch (error) {
+    console.error('更新資料集列表失敗:', error)
+    showNotification('negative', '更新資料集列表失敗: ' + error.message)
+  }
+}
+
+// ============================
+// 生命週期鉤子
+// ============================
 onMounted(async () => {
   await updateDatasetList()
 })
 </script>
 
 <style scoped>
-.sample-item {
-  margin-bottom: 8px;
+/* ========================= */
+/* 共用樣式 */
+/* ========================= */
+.text-subtitle2 {
+  font-size: 0.9rem;
+  font-weight: 500;
 }
 
-.samples-container {
+/* ========================= */
+/* 資料集顯示區塊 */
+/* ========================= */
+.dataset-section {
+  margin-bottom: 1.5rem;
+}
+
+.info-item {
+  display: flex;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+
+.info-label {
+  font-size: 0.9rem;
+  font-weight: 500;
+  margin-right: 0.5rem;
+}
+
+.info-value {
+  font-size: 0.9rem;
+}
+
+.samples-section {
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
-  gap: 0.5em;
-  margin-bottom: 8px;
+  gap: 0.5rem;
 }
 
+.samples-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.25rem;
+}
+
+/* ========================= */
+/* 上傳控制區域 */
+/* ========================= */
 .upload-controls {
   display: flex;
-  flex-direction: row;
-  justify-content: flex-end;
   align-items: center;
-  width: 100%;
-  gap: 0.5em;
-  margin-bottom: 16px;
+  gap: 1rem;
+  margin-bottom: 1rem;
+  padding: 0.5rem;
+  background-color: #f5f5f5;
+  border-radius: 4px;
 }
 
 .upload-btn {
-  height: 100%;
+  min-width: 100px;
+}
+
+.gene-type-toggle {
+  margin-left: auto;
 }
 
 .hidden-file-input {
-  width: 100%;
   display: none;
+}
+
+/* ========================= */
+/* 檔案列表區域 */
+/* ========================= */
+.uploaded-files-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
 }
 
 .file-item {
   border: 1px solid #e0e0e0;
   border-radius: 4px;
-  margin-bottom: 8px;
+  padding: 0.75rem;
+  background-color: #ffffff;
+}
+
+.file-item-content {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
 }
 
 .file-name {
+  flex: 2;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+.gene-type-selection {
+  flex: 2;
+  display: flex;
+  gap: 1rem;
+}
+
+.gene-type-radio {
+  margin-right: 0.5rem;
+}
+
+.sample-type-selection {
+  flex: 2;
 }
 
 .sample-type-select {
   width: 150px;
 }
 
-.collapsed {
-  height: 3em;
-  overflow: hidden;
-}
-
-.expanded {
-  height: auto;
-  overflow: auto;
+.file-actions {
+  flex: 1;
+  display: flex;
+  justify-content: flex-end;
 }
 </style>

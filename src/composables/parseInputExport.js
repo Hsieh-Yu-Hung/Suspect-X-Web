@@ -392,7 +392,6 @@ function exportF2f5Props(inputData) {
 
 // PD
 function exportPdProps(inputData) {
-  console.log("GBA inputData", inputData);
   function assessmentExport(assessment) {
     const pdAssessment = {
       'low-risk': 'lowRisk',

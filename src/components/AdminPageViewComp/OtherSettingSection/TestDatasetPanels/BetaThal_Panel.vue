@@ -1,4 +1,7 @@
 <template>
+  <!-- ========================= -->
+  <!-- 主要資料集模板組件 -->
+  <!-- ========================= -->
   <GeneralDatasetTmpl
     dataset_class="BETA-THAL"
     :datasetList="DatasetList"
@@ -7,17 +10,25 @@
     @updateDatasetList="updateDatasetList"
     ref="generalDatasetTmpl"
   >
+    <!-- ========================= -->
+    <!-- 資料集內容顯示區塊 -->
+    <!-- ========================= -->
     <template #dataset-content="slotProps">
-      <div class="sample-container">
-        <div v-for="sample in slotProps.dataset.sample_files" :key="sample.name">
-          <span class="text-subtitle2">{{ sample.name }}</span>
+      <div class="dataset-container">
+        <!-- 樣本檔案列表 -->
+        <div
+          v-for="sample in slotProps.dataset.sample_files"
+          :key="sample.name"
+          class="dataset-item"
+        >
+          <span class="dataset-name">{{ sample.name }}</span>
           <div class="file-list">
             <q-chip
               v-for="file in sample.files"
               :key="file.file_name"
               color="grey-3"
               dense
-              class="text-subtitle2"
+              class="file-chip"
               :label="file.file_name"
             />
           </div>
@@ -25,26 +36,36 @@
       </div>
     </template>
 
+    <!-- ========================= -->
+    <!-- 新增資料集表單區塊 -->
+    <!-- ========================= -->
     <template #add-content>
-      <div class="sample-list-container">
+      <div class="form-container">
+        <!-- 樣本列表 -->
         <div
           v-for="(sample, index) in sampleList"
           :key="index"
-          class="sample-item"
+          class="form-item"
         >
-          <span class="text-subtitle2 sample-label">Sample {{ index + 1 }}</span>
-          <div class="sample-content">
+          <!-- 樣本標題 -->
+          <span class="form-label">Sample {{ index + 1 }}</span>
+
+          <!-- 樣本內容區域 -->
+          <div class="form-content">
+            <!-- 樣本名稱輸入 -->
             <q-input
               v-model="sample.name"
               :rules="sampleNameRules"
               lazy-rules
               dense
               filled
-              class="text-subtitle2 q-pa-md sample-name-input"
+              class="name-input"
             />
+
+            <!-- 檔案上傳區域 -->
             <q-file
               v-model="sample.files"
-              class="text-subtitle2 q-pa-md sample-file-input"
+              class="file-input"
               filled
               dense
               use-chips
@@ -57,8 +78,19 @@
               @update:model-value="val => sample.files = val"
               @rejected="onRejected"
             />
-            <div class="sample-actions">
-              <q-btn flat round dense color="primary" icon="add_circle" @click="addSample(index)" />
+
+            <!-- 操作按鈕區域 -->
+            <div class="action-buttons">
+              <q-btn
+                flat
+                round
+                dense
+                color="primary"
+                icon="add_circle"
+                @click="addSample(index)"
+              >
+                <q-tooltip>新增樣本</q-tooltip>
+              </q-btn>
               <q-btn
                 v-if="sampleList.length > 1"
                 flat
@@ -67,7 +99,9 @@
                 color="negative"
                 icon="remove_circle"
                 @click="removeSample(index)"
-              />
+              >
+                <q-tooltip>刪除樣本</q-tooltip>
+              </q-btn>
             </div>
           </div>
         </div>
@@ -77,7 +111,9 @@
 </template>
 
 <script setup>
-// 導入模組
+// ============================
+// 導入相關模組
+// ============================
 import { ref, onMounted, computed } from 'vue'
 import { useQuasar } from 'quasar'
 import { uploadFileToStorage } from '@/firebase/firebaseStorage'
@@ -87,45 +123,42 @@ import { v4 as uuidv4 } from 'uuid'
 import GeneralDatasetTmpl from '@/components/AdminPageViewComp/OtherSettingSection/TestDatasetTemplates/GeneralDatasetTmpl.vue'
 import { createBetaThalDataset } from '@/types/dataset.js'
 
+// ============================
 // 常數定義
+// ============================
 const DATASET_CLASS = "BETA-THAL"
 const DEFAULT_GROUP = { label: 'Positive', value: 'Positive' }
 const DEFAULT_QC = 'Passed'
 const NOTIFICATION_TIMEOUT = 2000
 
+// ============================
 // 表單驗證規則
+// ============================
 const sampleNameRules = [val => !!val || '請輸入樣本名稱']
 const sampleFileRules = [val => (val && val.length === 2) || '請上傳 2 個結果檔案']
 
-// 使用 Quasar 的通知
+// ============================
+// 響應式狀態
+// ============================
 const $q = useQuasar()
 const generalDatasetTmpl = ref(null)
-
-// 表單數據和計算屬性
 const DatasetList = ref([])
 const sampleList = ref([{ name: '', files: null }])
 
-// 從子組件獲取值的計算屬性
+// ============================
+// 計算屬性
+// ============================
 const datasetName = computed(() => generalDatasetTmpl.value?.datasetName)
 const selectedInstrument = computed(() => generalDatasetTmpl.value?.selectedInstrument)
 const selectedReagent = computed(() => generalDatasetTmpl.value?.selectedReagent)
 const selectedGroup = computed(() => generalDatasetTmpl.value?.selectedGroup)
 const selectedQC = computed(() => generalDatasetTmpl.value?.selectedQC)
-const resultText = computed(() => generalDatasetTmpl.value?.resultText)
-const assessmentsText = computed(() => generalDatasetTmpl.value?.assessmentsText)
+const result_matrix = computed(() => generalDatasetTmpl.value?.result_matrix)
 
-// 樣本操作函數
-const addSample = (index) => {
-  sampleList.value.splice(index + 1, 0, { name: '', files: null })
-}
-
-const removeSample = (index) => {
-  if (sampleList.value.length > 1) {
-    sampleList.value.splice(index, 1)
-  }
-}
-
-// 顯示通知的輔助函數
+// ============================
+// 工具函數
+// ============================
+// 顯示通知訊息
 const showNotification = (type, message) => {
   $q.notify({
     type,
@@ -135,6 +168,29 @@ const showNotification = (type, message) => {
   })
 }
 
+// ============================
+// 樣本操作方法
+// ============================
+// 新增樣本
+const addSample = (index) => {
+  sampleList.value.splice(index + 1, 0, { name: '', files: null })
+}
+
+// 移除樣本
+const removeSample = (index) => {
+  if (sampleList.value.length > 1) {
+    sampleList.value.splice(index, 1)
+  }
+}
+
+// 處理檔案被拒絕
+const onRejected = () => {
+  showNotification('negative', '只能上傳 .ab1 檔案')
+}
+
+// ============================
+// 表單驗證與提交
+// ============================
 // 驗證表單的輔助函數
 const validateForm = () => {
   // 檢查子組件 ref 是否存在
@@ -144,8 +200,6 @@ const validateForm = () => {
   }
 
   const name = datasetName.value
-  const result = resultText.value
-  const assessments = assessmentsText.value
 
   // 檢查資料集名稱和樣本
   if (!name || sampleList.value.length === 0) {
@@ -153,9 +207,19 @@ const validateForm = () => {
     return false
   }
 
-  // 檢查 Result 和 Assessments
-  if (!assessments || !result) {
-    showNotification('negative', '請填寫 Result 和 Assessments 欄位')
+  // 檢查 result_matrix
+  if (!result_matrix.value || !Array.isArray(result_matrix.value) || result_matrix.value.length === 0) {
+    showNotification('negative', '請至少添加一個結果資訊')
+    return false
+  }
+
+  // 檢查每個 result_matrix 項目
+  const isValidResultMatrix = result_matrix.value.every(item =>
+    item.sample_id && item.result && item.assessment
+  )
+
+  if (!isValidResultMatrix) {
+    showNotification('negative', '請確保每個結果資訊都已填寫完整')
     return false
   }
 
@@ -172,6 +236,9 @@ const validateForm = () => {
   return true
 }
 
+// ============================
+// 檔案上傳處理
+// ============================
 // 上傳樣本檔案
 const uploadSampleFiles = async (storagePath) => {
   try {
@@ -198,9 +265,40 @@ const uploadSampleFiles = async (storagePath) => {
   }
 }
 
-// 檢查資料集是否存在並獲取 UID
-const getDatasetUid = async (name) => {
+// ============================
+// 資料集管理方法
+// ============================
+// 表單提交
+const onSubmit = async () => {
+  // 驗證表單
+  if (!validateForm()) return
+
+  // 開啟 loading
+  $q.loading.show()
+
   try {
+    // 獲取表單數據
+    const name = datasetName.value
+
+    // 生成隨機儲存路徑
+    const storagePath = uuidv4()
+
+    // 上傳檔案
+    const uploadedSamples = await uploadSampleFiles(storagePath)
+
+    // 創建資料集
+    const betaThalDataset = createBetaThalDataset(
+      name,
+      uploadedSamples,
+      selectedInstrument.value,
+      selectedReagent.value,
+      selectedGroup.value.value,
+      selectedQC.value,
+      storagePath,
+      result_matrix.value
+    )
+
+    // 檢查資料庫中是否有相同名稱的資料集
     let datasetUid = ''
     const searchPath = `${dataset_list.testing_data}`
     const collectionRef = collection(Database, searchPath)
@@ -215,53 +313,14 @@ const getDatasetUid = async (name) => {
       }
     }
 
-    return datasetUid || uuidv4()
-  } catch (error) {
-    console.error('檢查資料集時出錯:', error)
-    showNotification('negative', '檢查資料集失敗: ' + error.message)
-    throw error
-  }
-}
-
-// 表單提交
-const onSubmit = async () => {
-  // 驗證表單
-  if (!validateForm()) return
-
-  // 開啟 loading
-  $q.loading.show()
-
-  try {
-    // 獲取表單數據
-    const name = datasetName.value
-    const result = resultText.value
-    const assessments = assessmentsText.value
-
-    // 生成隨機儲存路徑
-    const storagePath = uuidv4()
-
-    // 上傳檔案
-    const uploadedSamples = await uploadSampleFiles(storagePath)
-
-    // 創建資料集
-    const datasetData = createBetaThalDataset(
-      name,
-      uploadedSamples,
-      selectedInstrument.value,
-      selectedReagent.value,
-      selectedGroup.value.value,
-      selectedQC.value,
-      result,
-      assessments,
-      storagePath
-    )
-
-    // 檢查是否已存在相同名稱的資料集
-    const datasetUid = await getDatasetUid(name)
+    // 如果沒有，則新增資料集
+    if (datasetUid === '') {
+      datasetUid = uuidv4()
+    }
 
     // 轉換為純 JavaScript 物件並保存
-    const plainObject = datasetData.toPlainObject()
-    await addTestingSample(plainObject, datasetUid)
+    const datasetData = betaThalDataset.toPlainObject()
+    await addTestingSample(datasetData, datasetUid)
 
     // 顯示成功通知
     showNotification('positive', '資料集創建成功')
@@ -286,8 +345,7 @@ const onReset = () => {
   // 如果子組件可用，重置子組件的表單
   if (generalDatasetTmpl.value) {
     generalDatasetTmpl.value.datasetName = ''
-    generalDatasetTmpl.value.resultText = ''
-    generalDatasetTmpl.value.assessmentsText = ''
+    generalDatasetTmpl.value.result_matrix = []
   }
 }
 
@@ -303,97 +361,135 @@ const updateDatasetList = async () => {
     DatasetList.value = []
 
     // 載入測試樣本
-    querySnapshot.forEach(document => {
+    for (const document of querySnapshot.docs) {
       const docData = document.data()
       if (docData.dataset_class === DATASET_CLASS) {
-        DatasetList.value.push(createBetaThalDataset(
+        const dataset = createBetaThalDataset(
           docData.name,
           docData.sample_files,
           docData.instrument,
           docData.reagent,
-          docData.group || DEFAULT_GROUP,
+          docData.group || DEFAULT_GROUP.value,
           docData.qc || DEFAULT_QC,
-          docData.result || '',
-          docData.assessments || '',
-          docData.storagePath
-        ))
+          docData.storagePath,
+          docData.result_matrix
+        )
+        DatasetList.value.push(dataset)
       }
-    })
+    }
   } catch (error) {
     console.error('更新資料集列表失敗:', error)
     showNotification('negative', '更新資料集列表失敗: ' + error.message)
   }
 }
 
-// 處理檔案被拒絕的情況
-const onRejected = () => {
-  showNotification('negative', '只能上傳 .ab1 檔案')
-}
-
-// 掛載元件
+// ============================
+// 生命週期鉤子
+// ============================
 onMounted(async () => {
   await updateDatasetList()
 })
 </script>
 
 <style scoped>
-.sample-container {
+/* ========================= */
+/* 共用樣式 */
+/* ========================= */
+.text-subtitle2 {
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+/* ========================= */
+/* 資料集顯示區塊 */
+/* ========================= */
+.dataset-container {
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
-  margin-top: 0.5em;
+  gap: 1rem;
   width: 100%;
+  padding: 0.5rem;
+}
+
+.dataset-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 0.5rem;
+  border: 1px solid #e0e0e0;
+  border-radius: 4px;
+}
+
+.dataset-name {
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: #424242;
 }
 
 .file-list {
   display: flex;
-  justify-content: flex-start;
   flex-direction: column;
-  align-items: flex-start;
-  gap: 0.5em;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  gap: 0.5rem;
+  padding-left: 1rem;
 }
 
-.sample-list-container {
+.file-chip {
+  font-size: 0.85rem;
+}
+
+/* ========================= */
+/* 表單區塊樣式 */
+/* ========================= */
+.form-container {
   display: flex;
   flex-direction: column;
-  gap: 0.5em;
+  gap: 1rem;
   width: 100%;
-  align-items: center;
+  padding: 0.5rem;
 }
 
-.sample-item {
+.form-item {
   display: flex;
-  flex-direction: row;
-  gap: 0.5em;
-  width: 100%;
-  align-items: center;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 1rem;
+  border: 1px solid #e0e0e0;
+  border-radius: 4px;
+  background-color: #fafafa;
 }
 
-.sample-label {
-  white-space: nowrap;
+.form-label {
+  font-size: 1rem;
+  font-weight: 500;
+  color: #616161;
 }
 
-.sample-content {
+.form-content {
   display: flex;
-  flex-direction: row;
-  width: 100%;
+  gap: 1rem;
   align-items: center;
+  flex-wrap: wrap;
 }
 
-.sample-name-input {
-  width: 50%;
+/* ========================= */
+/* 輸入欄位樣式 */
+/* ========================= */
+.name-input {
+  flex: 1;
+  min-width: 200px;
 }
 
-.sample-file-input {
-  width: 100%;
+.file-input {
+  flex: 2;
+  min-width: 300px;
 }
 
-.sample-actions {
+/* ========================= */
+/* 按鈕區域樣式 */
+/* ========================= */
+.action-buttons {
   display: flex;
-  flex-direction: row;
-  gap: 0.5em;
+  gap: 0.5rem;
+  align-items: center;
 }
 </style>

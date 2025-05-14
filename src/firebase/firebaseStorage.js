@@ -42,7 +42,6 @@ export const uploadFileToStorage = async (file, upload_path, base=null, override
     else {
       execute_result.status = 'Overwrite';
       execute_result.message = `File already exists, overwrite upload.`;
-      console.log("Overwrite-file", storage_path);
       // 若要覆寫則先刪除檔案
       await deleteFile(storage_path);
     }

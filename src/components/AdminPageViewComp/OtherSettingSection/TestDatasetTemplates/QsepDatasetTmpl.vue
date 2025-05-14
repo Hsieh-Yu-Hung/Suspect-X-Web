@@ -1,4 +1,5 @@
 <template>
+  <!-- 主要資料集模板組件 -->
   <GeneralDatasetTmpl
     :dataset_class="props.dataset_class"
     :datasetList="datasetList"
@@ -7,80 +8,98 @@
     @updateDatasetList="updateDatasetList"
     ref="generalDatasetTmpl"
   >
-    <!-- 資料集內容插槽 -->
+    <!-- =================== -->
+    <!-- 資料集內容顯示區塊 -->
+    <!-- =================== -->
     <template #dataset-content="{ dataset }">
+      <!-- Type I 資料集顯示 -->
       <template v-if="typeIClass.includes(props.dataset_class)">
-        <div class="flex row items-center gap-sm">
-          <span class="text-subtitle2">Control File:</span>
-          <q-chip class="text-subtitle2 q-mr-sm">{{ dataset.controlFile.split('/').pop() }}</q-chip>
-        </div>
-        <div class="flex row items-start gap-sm">
-          <span class="text-subtitle2" style="white-space: nowrap; margin-top: 0.5em;">Sample Files:</span>
-          <div class="flex column items-start flex-wrap">
-            <q-chip
-              v-for="file in dataset.sampleFiles"
-              :key="file"
-              class="text-subtitle2 q-mr-sm"
-            >
-              {{ file.split('/').pop() }}
-            </q-chip>
+        <div class="dataset-info">
+          <div class="file-upload-row">
+            <span class="info-label text-subtitle2">Control File:</span>
+            <q-chip class="text-subtitle2">{{ dataset.controlFile.split('/').pop() }}</q-chip>
+          </div>
+          <div class="file-upload-row">
+            <span class="info-label text-subtitle2">Sample Files:</span>
+            <div class="sample-files-list">
+              <q-chip
+                v-for="file in dataset.sampleFiles"
+                :key="file"
+                class="text-subtitle2"
+              >
+                {{ file.split('/').pop() }}
+              </q-chip>
+            </div>
           </div>
         </div>
       </template>
+
+      <!-- Type II 資料集顯示 -->
       <template v-else>
-        <div class="flex row items-start gap-sm q-mt-md">
-          <span class="text-subtitle2" style="white-space: nowrap;">SC1 Files:</span>
-          <div class="flex row flex-wrap gap-sm">
-            <q-chip
-              v-for="file in dataset.sc1_files"
-              :key="file"
-              class="text-subtitle2"
-            >
-              {{ file.split('/').pop() }}
-            </q-chip>
+        <div class="dataset-info">
+          <!-- SC1 檔案 -->
+          <div class="file-upload-row">
+            <span class="info-label text-subtitle2">SC1 Files:</span>
+            <div class="sample-files-list">
+              <q-chip
+                v-for="file in dataset.sc1_files"
+                :key="file"
+                class="text-subtitle2"
+              >
+                {{ file.split('/').pop() }}
+              </q-chip>
+            </div>
           </div>
-        </div>
-        <div class="flex row items-start gap-sm q-mt-md">
-          <span class="text-subtitle2" style="white-space: nowrap;">SC2 Files:</span>
-          <div class="flex row flex-wrap gap-sm">
-            <q-chip
-              v-for="file in dataset.sc2_files"
-              :key="file"
-              class="text-subtitle2"
-            >
-              {{ file.split('/').pop() }}
-            </q-chip>
+
+          <!-- SC2 檔案 -->
+          <div class="file-upload-row">
+            <span class="info-label text-subtitle2">SC2 Files:</span>
+            <div class="sample-files-list">
+              <q-chip
+                v-for="file in dataset.sc2_files"
+                :key="file"
+                class="text-subtitle2"
+              >
+                {{ file.split('/').pop() }}
+              </q-chip>
+            </div>
           </div>
-        </div>
-        <div
-          v-for="groupNum in getGroupNumbers(dataset.sample_files)"
-          :key="groupNum"
-          class="flex row items-start gap-sm q-mt-md"
-        >
-          <span class="text-subtitle2" style="white-space: nowrap;">Sample Files 組 {{ groupNum }}:</span>
-          <div class="flex row flex-wrap gap-sm">
-            <q-chip
-              v-for="file in dataset.sample_files.filter(f => f.group === groupNum)"
-              :key="file.path"
-              class="text-subtitle2"
-            >
-              {{ file.path.split('/').pop() }}
-            </q-chip>
+
+          <!-- 樣本檔案組 -->
+          <div
+            v-for="groupNum in getGroupNumbers(dataset.sample_files)"
+            :key="groupNum"
+            class="sample-files-group"
+          >
+            <div class="file-upload-row">
+              <span class="info-label text-subtitle2">Sample Files 組 {{ groupNum }}:</span>
+              <div class="sample-files-list">
+                <q-chip
+                  v-for="file in dataset.sample_files.filter(f => f.group === groupNum)"
+                  :key="file.path"
+                  class="text-subtitle2"
+                >
+                  {{ file.path.split('/').pop() }}
+                </q-chip>
+              </div>
+            </div>
           </div>
         </div>
       </template>
     </template>
 
-    <!-- 新增資料集內容插槽 -->
+    <!-- =================== -->
+    <!-- 新增資料集表單區塊 -->
+    <!-- =================== -->
     <template #add-content>
-      <div style="width: 100%;">
-        <!-- Type I 資料集 -->
-        <div v-if="typeIClass.includes(props.dataset_class)" style="width: 100%;">
-          <div class="flex row gap-sm overflow-auto">
-            <span class="text-subtitle2" style="white-space: nowrap; margin-top: 0.6em;">Control File:</span>
+      <div class="file-upload-section">
+        <!-- Type I 資料集表單 -->
+        <div v-if="typeIClass.includes(props.dataset_class)" class="file-upload-section">
+          <div class="file-upload-row">
+            <span class="upload-label text-subtitle2">Control File:</span>
             <q-file
               v-model="controlFile"
-              class="q-mb-md w-100"
+              class="upload-field"
               filled
               dense
               use-chips
@@ -89,14 +108,13 @@
               color="deep-orange-6"
               stack-label
               accept=".xlsx,.xls"
-              style="width: 100%;"
             />
           </div>
-          <div class="flex row items-start gap-sm overflow-auto">
-            <span class="text-subtitle2" style="white-space: nowrap; margin-top: 0.6em;">Sample Files:</span>
+          <div class="file-upload-row">
+            <span class="upload-label text-subtitle2">Sample Files:</span>
             <q-file
               v-model="sampleFiles"
-              class="q-mb-md w-100"
+              class="upload-field"
               filled
               dense
               multiple
@@ -106,23 +124,22 @@
               color="deep-orange-6"
               stack-label
               accept=".xlsx,.xls"
-              style="width: 100%;"
             />
           </div>
         </div>
 
-        <!-- Type II 資料集 -->
-        <div v-if="typeIIClass.includes(props.dataset_class)" style="width: 100%;">
+        <!-- Type II 資料集表單 -->
+        <div v-if="typeIIClass.includes(props.dataset_class)" class="file-upload-section">
+          <!-- SC1 和 SC2 檔案上傳 -->
           <div
             v-for="sc in ['SC1', 'SC2']"
             :key="sc"
-            class="flex row gap-sm w-100 overflow-auto"
-            style="gap: 1.5em;"
+            class="file-upload-row"
           >
-            <span class="text-subtitle2" style="white-space: nowrap; margin-top: 0.6em;">{{ sc }} File:</span>
+            <span class="upload-label text-subtitle2">{{ sc }} File:</span>
             <q-file
               v-model="scFiles[sc]"
-              class="q-mb-md w-100"
+              class="upload-field"
               filled
               dense
               use-chips
@@ -132,50 +149,45 @@
               color="deep-orange-6"
               stack-label
               accept=".xlsx,.xls"
-              style="width: 85%;"
             />
           </div>
-          <div style="gap: 1.5em;">
-            <div
-              v-for="(group, groupIndex) in typeIISampleFiles"
-              :key="groupIndex"
-              class="flex row items-start overflow-auto"
-              style="gap: 1.5em;"
-            >
-              <span class="text-subtitle2" style="white-space: nowrap; margin-top: 0.75em;">Sample Files 組 {{ groupIndex + 1 }}:</span>
-              <q-file
-                v-model="typeIISampleFiles[groupIndex]"
-                class="q-mb-md w-100"
-                filled
+
+          <!-- 樣本檔案組上傳 -->
+          <div
+            v-for="(group, groupIndex) in typeIISampleFiles"
+            :key="groupIndex"
+            class="file-upload-row"
+          >
+            <span class="upload-label text-subtitle2">Sample Files 組 {{ groupIndex + 1 }}:</span>
+            <q-file
+              v-model="typeIISampleFiles[groupIndex]"
+              class="upload-field"
+              filled
+              dense
+              multiple
+              use-chips
+              :rules="[val => val && val.length === 3 || '請上傳 3 個檔案']"
+              lazy-rules
+              color="deep-orange-6"
+              stack-label
+              accept=".xlsx,.xls"
+            />
+            <div class="flex row gap-sm items-center">
+              <q-btn
+                v-if="groupIndex === typeIISampleFiles.length - 1"
+                color="primary"
+                icon="add_box"
                 dense
-                multiple
-                use-chips
-                :rules="[val => val && val.length === 3 || '請上傳 3 個檔案']"
-                lazy-rules
-                color="deep-orange-6"
-                stack-label
-                accept=".xlsx,.xls"
-                style="width: 60%;"
+                class="text-subtitle2"
+                @click.prevent="addTypeIISampleFile"
               />
-              <div class="flex row gap-sm items-center justify-center q-mt-xs" style="gap: 0.5em;">
-                <q-btn
-                  v-if="groupIndex === typeIISampleFiles.length - 1"
-                  color="primary"
-                  icon="add_box"
-                  dense
-                  class="text-subtitle2"
-                  label=""
-                  @click.prevent="addTypeIISampleFile"
-                />
-                <q-btn
-                  color="red-8"
-                  icon="delete"
-                  dense
-                  class="text-subtitle2"
-                  label=""
-                  @click.prevent="deleteTypeIISampleFile(groupIndex)"
-                />
-              </div>
+              <q-btn
+                color="red-8"
+                icon="delete"
+                dense
+                class="text-subtitle2"
+                @click.prevent="deleteTypeIISampleFile(groupIndex)"
+              />
             </div>
           </div>
         </div>
@@ -185,7 +197,9 @@
 </template>
 
 <script setup>
-// 導入模組
+// ==========================================
+// 導入相關模組
+// ==========================================
 import { ref, onMounted, computed } from 'vue'
 import { uploadFileToStorage } from '@/firebase/firebaseStorage'
 import { addTestingSample, dataset_list, Database } from '@/firebase/firebaseDatabase'
@@ -194,7 +208,9 @@ import { v4 as uuidv4 } from 'uuid'
 import { createQSEPDataset } from '@/types/dataset'
 import GeneralDatasetTmpl from './GeneralDatasetTmpl.vue'
 
-// Props
+// ==========================================
+// Props 定義
+// ==========================================
 const props = defineProps({
   dataset_class: {
     type: String,
@@ -202,40 +218,51 @@ const props = defineProps({
   }
 })
 
-// 從子組件獲取值的計算屬性
-const generalDatasetTmpl = ref(null)
-const datasetName = computed(() => generalDatasetTmpl.value?.datasetName)
-const selectedInstrument = computed(() => generalDatasetTmpl.value?.selectedInstrument)
-const selectedReagent = computed(() => generalDatasetTmpl.value?.selectedReagent)
-const selectedGroup = computed(() => generalDatasetTmpl.value?.selectedGroup)
-const selectedQC = computed(() => generalDatasetTmpl.value?.selectedQC)
-const resultText = computed(() => generalDatasetTmpl.value?.resultText)
-const assessmentsText = computed(() => generalDatasetTmpl.value?.assessmentsText)
-
-// 定義資料集類型
+// ==========================================
+// 常數定義
+// ==========================================
 const typeIClass = ['FXS', 'HTD']
 const typeIIClass = ['APOE']
+
+// ==========================================
+// 響應式狀態
+// ==========================================
+// 子組件引用
+const generalDatasetTmpl = ref(null)
 
 // 資料集列表
 const datasetList = ref([])
 
-// Type I 資料集
+// Type I 資料集狀態
 const controlFile = ref(null)
 const sampleFiles = ref([])
 
-// Type II 資料集
+// Type II 資料集狀態
 const scFiles = ref({
   SC1: null,
   SC2: null
 })
 const typeIISampleFiles = ref([[]])
 
-// 新增 Type II 樣本檔案
+// ==========================================
+// 計算屬性
+// ==========================================
+const datasetName = computed(() => generalDatasetTmpl.value?.datasetName)
+const selectedInstrument = computed(() => generalDatasetTmpl.value?.selectedInstrument)
+const selectedReagent = computed(() => generalDatasetTmpl.value?.selectedReagent)
+const selectedGroup = computed(() => generalDatasetTmpl.value?.selectedGroup)
+const selectedQC = computed(() => generalDatasetTmpl.value?.selectedQC)
+const result_matrix = computed(() => generalDatasetTmpl.value?.result_matrix)
+
+// ==========================================
+// Type II 資料集方法
+// ==========================================
+// 新增樣本檔案組
 const addTypeIISampleFile = () => {
   typeIISampleFiles.value.push([])
 }
 
-// 刪除 Type II 樣本檔案
+// 刪除樣本檔案組
 const deleteTypeIISampleFile = (index) => {
   if (typeIISampleFiles.value.length > 1) {
     typeIISampleFiles.value.splice(index, 1)
@@ -244,7 +271,10 @@ const deleteTypeIISampleFile = (index) => {
   }
 }
 
-// 提交表單
+// ==========================================
+// 表單提交處理
+// ==========================================
+// 主要提交處理
 const onSubmit = async () => {
   if (typeIClass.includes(props.dataset_class)) {
     await onSubmitTypeI()
@@ -253,7 +283,7 @@ const onSubmit = async () => {
   }
 }
 
-// 提交表單 - Type I
+// Type I 資料集提交
 const onSubmitTypeI = async () => {
   // 檢查所有必填欄位
   if (!datasetName.value || !controlFile.value || !sampleFiles.value || sampleFiles.value.length === 0) {
@@ -276,22 +306,21 @@ const onSubmitTypeI = async () => {
   }
 
   // 創建 QSEPDataset 實例並轉換為平面物件
-  const qsepDataset = createQSEPDataset(
-    datasetName.value,
-    `testing_data/${controlFileStoragePath}`,
-    sampleFilePaths,
-    null,
-    null,
-    null,
-    selectedInstrument.value,
-    selectedReagent.value,
-    storagePath,
-    props.dataset_class,
-    resultText.value,
-    assessmentsText.value,
-    selectedGroup.value?.value,
-    selectedQC.value
-  )
+  const qsepDataset = createQSEPDataset({
+    name: datasetName.value,
+    controlFile: `testing_data/${controlFileStoragePath}`,
+    sampleFiles: sampleFilePaths,
+    sc1_files: null,
+    sc2_files: null,
+    sample_files: null,
+    instrument: selectedInstrument.value,
+    reagent: selectedReagent.value,
+    storagePath: storagePath,
+    dataset_class: props.dataset_class,
+    group: selectedGroup.value?.value,
+    qc: selectedQC.value,
+    result_matrix: result_matrix.value
+  })
 
   // 將 qsepDataset 轉換為平面物件
   const datasetData = qsepDataset.toPlainObject()
@@ -300,7 +329,7 @@ const onSubmitTypeI = async () => {
   await saveDataset(datasetData)
 }
 
-// 提交表單 - Type II
+// Type II 資料集提交
 const onSubmitTypeII = async () => {
   // 檢查所有必填欄位
   if (!datasetName.value || !scFiles.value.SC1 || !scFiles.value.SC2) {
@@ -345,37 +374,55 @@ const onSubmitTypeII = async () => {
   }
 
   // 創建 QSEPDataset 實例並轉換為平面物件
-  const qsepDataset = createQSEPDataset(
-    datasetName.value,
-    null,
-    null,
-    sc1FilePaths,
-    sc2FilePaths,
-    sampleFilesPaths,
-    selectedInstrument.value,
-    selectedReagent.value,
-    storagePath,
-    props.dataset_class,
-    resultText.value,
-    assessmentsText.value,
-    selectedGroup.value?.value,
-    selectedQC.value
-  )
+  const qsepDataset = createQSEPDataset({
+    name: datasetName.value,
+    controlFile: null,
+    sampleFiles: null,
+    sc1_files: sc1FilePaths,
+    sc2_files: sc2FilePaths,
+    sample_files: sampleFilesPaths,
+    instrument: selectedInstrument.value,
+    reagent: selectedReagent.value,
+    storagePath: storagePath,
+    dataset_class: props.dataset_class,
+    group: selectedGroup.value?.value,
+    qc: selectedQC.value,
+    result_matrix: result_matrix.value
+  })
 
   // 將 qsepDataset 轉換為平面物件
   const datasetData = qsepDataset.toPlainObject()
 
-  // 儲存資料集
+  // 檢查資料庫中是否有相同名稱的資料集
   await saveDataset(datasetData)
 }
 
-// 儲存資料集到資料庫
+// ==========================================
+// 資料集管理方法
+// ==========================================
+// 儲存資料集
 const saveDataset = async (datasetData) => {
   // 檢查是否已存在相同名稱的資料集
   let datasetUid = ''
   const searchPath = `${dataset_list.testing_data}`
   const collectionRef = collection(Database, searchPath)
   const querySnapshot = await getDocs(collectionRef)
+
+  // 檢查 result_matrix
+  if (!result_matrix.value || !Array.isArray(result_matrix.value) || result_matrix.value.length === 0) {
+    showNotification('negative', '請至少添加一個結果資訊')
+    return
+  }
+
+  // 檢查每個 result_matrix 項目
+  const isValidResultMatrix = result_matrix.value.every(item =>
+    item.sample_id && item.result && item.assessment
+  )
+
+  if (!isValidResultMatrix) {
+    showNotification('negative', '請確保每個結果資訊都已填寫完整')
+    return
+  }
 
   for (const document of querySnapshot.docs) {
     const docData = document.data()
@@ -392,7 +439,13 @@ const saveDataset = async (datasetData) => {
     datasetUid = uuidv4()
   }
 
-  await addTestingSample(datasetData, datasetUid)
+  // 將 result_matrix 添加到 dataset_data
+  const finalDatasetData = {
+    ...datasetData,
+    result_matrix: result_matrix.value
+  }
+
+  await addTestingSample(finalDatasetData, datasetUid)
 
   // 重置表單
   onReset()
@@ -403,23 +456,25 @@ const saveDataset = async (datasetData) => {
 
 // 重置表單
 const onReset = () => {
+  // 重置 Type I 資料集
   controlFile.value = null
   sampleFiles.value = []
-  typeIISampleFiles.value = [[]]
+
+  // 重置 Type II 資料集
   scFiles.value = {
     SC1: null,
     SC2: null
   }
+  typeIISampleFiles.value = [[]]
 
-  // 重置子組件的表單
+  // 重置子組件
   if (generalDatasetTmpl.value) {
     generalDatasetTmpl.value.datasetName = ''
-    generalDatasetTmpl.value.resultText = ''
-    generalDatasetTmpl.value.assessmentsText = ''
+    generalDatasetTmpl.value.result_matrix = []
   }
 }
 
-// 更新集合顯示
+// 更新資料集列表
 const updateDatasetList = async () => {
   // 取得 database 中所有分析
   const searchPath = `${dataset_list.testing_data}`
@@ -438,39 +493,37 @@ const updateDatasetList = async () => {
       let dataset
 
       if (typeIClass.includes(props.dataset_class)) {
-        dataset = createQSEPDataset(
-          docData.dataset_name,
-          docData.controlFile,
-          docData.sampleFiles,
-          null,
-          null,
-          null,
-          docData.instrument,
-          docData.reagent,
-          docData.storagePath,
-          docData.dataset_class,
-          docData.result,
-          docData.assessments,
-          docData.group,
-          docData.qc
-        )
+        dataset = createQSEPDataset({
+          name: docData.dataset_name,
+          controlFile: docData.controlFile,
+          sampleFiles: docData.sampleFiles,
+          sc1_files: null,
+          sc2_files: null,
+          sample_files: null,
+          instrument: docData.instrument,
+          reagent: docData.reagent,
+          storagePath: docData.storagePath,
+          dataset_class: docData.dataset_class,
+          group: docData.group,
+          qc: docData.qc,
+          result_matrix: docData.result_matrix
+        })
       } else {
-        dataset = createQSEPDataset(
-          docData.dataset_name,
-          null,
-          null,
-          docData.sc1_files,
-          docData.sc2_files,
-          docData.sample_files,
-          docData.instrument,
-          docData.reagent,
-          docData.storagePath,
-          docData.dataset_class,
-          docData.result,
-          docData.assessments,
-          docData.group,
-          docData.qc
-        )
+        dataset = createQSEPDataset({
+          name: docData.dataset_name,
+          controlFile: null,
+          sampleFiles: null,
+          sc1_files: docData.sc1_files,
+          sc2_files: docData.sc2_files,
+          sample_files: docData.sample_files,
+          instrument: docData.instrument,
+          reagent: docData.reagent,
+          storagePath: docData.storagePath,
+          dataset_class: docData.dataset_class,
+          group: docData.group,
+          qc: docData.qc,
+          result_matrix: docData.result_matrix
+        })
       }
 
       datasetList.value.push(dataset)
@@ -484,8 +537,99 @@ const getGroupNumbers = (sampleFiles) => {
   return [...new Set(sampleFiles.map(file => file.group))].sort((a, b) => a - b)
 }
 
-// 掛載元件
+// ==========================================
+// 生命週期鉤子
+// ==========================================
 onMounted(async () => {
   await updateDatasetList()
 })
 </script>
+
+<style scoped>
+/* ================ */
+/* 共用樣式 */
+/* ================ */
+.flex {
+  display: flex;
+}
+
+.row {
+  flex-direction: row;
+}
+
+.column {
+  flex-direction: column;
+}
+
+.gap-sm {
+  gap: 0.5em;
+}
+
+/* ================ */
+/* 文字樣式 */
+/* ================ */
+.text-subtitle2 {
+  font-size: 0.9em;
+  font-weight: 500;
+}
+
+/* ================ */
+/* 資料集顯示區塊 */
+/* ================ */
+.dataset-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5em;
+  margin-top: 1em;
+}
+
+.info-label {
+  white-space: nowrap;
+}
+
+/* ================ */
+/* 檔案上傳區塊 */
+/* ================ */
+.file-upload-section {
+  width: 100%;
+  margin-bottom: 1em;
+}
+
+.file-upload-row {
+  display: flex;
+  align-items: center;
+  gap: 1em;
+  width: 100%;
+}
+
+.upload-label {
+  white-space: nowrap;
+  min-width: 100px;
+}
+
+.upload-field {
+  flex: 1;
+}
+
+/* ================ */
+/* 樣本檔案區塊 */
+/* ================ */
+.sample-files-section {
+  margin-top: 1em;
+}
+
+.sample-files-group {
+  margin-bottom: 1em;
+}
+
+.sample-files-label {
+  white-space: nowrap;
+  margin-right: 1em;
+}
+
+.sample-files-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5em;
+}
+</style>
