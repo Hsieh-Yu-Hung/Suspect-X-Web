@@ -18,17 +18,6 @@
             Please select the corresponding control result and sample result.
           </div>
         </div>
-        <!-- DevMode 開關-->
-        <div style="margin-right: 3em;" v-if="is_dev_mode">
-          <q-toggle
-            v-model="switch_dev_mode"
-            :label="switch_dev_mode"
-            true-value="DevMode: ON"
-            false-value="DevMode: OFF"
-            size="lg"
-            color="pink-7"
-          />
-        </div>
       </div>
     </q-card-section>
 
@@ -75,12 +64,6 @@
             </q-file>
           </div>
 
-          <!-- 載入測試資料集 -->
-          <div class="flex flex-start" style="background-color: rgba(221, 232, 243, 0.2); margin: 1em; flex-direction: column; padding: 1em; border-radius: 1em;" :style="{ 'display': is_dev_mode && switch_dev_mode === 'DevMode: ON' ? 'flex' : 'none' }">
-            <span class="text-h6 text-bold text-blue-grey-7" style="margin-bottom: 1em;">Testing Datasets</span>
-            <q-btn flat dense v-for="dataset_name in dataset_name_list" :key="dataset_name" :label="dataset_name" color="indigo-7" icon="mdi-download" @click="loadTestingDataset(dataset_name)" />
-          </div>
-
         </div>
 
         <!-- 分析按鈕 -->
@@ -104,7 +87,7 @@ import { useRouter } from 'vue-router';
 
 // 導入 composable
 import { submitWorkflow } from '@/composables/submitWorkflow';
-import { updateGetUserInfo, isDevMode } from '@/composables/accessStoreUserInfo';
+import { updateGetUserInfo } from '@/composables/accessStoreUserInfo';
 import { CATEGORY_LIST, upload_files_to_storage } from '@/composables/storageManager';
 import { setAnalysisID } from '@/composables/checkAnalysisStatus';
 import { ANALYSIS_RESULT, EXPORT_RESULT, update_userAnalysisData, simplifyFilePath } from '@/firebase/firebaseDatabase';
@@ -136,13 +119,6 @@ const HTD_RESULT = (standard_control_data, result_and_data, errMsg) => {
 const store = useStore();
 const router = useRouter();
 const $q = useQuasar();
-
-// DevMode 開關
-const is_dev_mode = ref(false);
-const switch_dev_mode = ref("DevMode: ON");
-const dataset_name_list = computed(() => {
-  return props.testing_data?.map(item => item.dataset_name) || [];
-});
 
 // props
 const props = defineProps({
@@ -487,11 +463,63 @@ async function uploadFile(files, type) {
   $q.loading.hide();
 }
 
-// 載入測試資料集
-async function loadTestingDataset(dataset_name) {
+// 取得試劑
+const getReagent = (dataset_class, reagent) => {
+  let reagent_value = null;
+  let reagent_label = null;
+  switch (dataset_class) {
+    case 'FXS':
+      switch (reagent) {
+        case 'FXS_v1':
+          reagent_value = 'accuinFx1';
+          reagent_label = 'ACCUiN BioTech Fragile X v1';
+          break;
+        case 'FXS_v2':
+          reagent_value = 'accuinFx2';
+          reagent_label = 'ACCUiN BioTech Fragile X v2';
+          break;
+        default:
+          break;
+      }
+    case 'HTD':
+      switch (reagent) {
+        case 'HTD_v1':
+          reagent_value = 'accuinHD1';
+          reagent_label = 'ACCUiN BioTech HTD v1';
+          break;
+        default:
+          break;
+      }
+    default:
+      break;
+  }
+  return {
+    reagent_value: reagent_value,
+    reagent_label: reagent_label,
+  }
+}
+
+// 執行測試資料集
+async function runTestingDataset(dataset_name) {
 
   // 取得測試資料集
   const testing_data = props.testing_data.find(item => item.dataset_name === dataset_name);
+
+  // 決定該 Dataset 使用的儀器和試劑
+  const usedInstrument = testing_data.instrument;
+  const { reagent_value, reagent_label } = getReagent(testing_data.dataset_class, testing_data.reagent);
+
+  // 取得 settingProps
+  const currentSettingProps = store.getters["analysis_setting/getSettingProps"];
+  const updatedSettingProps = {
+    ...currentSettingProps,
+    instrument: usedInstrument,
+    reagent: reagent_value,
+    reagentLabel: reagent_label,
+  }
+
+  // 更新 settingProps
+  store.commit("analysis_setting/updateSettingProps", updatedSettingProps);
 
   // 創建一個空的 Blob 物件作為檔案內容
   const emptyBlob = new Blob([''], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
@@ -521,7 +549,15 @@ async function loadTestingDataset(dataset_name) {
     });
     return fileObj;
   });
+
+  // 送出
+  onSubmit();
 }
+
+// Expose
+defineExpose({
+  runTestingDataset,
+});
 
 // 掛載時
 onMounted(async () => {
@@ -536,9 +572,6 @@ onMounted(async () => {
 
   // 初始化 inputss
   initInputs();
-
-  // 取得當前使用者的權限動作列表
-  is_dev_mode.value = await isDevMode();
 });
 
 // 監聽 controlSampleFile

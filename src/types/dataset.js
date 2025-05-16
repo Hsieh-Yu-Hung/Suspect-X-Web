@@ -135,6 +135,9 @@ export class BetaThalDataset extends BaseDataset {
    * 建立貝塔地中海貧血資料集
    * @param {string} name - 資料集名稱
    * @param {Array<SampleFiles>} sample_files - 樣本檔案
+   * @param {number} leftTrim - 左側修剪值
+   * @param {number} rightTrim - 右側修剪值
+   * @param {number} peakRatio - 峰比值
    * @param {string} instrument - 使用的儀器
    * @param {string} reagent - 使用的試劑
    * @param {string} group - 分組
@@ -145,6 +148,9 @@ export class BetaThalDataset extends BaseDataset {
   constructor(
     name,
     sample_files,
+    leftTrim,
+    rightTrim,
+    peakRatio,
     instrument,
     reagent,
     group,
@@ -154,6 +160,9 @@ export class BetaThalDataset extends BaseDataset {
   ) {
     super(name, instrument, reagent, storagePath, result_matrix);
     this.sample_files = sample_files;
+    this.leftTrim = leftTrim;
+    this.rightTrim = rightTrim;
+    this.peakRatio = peakRatio;
     this.group = group;
     this.qc = qc;
     this.dataset_class = "BETA-THAL";
@@ -502,6 +511,9 @@ export function createSmnSample(name, path, expType, smnType) {
  * 創建貝塔地中海貧血資料集的工廠函數
  * @param {string} name - 資料集名稱
  * @param {Array<SampleFiles>} sample_files - 樣本檔案
+ * @param {number} leftTrim - 左側修剪值
+ * @param {number} rightTrim - 右側修剪值
+ * @param {number} peakRatio - 峰比值
  * @param {string} instrument - 使用的儀器
  * @param {string} reagent - 使用的試劑
  * @param {string} group - 分組
@@ -513,6 +525,9 @@ export function createSmnSample(name, path, expType, smnType) {
 export function createBetaThalDataset(
   name,
   sample_files,
+  leftTrim,
+  rightTrim,
+  peakRatio,
   instrument,
   reagent,
   group,
@@ -523,6 +538,9 @@ export function createBetaThalDataset(
   return new BetaThalDataset(
     name,
     sample_files,
+    leftTrim,
+    rightTrim,
+    peakRatio,
     instrument,
     reagent,
     group,

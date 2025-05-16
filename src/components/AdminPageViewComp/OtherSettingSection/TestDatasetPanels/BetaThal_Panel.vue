@@ -14,12 +14,26 @@
     <!-- 資料集內容顯示區塊 -->
     <!-- ========================= -->
     <template #dataset-content="slotProps">
-      <div class="dataset-container">
+      <div class="dataset-container w100">
+        <div class="dataset-content">
+          <span class="dataset-name">Left-Trim:</span>
+          <span class="dataset-value">{{ slotProps.dataset.leftTrim }}</span>
+        </div>
+        <div class="dataset-content">
+          <span class="dataset-name">Right-Trim:</span>
+          <span class="dataset-value">{{ slotProps.dataset.rightTrim }}</span>
+        </div>
+        <div class="dataset-content">
+          <span class="dataset-name">Peak-Ratio:</span>
+          <span class="dataset-value">{{ slotProps.dataset.peakRatio }}</span>
+        </div>
+      </div>
+      <div class="dataset-container w100">
         <!-- 樣本檔案列表 -->
         <div
           v-for="sample in slotProps.dataset.sample_files"
           :key="sample.name"
-          class="dataset-item"
+          class="dataset-item w100"
         >
           <span class="dataset-name">{{ sample.name }}</span>
           <div class="file-list">
@@ -41,6 +55,38 @@
     <!-- ========================= -->
     <template #add-content>
       <div class="form-container">
+        <!-- 參數設置 -->
+        <div class="form-content w100">
+          <div class="form-item w100">
+            <div class="form-content">
+              <span class="form-label">Left-Trim:</span>
+              <q-input
+                dense
+                v-model="leftTrim"
+                type="number"
+                class="name-input"
+              />
+            </div>
+            <div class="form-content">
+              <span class="form-label">Right-Trim:</span>
+              <q-input
+                dense
+              v-model="rightTrim"
+              type="number"
+                class="name-input"
+              />
+            </div>
+            <div class="form-content">
+              <span class="form-label">Peak-Ratio:</span>
+              <q-input
+                dense
+              v-model="peakRatio"
+              type="number"
+                class="name-input"
+              />
+            </div>
+          </div>
+        </div>
         <!-- 樣本列表 -->
         <div
           v-for="(sample, index) in sampleList"
@@ -79,8 +125,8 @@
               @rejected="onRejected"
             />
 
-            <!-- 操作按鈕區域 -->
-            <div class="action-buttons">
+            <!-- 操作按鈕區域, 由於流程關係至提供一次一組, 先關閉新增功能 -->
+            <div class="action-buttons" v-if="false">
               <q-btn
                 flat
                 round
@@ -144,6 +190,9 @@ const $q = useQuasar()
 const generalDatasetTmpl = ref(null)
 const DatasetList = ref([])
 const sampleList = ref([{ name: '', files: null }])
+const leftTrim = ref(50)
+const rightTrim = ref(50)
+const peakRatio = ref(0.25)
 
 // ============================
 // 計算屬性
@@ -208,8 +257,8 @@ const validateForm = () => {
   }
 
   // 檢查 result_matrix
-  if (!result_matrix.value || !Array.isArray(result_matrix.value) || result_matrix.value.length === 0) {
-    showNotification('negative', '請至少添加一個結果資訊')
+  if (!result_matrix.value || !Array.isArray(result_matrix.value)) {
+    showNotification('negative', '請填寫評估結果')
     return false
   }
 
@@ -290,6 +339,9 @@ const onSubmit = async () => {
     const betaThalDataset = createBetaThalDataset(
       name,
       uploadedSamples,
+      leftTrim.value,
+      rightTrim.value,
+      peakRatio.value,
       selectedInstrument.value,
       selectedReagent.value,
       selectedGroup.value.value,
@@ -367,6 +419,9 @@ const updateDatasetList = async () => {
         const dataset = createBetaThalDataset(
           docData.name,
           docData.sample_files,
+          docData.leftTrim,
+          docData.rightTrim,
+          docData.peakRatio,
           docData.instrument,
           docData.reagent,
           docData.group || DEFAULT_GROUP.value,
@@ -399,7 +454,9 @@ onMounted(async () => {
   font-size: 0.9rem;
   font-weight: 500;
 }
-
+.w100 {
+  width: 100%;
+}
 /* ========================= */
 /* 資料集顯示區塊 */
 /* ========================= */

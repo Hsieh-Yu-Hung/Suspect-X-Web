@@ -32,6 +32,16 @@ const currentAnalysisID = ref(null);
 // 測試資料集
 const testing_data = ref([]);
 
+// 執行測試資料集
+const runTestingDataset = (dataset_name) => {
+  ref_import_ppcr_tmpl.value.runTestingDataset(dataset_name);
+}
+
+// Expose
+defineExpose({
+  runTestingDataset,
+});
+
 // 掛載時
 onMounted(async () => {
   // 取得使用者身份

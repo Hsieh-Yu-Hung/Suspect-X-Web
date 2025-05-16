@@ -341,7 +341,7 @@ async function updateInputTableData(product) {
 
     // THAL_ALPHA
     case "THAL_ALPHA":
-      console.log('THAL_ALPHA not implemented');
+      console.error('THAL_ALPHA not implemented');
       break;
 
     // THAL_BETA

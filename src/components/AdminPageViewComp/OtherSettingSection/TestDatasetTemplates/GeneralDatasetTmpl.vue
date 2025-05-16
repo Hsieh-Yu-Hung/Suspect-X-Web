@@ -47,8 +47,8 @@
                   <div class="dataset-tags">
                     <q-chip color="indigo-3" dense class="text-subtitle2" :label="dataset.instrument" />
                     <q-chip color="blue-4" dense class="text-subtitle2" :label="dataset.reagent" />
-                    <q-chip color="yellow-9" dense class="text-subtitle2" :label="dataset.group" />
-                    <q-chip :color="dataset.qc === 'Passed' ? 'green-4' : 'red-4'" dense class="text-subtitle2" :label="dataset.qc" />
+                    <q-chip color="yellow-9" dense class="text-subtitle2" :label="dataset.group" clickable @click="toggleGroup(dataset)" />
+                    <q-chip :color="dataset.qc === 'Passed' ? 'green-4' : 'red-4'" dense class="text-subtitle2" :label="dataset.qc" clickable @click="toggleQC(dataset)" />
                   </div>
                 </div>
                 <!-- 操作按鈕 -->
@@ -245,11 +245,7 @@ const currentEditingDataset = ref(null)
 // 結果矩陣相關
 const popupDialog = ref(null)
 const viewDialog = ref(null)
-const result_matrix = ref([{
-  sample_id: '',
-  result: '',
-  assessment: ''
-}])
+const result_matrix = ref([])
 
 // 選擇狀態
 const selectedInstrument = ref('')
@@ -456,14 +452,14 @@ const onSubmit = async () => {
     }
 
     // 驗證 result_matrix
-    if (!result_matrix.value || !Array.isArray(result_matrix.value) || result_matrix.value.length === 0) {
-      showNotification('negative', '請至少添加一個結果資訊')
+    if (!result_matrix.value || !Array.isArray(result_matrix.value)) {
+      showNotification('negative', '格式錯誤')
       return
     }
 
     // 檢查每個 result_matrix 項目
     const isValidResultMatrix = result_matrix.value.every(item =>
-      item.sample_id && item.result && item.assessment
+      item.sample_id && item.assessment
     )
 
     if (!isValidResultMatrix) {
@@ -554,14 +550,14 @@ const editDatasetMatrix = (dataset) => {
 const handleConfirm = async (results, dataset) => {
   try {
     // 驗證結果
-    if (!Array.isArray(results) || results.length === 0) {
-      showNotification('negative', '結果資訊不能為空')
+    if (!Array.isArray(results)) {
+      showNotification('negative', '結果資訊格式錯誤')
       return
     }
 
     // 驗證每個結果項目
     const isValid = results.every(item =>
-      item.sample_id && item.result && item.assessment
+      item.sample_id && item.assessment
     )
 
     if (!isValid) {
@@ -615,6 +611,70 @@ const handleConfirm = async (results, dataset) => {
     }
   } catch (error) {
     showNotification('negative', '處理結果資訊時發生錯誤')
+  }
+}
+
+// 切換 QC 狀態
+const toggleQC = async (dataset) => {
+  try {
+    // 找到當前 QC 在選項中的索引
+    const currentIndex = qcOptions.indexOf(dataset.qc)
+    // 計算下一個選項的索引（循環）
+    const nextIndex = (currentIndex + 1) % qcOptions.length
+    // 更新 QC 值
+    dataset.qc = qcOptions[nextIndex]
+
+    // 更新資料庫
+    const search_path = `${dataset_list.testing_data}`
+    const collectionRef = collection(Database, search_path)
+    const querySnapshot = await getDocs(collectionRef)
+
+    for (const document of querySnapshot.docs) {
+      const doc_data = document.data()
+      if (doc_data.dataset_class === props.dataset_class && doc_data.name === dataset.name) {
+        const docRef = doc(Database, search_path, document.id)
+        await updateDoc(docRef, {
+          qc: dataset.qc
+        })
+        showNotification('positive', 'QC 狀態更新成功')
+        break
+      }
+    }
+  } catch (error) {
+    console.error('更新 QC 狀態時發生錯誤：', error)
+    showNotification('negative', '更新 QC 狀態時發生錯誤')
+  }
+}
+
+// 切換群組
+const toggleGroup = async (dataset) => {
+  try {
+    // 找到當前群組在選項中的索引
+    const currentIndex = groupOptions.findIndex(option => option.value === dataset.group)
+    // 計算下一個選項的索引（循環）
+    const nextIndex = (currentIndex + 1) % groupOptions.length
+    // 更新群組值
+    dataset.group = groupOptions[nextIndex].value
+
+    // 更新資料庫
+    const search_path = `${dataset_list.testing_data}`
+    const collectionRef = collection(Database, search_path)
+    const querySnapshot = await getDocs(collectionRef)
+
+    for (const document of querySnapshot.docs) {
+      const doc_data = document.data()
+      if (doc_data.dataset_class === props.dataset_class && doc_data.name === dataset.name) {
+        const docRef = doc(Database, search_path, document.id)
+        await updateDoc(docRef, {
+          group: dataset.group
+        })
+        showNotification('positive', '群組更新成功')
+        break
+      }
+    }
+  } catch (error) {
+    console.error('更新群組時發生錯誤：', error)
+    showNotification('negative', '更新群組時發生錯誤')
   }
 }
 

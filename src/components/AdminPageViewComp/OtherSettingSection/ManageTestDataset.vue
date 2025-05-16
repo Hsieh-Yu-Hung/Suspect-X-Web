@@ -94,7 +94,7 @@
 
 <script setup>
 // 導入模組
-import { ref } from 'vue'
+import { ref, onMounted, watch } from 'vue'
 
 // 導入元件
 import FXS_Panel from '@/components/AdminPageViewComp/OtherSettingSection/TestDatasetPanels/FXS_Panel.vue'
@@ -107,9 +107,22 @@ import BetaThal_Panel from '@/components/AdminPageViewComp/OtherSettingSection/T
 import SMA_CE_Panel from '@/components/AdminPageViewComp/OtherSettingSection/TestDatasetPanels/SMA_CE_Panel.vue'
 
 // 測試資料集
-const tab = ref('smav4')
+const tab = ref('')
 const splitterModel = ref(10)
 
+// 紀錄 currentSelectedTAB 到 localStorage
+onMounted(() => {
+  // 從 localStorage 取得 currentSelectedTAB
+  const storedTab = localStorage.getItem('DataManageSelectedTAB')
+  if (storedTab) {
+    tab.value = storedTab
+  }
+})
+
+// 監控 tab 的變化, 並更新 localStorage
+watch(tab, (newTab) => {
+  localStorage.setItem('DataManageSelectedTAB', newTab)
+})
 
 </script>
 

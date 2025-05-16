@@ -207,7 +207,7 @@ import { collection, getDocs, doc, deleteDoc } from 'firebase/firestore'
 import { v4 as uuidv4 } from 'uuid'
 import { createQSEPDataset } from '@/types/dataset'
 import GeneralDatasetTmpl from './GeneralDatasetTmpl.vue'
-
+import { useQuasar } from 'quasar'
 // ==========================================
 // Props 定義
 // ==========================================
@@ -243,6 +243,9 @@ const scFiles = ref({
   SC2: null
 })
 const typeIISampleFiles = ref([[]])
+
+// useQuasar
+const $q = useQuasar()
 
 // ==========================================
 // 計算屬性
@@ -400,6 +403,16 @@ const onSubmitTypeII = async () => {
 // ==========================================
 // 資料集管理方法
 // ==========================================
+// 顯示通知訊息
+const showNotification = (type, message) => {
+  $q.notify({
+    type,
+    message,
+    position: 'top',
+    timeout: NOTIFICATION_TIMEOUT
+  })
+}
+
 // 儲存資料集
 const saveDataset = async (datasetData) => {
   // 檢查是否已存在相同名稱的資料集
@@ -409,8 +422,8 @@ const saveDataset = async (datasetData) => {
   const querySnapshot = await getDocs(collectionRef)
 
   // 檢查 result_matrix
-  if (!result_matrix.value || !Array.isArray(result_matrix.value) || result_matrix.value.length === 0) {
-    showNotification('negative', '請至少添加一個結果資訊')
+  if (!result_matrix.value || !Array.isArray(result_matrix.value)) {
+    showNotification('negative', '格式錯誤')
     return
   }
 

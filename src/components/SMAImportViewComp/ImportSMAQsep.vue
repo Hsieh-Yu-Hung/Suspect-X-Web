@@ -192,6 +192,7 @@ import { update_userAnalysisData, getData, dataset_list, ANALYSIS_RESULT, EXPORT
 import { deleteData } from '@/firebase/firebaseDatabase';
 import { submitWorkflow } from '@/composables/submitWorkflow';
 import loggerV2 from '@/composables/loggerV2';
+import getTestingData from '@/composables/useGetTestingData';
 
 // import component
 import WarningDialog from '@/components/WarningDialog.vue';
@@ -702,6 +703,8 @@ const smnTypeInterpretation = (smn1, smn2) => {
 /* 主程式 */
 async function onSubmit() {
 
+  console.log("smav4Files.value", smav4Files.value);
+
   // 先存設定
   saveConfigBtn.value.click();
 
@@ -829,6 +832,46 @@ async function onSubmit() {
     $q.loading.hide();
   }
 }
+
+// 執行資料集
+async function runTestingDataset(dataset_name) {
+  const testing_data = await getTestingData('SMA_CE');
+  const selected_data = testing_data.find(data => data.name === dataset_name);
+  const totalFiles = [
+    ...selected_data.SMN1_SC_C,
+    ...selected_data.SMN1_SC_N,
+    ...selected_data.SMN2_SC_C,
+    ...selected_data.SMN2_SC_N,
+    ...selected_data.SMN1_Samples,
+    ...selected_data.SMN2_Samples
+  ];
+  currentDisplayedConfig.value = '';
+  smav4Files.value = totalFiles.map(file => ({
+    ...file,
+    file_name: file.name
+  }));
+
+  // 決定該 Dataset 使用的儀器和試劑
+  const usedInstrument = selected_data.instrument;
+
+  // 取得 settingProps
+  const currentSettingProps = store.getters["analysis_setting/getSettingProps"];
+  const updatedSettingProps = {
+    ...currentSettingProps,
+    instrument: usedInstrument
+  }
+
+  // 更新 settingProps
+  store.commit("analysis_setting/updateSettingProps", updatedSettingProps);
+
+  // 執行 onSubmit
+  onSubmit();
+}
+
+// Expose
+defineExpose({
+  runTestingDataset,
+});
 
 // 掛載時執行
 onMounted(async () => {

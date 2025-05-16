@@ -114,8 +114,8 @@
 
             <!-- 基因類型選擇 -->
             <div class="gene-type-selection">
-              <q-radio v-model="file.geneType" val="SMN1" label="SMN1" class="gene-type-radio" />
-              <q-radio v-model="file.geneType" val="SMN2" label="SMN2" />
+              <q-radio color="green" v-model="file.geneType" val="SMN1" label="SMN1" class="gene-type-radio" />
+              <q-radio color="pink" v-model="file.geneType" val="SMN2" label="SMN2" />
             </div>
 
             <!-- 樣本類型選擇 -->
@@ -225,8 +225,8 @@ const validateForm = () => {
     }
 
     // 檢查 result_matrix
-    if (!result_matrix.value || !Array.isArray(result_matrix.value) || result_matrix.value.length === 0) {
-      showNotification('negative', '請至少添加一個結果資訊')
+    if (!result_matrix.value || !Array.isArray(result_matrix.value)) {
+      showNotification('negative', '請填寫結果矩陣')
       return false
     }
 
@@ -535,6 +535,7 @@ onMounted(async () => {
 /* 檔案列表區域 */
 /* ========================= */
 .uploaded-files-list {
+  width: 100%;
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
@@ -550,20 +551,20 @@ onMounted(async () => {
 .file-item-content {
   display: flex;
   align-items: center;
-  gap: 1rem;
+  gap: 0.5rem;
 }
 
 .file-name {
-  flex: 2;
+  flex: 5;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
 .gene-type-selection {
-  flex: 2;
+  flex: 1;
   display: flex;
-  gap: 1rem;
+  flex-direction: column;
 }
 
 .gene-type-radio {
@@ -571,16 +572,16 @@ onMounted(async () => {
 }
 
 .sample-type-selection {
-  flex: 2;
+  flex: 1;
 }
 
 .sample-type-select {
-  width: 150px;
+  width: 6rem;
 }
 
 .file-actions {
   flex: 1;
   display: flex;
-  justify-content: flex-end;
+  justify-content: center;
 }
 </style>

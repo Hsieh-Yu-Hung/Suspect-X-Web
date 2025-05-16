@@ -207,14 +207,6 @@
                 <span class="text-bold text-h6 text-blue-grey-7">
                   Development Settings
                 </span>
-                <div style="display: flex; flex-direction: column; justify-content: center; align-items: flex-start;">
-                  <q-btn no-caps dense flat label="Load Testing (betaThal)" icon="mdi-download" text-color="indigo-7" @click="loadTestingSamples('test_betaThal')" />
-                  <q-btn no-caps dense flat label="Load Testing (HBB Mutant)" icon="mdi-download" text-color="indigo-7" @click="loadTestingSamples('test_hbb_mutant')" />
-                  <q-btn no-caps dense flat label="Load Testing (HBB WT)" icon="mdi-download" text-color="indigo-7" @click="loadTestingSamples('test_hbb_wild_type')" />
-                  <q-btn no-caps dense flat label="Load Testing (Low Signal)" icon="mdi-download" text-color="indigo-7" @click="loadTestingSamples('test_sanger_low_signal')" />
-                  <q-btn no-caps dense flat label="Load Testing (Non HBB)" icon="mdi-download" text-color="indigo-7" @click="loadTestingSamples('test_non_hbb_sanger')" />
-                  <q-btn no-caps dense flat label="Load Testing (Non HBB High BG)" icon="mdi-download" text-color="indigo-7" @click="loadTestingSamples('test_non_hbb_highbg')" />
-                </div>
               </div>
 
               <!-- 開發設定參數:Left-Trim, Right-Trim -->
@@ -303,6 +295,7 @@ import { submitWorkflow } from '@/composables/submitWorkflow';
 import { updateGetUserInfo, isDevMode } from '@/composables/accessStoreUserInfo';
 import { CATEGORY_LIST, upload_files_to_storage } from '@/composables/storageManager';
 import { setAnalysisID } from '@/composables/checkAnalysisStatus';
+import getTestingData from '@/composables/useGetTestingData';
 import { ANALYSIS_RESULT, EXPORT_RESULT, update_userAnalysisData, dataset_list, Database } from '@/firebase/firebaseDatabase';
 
 // 引入元件
@@ -853,6 +846,28 @@ async function deleteEmptyAnalysis() {
     }
   });
 }
+
+// 跑測試
+async function runTestingDataset(dataset_name) {
+  // 取得測試資料
+  const testing_data = await getTestingData('BETA-THAL');
+  const selected_data = testing_data.find(data => data.name === dataset_name);
+  const updatedSampleListRow = selected_data.sample_files.map((item, index) => {
+    return {
+      index: index + 1,
+      sample_name: item.name,
+      sequencing_files: item.files
+    }
+  });
+  sampleList_row.value = updatedSampleListRow;
+  // submit
+  onSubmit();
+}
+
+// Expose
+defineExpose({
+  runTestingDataset,
+});
 
 // 掛載時
 onMounted(async () => {

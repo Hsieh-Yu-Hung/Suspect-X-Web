@@ -96,7 +96,7 @@
 // =====================
 // 導入相關模組
 // =====================
-import { ref, defineProps, defineEmits } from 'vue'
+import { ref } from 'vue'
 import { useDialogPluginComponent } from 'quasar'
 
 // =====================
@@ -174,7 +174,7 @@ defineExpose({
 /* 對話框樣式 */
 /* ===================== */
 .dialog-card {
-  min-width: 500px;
+  min-width: 60em;
 }
 
 .dialog-header {
