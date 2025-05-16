@@ -159,7 +159,7 @@ const assessment = (value) => {
 function updateResTable(nudt15_result){
 
   // 取得 sample_list
-  const sample_list = nudt15_result.resultObj.resultList.map(item=>item.sample_name)
+  const sample_list = nudt15_result.resultObj.resultList ? nudt15_result.resultObj.resultList.map(item=>item.sample_name) : [];
 
   // 更新 resultTableNudt15Props
   let results = [];

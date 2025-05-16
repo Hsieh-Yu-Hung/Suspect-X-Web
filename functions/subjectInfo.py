@@ -25,8 +25,7 @@ def download_file_from_storage(bucket, file_path):
     os.makedirs(os.path.dirname(local_file_path))
 
   # 下載檔案
-  if not os.path.exists(local_file_path):
-    blob.download_to_filename(local_file_path)
+  blob.download_to_filename(local_file_path)
 
   logger.debug(f"File downloaded successfully: {local_file_path}", msg_source)
 
@@ -163,7 +162,7 @@ def parse_input_analysis_lims(subject_file):
                 continue
 
             # 生成 ID
-            id_str = re.sub(r'/', '', str(s['orderingDate'])) + str(s['serialId'])
+            id_str = str(s['serialId'])
 
             # 轉換資料格式
             subject_info[id_str] = {

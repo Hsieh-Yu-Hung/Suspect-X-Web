@@ -28,6 +28,16 @@ const user_info = ref(null);
 // 當前的分析 ID
 const currentAnalysisID = ref(null);
 
+// 運行 Testing Dataset
+async function runTestingDataset(dataset_name) {
+  ref_import_qpcr_tmpl.value.runTestingDataset(dataset_name);
+}
+
+// Expose
+defineExpose({
+  runTestingDataset
+});
+
 // 掛載時
 onMounted(() => {
   // 取得使用者身份

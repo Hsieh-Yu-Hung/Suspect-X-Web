@@ -243,6 +243,9 @@ const getQCStatus = (status) => {
 
 // 取得線性
 const getLinear = (control_qc_obj) => {
+  if (!control_qc_obj) {
+    return null;
+  }
   const line1 = [control_qc_obj.line[0].x, control_qc_obj.line[0].y];
   const line2 = [control_qc_obj.line[1].x, control_qc_obj.line[1].y];
   return [line1, line2];
@@ -275,7 +278,7 @@ function update_FXS_RESULT_OBJ(fxs_result) {
   }
 
   // 製作 Result
-  const resultList = Object.keys(fxs_result.resultObj.result);
+  const resultList = fxs_result.resultObj.result ? Object.keys(fxs_result.resultObj.result) : [];
   let result_list = [];
   resultList.forEach(sample => {
     const raw_res = fxs_result.resultObj.result[sample];
@@ -442,6 +445,12 @@ onMounted(async () => {
 
   // 如果當前分析結果不存在, 則跳出
   if (!currentAnalysisResult.value) {
+    showResult.value = false;
+    return;
+  }
+
+  // 如果 failed the criteria, 則跳出
+  if (currentAnalysisResult.value.qc_status === "fail-the-criteria") {
     showResult.value = false;
     return;
   }

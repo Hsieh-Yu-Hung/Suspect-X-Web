@@ -1,6 +1,7 @@
 // 導入模組
 import { ref, onMounted } from 'vue';
 import { useStore } from 'vuex';
+import { getUsers_from_firestore } from '@/firebase/firebaseDatabase';
 
 // 存取 store 的登入狀態
 const login_status = ref({
@@ -42,4 +43,12 @@ export function useValidateAccountStatus($q, router, store) {
       $q.loading.hide();
     }, 1500);
   }
+}
+
+// 判斷是否開啟開發者模式
+export const isDevMode = async () => {
+  const current_user_info = await getUsers_from_firestore(login_status.value.user_info.uid);
+  const current_user_actions = current_user_info ? current_user_info.actions : [];
+  const is_dev_mode = current_user_actions.some(action => action.action_name === "dev_mode" && action.action_active);
+  return is_dev_mode;
 }
