@@ -286,11 +286,11 @@ const getInstrumentOptions = computed(() => {
     case 'BETA-THAL':
       return ['qsep100']
     case 'MTHFR':
-      return ['qs3', 'qtower', 'z480']
+      return ['qs3', 'tower', 'z480']
     case 'NUDT15':
       return ['qs3', 'z480']
     case 'SMA':
-      return ['qs3', 'qtower', 'z480']
+      return ['qs3', 'tower', 'z480']
     case 'FXS':
       return ['qsep100']
     case 'HTD':
@@ -325,7 +325,7 @@ const getReagentOptions = computed(() => {
       if (selectedInstrument.value === 'z480') {
         return ['SMA_v3']
       }
-      else if (selectedInstrument.value === 'qtower') {
+      else if (selectedInstrument.value === 'tower') {
         return ['SMA_v1']
       }
       else {

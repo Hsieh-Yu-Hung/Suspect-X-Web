@@ -394,7 +394,7 @@ const getInstrument = (instrument) => {
   switch (instrument) {
     case "qs3":
       return { instrument_value: "qs3", instrument_label: "QuantStudio™ 3" };
-    case "qtower":
+    case "tower":
       return { instrument_value: "tower", instrument_label: "qTOWER³" };
     case "z480":
       return { instrument_value: "z480", instrument_label: "Roche Cobas® z 480" };
