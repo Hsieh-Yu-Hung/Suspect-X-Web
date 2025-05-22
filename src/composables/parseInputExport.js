@@ -408,7 +408,7 @@ function exportPdProps(inputData) {
     return {
       gba: result.slice(0, 2).replace(/(.)(.)/, '$1/$2'),
       lrrk21628: result.slice(2, 4).replace(/(.)(.)/, '$1/$2'),
-      lrrk22385: result.slice(2, 4).replace(/(.)(.)/, '$1/$2'),
+      lrrk22385: result.slice(4, 6).replace(/(.)(.)/, '$1/$2'),
     }
   };
 
@@ -622,8 +622,8 @@ function exportMthfrv2Props(inputData) {
 
   function measurementExport(measurement) {
     return {
-      c677: `${measurement[0]}/${measurement[1]}`,
-      c1298: `${measurement[2]}/${measurement[3]}`,
+      c677: `${measurement[0].toUpperCase()}/${measurement[1].toUpperCase()}`,
+      c1298: `${measurement[2].toUpperCase()}/${measurement[3].toUpperCase()}`,
     }
   };
 

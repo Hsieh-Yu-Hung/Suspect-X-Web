@@ -7,9 +7,8 @@
 
 <script setup>
 import { useStore } from 'vuex';
-
-// Import modules
-import { updateGetUserInfo } from '@/composables/accessStoreUserInfo';
+import { ref, computed, onMounted } from 'vue';
+import { updateGetUserInfo, isDevMode } from '@/composables/accessStoreUserInfo';
 
 // 使用者身份
 const { login_status } = updateGetUserInfo();
@@ -17,11 +16,13 @@ const { login_status } = updateGetUserInfo();
 // Store
 const store = useStore();
 
+
 /* functions */
 
 // Test check file format
 async function debug() {
   console.log("DEBUG");
+  console.log("isDevMode: ", await isDevMode());
 }
 
 // Get user info

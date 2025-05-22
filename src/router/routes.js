@@ -10,6 +10,7 @@ const routes = [
       { path: 'page-analysis', component: () => import('pages/MainPageAnalysis.vue') }, // Analysis
       { path: 'page-export', component: () => import('pages/MainPageExport.vue') },     // Export
       { path: 'page-admin', component: () => import('pages/AdminPage.vue') },           // Admin page
+      { path: 'page-history', component: () => import('pages/AnalysisHistoryPage.vue') },   // History
     ]
   },
 

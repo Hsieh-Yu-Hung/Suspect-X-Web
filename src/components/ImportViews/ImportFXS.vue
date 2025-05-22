@@ -1,5 +1,5 @@
 <template>
-  <ImportPCRTmpl :analysis_name="analysis_name" ref="ref_import_ppcr_tmpl" />
+  <ImportPCRTmpl :analysis_name="analysis_name" :testing_data="testing_data" ref="ref_import_ppcr_tmpl" />
 </template>
 
 <script setup>
@@ -10,6 +10,7 @@ import { useStore } from 'vuex';
 // 導入 composable
 import { updateGetUserInfo } from '@/composables/accessStoreUserInfo';
 import { setAnalysisID } from '@/composables/checkAnalysisStatus';
+import getTestingData from '@/composables/useGetTestingData';
 
 // 元件
 import ImportPCRTmpl from '@/components/ImportPCRQsepViews/ImportPCRTmpl.vue';
@@ -28,8 +29,21 @@ const user_info = ref(null);
 // 當前的分析 ID
 const currentAnalysisID = ref(null);
 
+// 測試資料集
+const testing_data = ref([]);
+
+// 執行測試資料集
+const runTestingDataset = (dataset_name) => {
+  ref_import_ppcr_tmpl.value.runTestingDataset(dataset_name);
+}
+
+// Expose
+defineExpose({
+  runTestingDataset,
+});
+
 // 掛載時
-onMounted(() => {
+onMounted(async () => {
   // 取得使用者身份
   const { login_status } = updateGetUserInfo();
   is_login.value = login_status.value.is_login;
@@ -38,5 +52,8 @@ onMounted(() => {
   // 先嘗試取得當前的分析 ID, 如果沒有則建立新的分析 ID
   currentAnalysisID.value = store.getters['analysis_setting/getCurrentAnalysisID'];
   setAnalysisID(store, 'FXS');
+
+  // 取得測試資料集
+  testing_data.value = await getTestingData('FXS');
 });
 </script>

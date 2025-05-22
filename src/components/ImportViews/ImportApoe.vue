@@ -99,6 +99,7 @@ import { CATEGORY_LIST } from '@/composables/storageManager';
 import { setAnalysisID } from '@/composables/checkAnalysisStatus';
 import { ANALYSIS_RESULT, simplifyFilePath, EXPORT_RESULT, update_userAnalysisData } from '@/firebase/firebaseDatabase';
 import loggerV2 from '@/composables/loggerV2';
+import getTestingData from '@/composables/useGetTestingData';
 
 // consts
 const $q = useQuasar();
@@ -153,6 +154,16 @@ const assessment = (value) => {
     return "Invalid";
   }
 };
+
+// 更新 currentAnalysisID
+function updateCurrentAnalysisID() {
+  const new_id = `analysis_${uuidv4()}`;
+  store.commit('analysis_setting/updateCurrentAnalysisID', {
+    analysis_name: "APOE",
+    analysis_uuid: new_id,
+  });
+  currentAnalysisID.value = store.getters['analysis_setting/getCurrentAnalysisID'];
+}
 
 // 送出表單
 async function onSubmit() {
@@ -242,12 +253,7 @@ async function onSubmit() {
     });
 
     // 更新 currentAnalysisID
-    const new_id = `analysis_${uuidv4()}`;
-    store.commit('analysis_setting/updateCurrentAnalysisID', {
-      analysis_name: "APOE",
-      analysis_uuid: new_id,
-    });
-    currentAnalysisID.value = store.getters['analysis_setting/getCurrentAnalysisID'];
+    updateCurrentAnalysisID();
 
     // 清除 store 的 subjectInfoTable 和 LabInfomation
     store.commit("export_page_setting/initExportPageSetting");
@@ -263,6 +269,14 @@ async function onSubmit() {
     }, 500);
   }
   else if (analysisResult.status == 'error'){
+    // 更新 currentAnalysisID
+    updateCurrentAnalysisID();
+
+    // 清空 control1File 和 control2File
+    control1File.value = null;
+    control2File.value = null;
+    sampleFile.value = new Array(1).fill([]);
+
     // 通知
     $q.notify({
       progress: true,
@@ -410,6 +424,55 @@ function addSampleFileInput(idx) {
 function removeSampleFileInput(idx) {
   sampleFile.value.splice(idx, 1);
 }
+
+// 製作檔案
+function makeFile(file_path) {
+
+  if (file_path == null) {
+    return null;
+  }
+
+  // 創建一個空的 Blob 物件作為檔案內容
+  const emptyBlob = new Blob([''], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+
+  // 載入 Result File - 創建模擬 File 物件
+  const resultFileName = file_path.split('/').pop();
+  const resultFileObj = new File([emptyBlob], resultFileName, {
+    type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+  });
+  // 添加 path 屬性
+  Object.defineProperty(resultFileObj, 'path', {
+    value: file_path,
+    writable: true
+  });
+  return resultFileObj;
+}
+
+// 運行 Testing Dataset
+async function runTestingDataset(dataset_name) {
+  // 取得 testing_data
+  const testing_data = await getTestingData("APOE");
+  const selected_dataset = testing_data.find((item) => item.name === dataset_name);
+
+  // 更新 control1File 和 control2File
+  control1File.value = selected_dataset.sc1_files.map((file) => {return makeFile(file)});
+  control2File.value = selected_dataset.sc2_files.map((file) => {return makeFile(file)});
+
+  // 更新 sampleFile
+  const groupList = new Set(selected_dataset.sample_files.map(sample => sample.group));
+  sampleFile.value = [];
+  groupList.forEach((group) => {
+    sampleFile.value.push(selected_dataset.sample_files.filter((sample) => sample.group === group).map((sample) => {return makeFile(sample.path)}));
+  });
+
+  // submit
+  onSubmit();
+}
+
+// Expose
+defineExpose({
+  runTestingDataset
+});
 
 // 掛載時
 onMounted(() => {

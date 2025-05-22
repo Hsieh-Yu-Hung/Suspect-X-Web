@@ -301,6 +301,8 @@ def readControlPeaks(data_df):
 # 讀取 Target peak (單個)
 def readTargetPeaks(data_df):
 
+  print("readTargetPeaks", data_df.head())
+
   # 檢查 data_df 是否為 DataFrame
   if not isinstance(data_df, pd.DataFrame):
     error_message = "Target peak Error: Can not read Target peaks dataframe!"
@@ -317,9 +319,17 @@ def readTargetPeaks(data_df):
   # 如果 Target peak 存在, 則取得最大的 RFU 的 peak
   if len(is_Target_peak) > 0:
     true_indices = [index for index, value in enumerate(is_Target_peak) if value]
-    select_df = filtered_df.iloc[true_indices]
-    top_RFU = select_df.loc[select_df["RFU"].idxmax()]
-    return APOEPeak(peak_group="Target", peak_type="target", peak_size=top_RFU["bp"], peak_rfu=top_RFU["RFU"])
+    if len(true_indices) > 0:  # 確保有符合條件的索引
+        select_df = filtered_df.iloc[true_indices]
+        if not select_df.empty:  # 確保 DataFrame 不是空的
+            top_RFU = select_df.loc[select_df["RFU"].idxmax()]
+            return APOEPeak(peak_group="Target", peak_type="target", peak_size=top_RFU["bp"], peak_rfu=top_RFU["RFU"])
+
+    # 如果沒有找到合適的 peak，返回錯誤
+    error_message = "No valid Target peak was found within the expected range!"
+    tmp_source = "apoe.py"
+    logger.warn(error_message, tmp_source)
+    return APOEPeak(peak_group="error", peak_type=error_message, peak_size=-1, peak_rfu=-1)
   else:
     error_message = "No Target peak was found!"
     tmp_source = "apoe.py line. 317"

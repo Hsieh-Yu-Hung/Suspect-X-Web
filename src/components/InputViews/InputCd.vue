@@ -550,7 +550,7 @@ watch(subjectListFile, async (newVal, oldVal) => {
     $q.loading.show();
 
     // 上傳檔案
-    await uploadFile_to_category([newVal], user_uid, analysis_uuid, category);
+    await uploadFile_to_category([newVal], user_uid, analysis_uuid, category, true);
 
     // 解析檔案
     const extract_result = await extract(newVal);

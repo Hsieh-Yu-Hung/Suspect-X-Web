@@ -5,6 +5,7 @@ import Vuex from 'vuex';
 
 // 自定義 Modules
 import login_status from './LoginStatus';
+import analysis_history_data from './AnalysisHistory_data';
 import analysis_setting from './AnalysisSetting';
 import FXS_analysis_data from './FXS_analysis_data';
 import HTD_analysis_data from './HTD_analysis_data';
@@ -38,6 +39,9 @@ export default store(function () {
 
       // 分析設定
       analysis_setting: analysis_setting,
+
+      // 分析歷史資料
+      analysis_history_data: analysis_history_data,
 
       // 匯出頁面設定
       export_page_setting: export_page_setting,

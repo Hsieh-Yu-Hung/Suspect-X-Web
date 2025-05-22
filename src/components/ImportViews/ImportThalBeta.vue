@@ -69,14 +69,47 @@
                   style="display: none;"
                 />
 
-                <!-- 新增樣本 -->
-                <q-btn
-                  label="Add Sample"
-                  color="blue-4"
-                  text-color="white"
-                  icon="mdi-plus"
-                  @click="addSample"
-                />
+                <!-- 新增樣本/DevMode 開關 -->
+                <div class="q-pa-md" style="display: flex; flex-direction: row; gap: 2em; align-items: center;justify-content: center;">
+
+                  <!-- DevMode 開關-->
+                  <div v-if="is_dev_mode">
+                    <q-toggle
+                      v-model="switch_dev_mode"
+                      :label="switch_dev_mode"
+                      true-value="DevMode: ON"
+                      false-value="DevMode: OFF"
+                      size="lg"
+                      color="pink-7"
+                    />
+                  </div>
+
+                  <!-- 新增樣本按鈕 -->
+                  <q-btn
+                    label="Add Sample"
+                    color="blue-4"
+                    text-color="white"
+                    icon="mdi-plus"
+                    @click="addSample"
+                  />
+
+                </div>
+
+              </div>
+
+              <!-- 開發設定參數: peak_ratio -->
+              <div class="q-pa-md" style="width: 50%; display: flex; flex-direction: column; gap: 1em;">
+
+                <div style="width: fit-content; display: flex; flex-direction: row; gap: 1em;">
+                  <span class="text-subtitle1">
+                    Peak Ratio
+                  </span>
+                  <q-badge color="secondary">
+                    Peak Ratio: {{ peak_ratio }} (0 to 1)
+                  </q-badge>
+                </div>
+
+                <q-slider v-model="peak_ratio" :min="0" :max="1" :step="0.01"/>
               </div>
 
               <div v-if="sampleList_row.length > 0" style="margin-block: 1em;">
@@ -168,20 +201,12 @@
             </div>
 
             <!-- 開發設定版面 -->
-            <div style="margin-block: 2em; background-color: rgba(221, 232, 243, 0.2); border-radius: 10px; padding: 10px;" :style="{ 'display': is_developer_mode ? 'block' : 'none' }">
+            <div style="margin-block: 2em; background-color: rgba(221, 232, 243, 0.2); border-radius: 10px; padding: 10px;" :style="switch_dev_mode === 'DevMode: ON' && is_dev_mode ? 'display: block;' : 'display: none;'">
               <!-- 開發設定標題 -->
               <div class="row" style="display: flex; flex-direction: row; justify-content: space-between; align-items: flex-start;">
                 <span class="text-bold text-h6 text-blue-grey-7">
                   Development Settings
                 </span>
-                <div style="display: flex; flex-direction: column; justify-content: center; align-items: flex-start;">
-                  <q-btn no-caps dense flat label="Load Testing (betaThal)" icon="mdi-download" text-color="indigo-7" @click="loadTestingSamples('test_betaThal')" />
-                  <q-btn no-caps dense flat label="Load Testing (HBB Mutant)" icon="mdi-download" text-color="indigo-7" @click="loadTestingSamples('test_hbb_mutant')" />
-                  <q-btn no-caps dense flat label="Load Testing (HBB WT)" icon="mdi-download" text-color="indigo-7" @click="loadTestingSamples('test_hbb_wild_type')" />
-                  <q-btn no-caps dense flat label="Load Testing (Low Signal)" icon="mdi-download" text-color="indigo-7" @click="loadTestingSamples('test_sanger_low_signal')" />
-                  <q-btn no-caps dense flat label="Load Testing (Non HBB)" icon="mdi-download" text-color="indigo-7" @click="loadTestingSamples('test_non_hbb_sanger')" />
-                  <q-btn no-caps dense flat label="Load Testing (Non HBB High BG)" icon="mdi-download" text-color="indigo-7" @click="loadTestingSamples('test_non_hbb_highbg')" />
-                </div>
               </div>
 
               <!-- 開發設定參數:Left-Trim, Right-Trim -->
@@ -196,20 +221,6 @@
                 </div>
               </div>
 
-              <!-- 開發設定參數: peak_ratio -->
-              <div class="q-pa-md" style="width: 50%; display: flex; flex-direction: column; gap: 1em;">
-
-                <div style="width: fit-content; display: flex; flex-direction: row; gap: 1em;">
-                  <span class="text-subtitle1">
-                    Peak Ratio
-                  </span>
-                  <q-badge color="secondary">
-                    Peak Ratio: {{ peak_ratio }} (0 to 1)
-                  </q-badge>
-                </div>
-
-                <q-slider v-model="peak_ratio" :min="0" :max="1" :step="0.01"/>
-              </div>
             </div>
 
           </div>
@@ -271,20 +282,21 @@
 
 <script setup>
 // 引入套件
-import { ref, watch, onMounted, computed } from 'vue';
+import { ref, watch, onMounted } from 'vue';
 import { useStore } from 'vuex';
 import { v4 as uuidv4 } from 'uuid';
 import { useRouter } from 'vue-router';
 import { useQuasar, QSpinnerFacebook } from 'quasar';
 
 // 導入 composable
-import { doc, getDoc, collection, getDocs } from 'firebase/firestore';
+import { doc, getDoc, collection, getDocs, deleteDoc } from 'firebase/firestore';
 import { deleteFile, listAllFilesInFolder } from '@/firebase/firebaseStorage';
 import { submitWorkflow } from '@/composables/submitWorkflow';
-import { updateGetUserInfo } from '@/composables/accessStoreUserInfo';
+import { updateGetUserInfo, isDevMode } from '@/composables/accessStoreUserInfo';
 import { CATEGORY_LIST, upload_files_to_storage } from '@/composables/storageManager';
 import { setAnalysisID } from '@/composables/checkAnalysisStatus';
-import { ANALYSIS_RESULT, EXPORT_RESULT, update_userAnalysisData, dataset_list, Database, getUsers_from_firestore } from '@/firebase/firebaseDatabase';
+import getTestingData from '@/composables/useGetTestingData';
+import { ANALYSIS_RESULT, EXPORT_RESULT, update_userAnalysisData, dataset_list, Database } from '@/firebase/firebaseDatabase';
 
 // 引入元件
 import WarningDialog from '@/components/WarningDialog.vue';
@@ -328,9 +340,13 @@ const selected_sample = ref([]);
 const selected_history = ref(null);
 const history_options = ref([])
 
+// DevMode 開關
+const is_dev_mode = ref(false);
+const switch_dev_mode = ref("DevMode: ON");
+
 /* FileBucket */
 
-// 定
+// 定義 FileObj
 const FileObj = (file_path) => {
   return {
     file_name: file_path.split('/').pop(),
@@ -413,7 +429,8 @@ const THAL_BETA_RESULT = (sample_name, input_file, parameters, resultTable, qc_s
 
 // 更新 user database 的資料
 function updateDatabaseSampleList(new_sample_list) {
-  const data = {sample_list: new_sample_list};
+  const labelStr = history_options.value.find(h => h.value === currentAnalysisID.value.analysis_uuid).label;
+  const data = {sample_list: new_sample_list, analysis_label: labelStr};
   const setConfigName = currentAnalysisID.value.analysis_uuid;
   update_userAnalysisData(user_info.value.uid, databaseConfigPath, data, setConfigName);
 }
@@ -456,14 +473,6 @@ async function uploadSampleListFile(index) {
   addFileSampleIndex.value = index;
   uploaded_sampleList_file_input.value.pickFiles();
 }
-
-// 取得當前使用者的權限動作列表
-const current_user_actions = ref([]);
-
-// 判斷是否開啟開發者模式
-const is_developer_mode = computed(() => {
-  return current_user_actions.value.some(action => action.action_name === "dev_mode" && action.action_active);
-});
 
 // Functions
 
@@ -631,6 +640,16 @@ function validateSampleList(sampleList) {
   return !(hasEmptySampleName || hasInvalidFileCount || hasDuplicateSampleName);
 }
 
+// 更新 currentAnalysisID
+function updateCurrentAnalysisID() {
+  const new_id = `analysis_${uuidv4()}`;
+  store.commit('analysis_setting/updateCurrentAnalysisID', {
+    analysis_name: 'THAL_BETA',
+    analysis_uuid: new_id,
+  });
+  currentAnalysisID.value = store.getters['analysis_setting/getCurrentAnalysisID'];
+}
+
 // 提交表單
 const onSubmit = async () => {
 
@@ -745,12 +764,7 @@ const onSubmit = async () => {
   });
 
   // 更新 currentAnalysisID
-  const new_id = `analysis_${uuidv4()}`;
-  store.commit('analysis_setting/updateCurrentAnalysisID', {
-    analysis_name: "THAL_BETA",
-    analysis_uuid: new_id,
-  });
-  currentAnalysisID.value = store.getters['analysis_setting/getCurrentAnalysisID'];
+  updateCurrentAnalysisID();
 
   // 清除 store 的 subjectInfoTable 和 LabInfomation
   store.commit("export_page_setting/initExportPageSetting");
@@ -775,23 +789,28 @@ async function loadHistoryData() {
   // 取得所有文件
   const querySnapshot = await getDocs(collectionRef);
   const analysis_list = [];
+  let empty_analysis_index = [];
+  querySnapshot.forEach((doc, index) => {
 
-  querySnapshot.forEach((doc) => {
+    // 搜集空白的分析
+    const doc_data = doc.data();
+    if (doc_data.sample_list.length === 0) {
+      empty_analysis_index.push(index);
+    }
+
+    // 搜集有樣本的分析
     analysis_list.push({
-      label: doc.id,
+      label: doc_data.analysis_label,
       value: doc.id
     });
   });
 
-  // 更新 history options
-  analysis_list.forEach((analysis) => {
-    // 如果不在 history_options 中, 則加入
-    if (!history_options.value.some(h => h.value === analysis.value)) {
-      history_options.value.push({label: analysis.label, value: analysis.value});
-    }
+  // 將空白的分析移除
+  empty_analysis_index.forEach((index) => {
+    analysis_list.splice(index, 1);
   });
 
-  // 如果不在 history_options 中, 則加入
+  // 更新 history options
   analysis_list.forEach((analysis) => {
     if (!history_options.value.some(h => h.value === analysis.value)) {
       history_options.value.push({label: analysis.label, value: analysis.value});
@@ -814,6 +833,47 @@ async function loadTestingSamples(dataset) {
   sampleList_row.value = testing_sample_list.sample_list;
 }
 
+// 刪除空的分析
+async function deleteEmptyAnalysis() {
+  // 取得 database 中所有分析
+  const search_path = `${dataset_list.user_analysis}/${user_info.value.uid}/${databaseConfigPath}`;
+  const collectionRef = collection(Database, search_path);
+
+  // 取得所有文件
+  const querySnapshot = await getDocs(collectionRef);
+
+  // 刪除空的分析
+  querySnapshot.forEach(async (document) => {
+    const doc_data = document.data();
+    if (doc_data.sample_list.length === 0) {
+      const docRef = doc(Database, search_path, document.id);
+      await deleteDoc(docRef);
+    }
+  });
+}
+
+// 跑測試
+async function runTestingDataset(dataset_name) {
+  // 取得測試資料
+  const testing_data = await getTestingData('BETA-THAL');
+  const selected_data = testing_data.find(data => data.name === dataset_name);
+  const updatedSampleListRow = selected_data.sample_files.map((item, index) => {
+    return {
+      index: index + 1,
+      sample_name: item.name,
+      sequencing_files: item.files
+    }
+  });
+  sampleList_row.value = updatedSampleListRow;
+  // submit
+  onSubmit();
+}
+
+// Expose
+defineExpose({
+  runTestingDataset,
+});
+
 // 掛載時
 onMounted(async () => {
   // 取得使用者身份
@@ -824,6 +884,9 @@ onMounted(async () => {
   // 先嘗試取得當前的分析 ID, 如果沒有則建立新的分析 ID
   currentAnalysisID.value = store.getters['analysis_setting/getCurrentAnalysisID'];
   setAnalysisID(store, 'THAL_BETA');
+
+  // 刪除空的分析
+  await deleteEmptyAnalysis();
 
   // 載入 history 的資料
   history_options.value = [{label: currentAnalysisID.value.analysis_uuid, value: currentAnalysisID.value.analysis_uuid}];
@@ -836,9 +899,8 @@ onMounted(async () => {
   // 讀取 database 的樣本列表
   await loadDatabaseSampleList();
 
-  // 更新當前使用者的權限動作列表
-  const current_user_info = await getUsers_from_firestore(user_info.value.uid);
-  current_user_actions.value = current_user_info.actions;
+  // 取得當前使用者的權限動作列表
+  is_dev_mode.value = await isDevMode();
 });
 
 // 監聽 controlSampleFile

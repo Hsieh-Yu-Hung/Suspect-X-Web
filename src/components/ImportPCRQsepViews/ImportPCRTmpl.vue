@@ -9,11 +9,15 @@
 
     <!-- 標題 -->
     <q-card-section>
-      <div class="text-h5 text-uppercase text-bold text-blue-grey-7">
-        Import
-      </div>
-      <div class="text-subtitle1">
-        Please select the corresponding control result and sample result.
+      <div class="flex justify-between items-center">
+        <div>
+          <div class="text-h5 text-uppercase text-bold text-blue-grey-7">
+            Import
+          </div>
+          <div class="text-subtitle1">
+            Please select the corresponding control result and sample result.
+          </div>
+        </div>
       </div>
     </q-card-section>
 
@@ -21,39 +25,46 @@
     <q-card-section>
       <q-form class="q-gutter-sm" @submit="onSubmit">
 
-        <!-- 控制組檔案 -->
-        <q-file
-          v-model="controlSampleFile"
-          use-chips
-          color="deep-orange-6"
-          stack-label
-          label="Control sample"
-          :rules="[(val) => val || `Please select ONE control sample`]"
-          accept=".xlsx"
-          lazy-rules
-        >
-          <template v-slot:before>
-            <q-icon name="mdi-microsoft-excel" />
-          </template>
-        </q-file>
+        <div class="row flex justify-between items-flex-start" style="flex-direction: row; height: 100%;">
 
-        <!-- 測試組檔案 -->
-        <q-file
-          v-model="testingSampleFile"
-          multiple
-          append
-          use-chips
-          color="deep-orange-6"
-          stack-label
-          label="Testing samples"
-          :rules="[(val) => (val && val.length != 0) || `Please select at least ONE testing sample`]"
-          accept=".xlsx"
-          lazy-rules
-        >
-          <template v-slot:before>
-            <q-icon name="mdi-microsoft-excel" />
-          </template>
-        </q-file>
+          <!-- 上傳檔案區 -->
+          <div class="col">
+            <!-- 控制組檔案 -->
+            <q-file
+              v-model="controlSampleFile"
+              use-chips
+              color="deep-orange-6"
+              stack-label
+              label="Control sample"
+              :rules="[(val) => val || `Please select ONE control sample`]"
+              accept=".xlsx"
+              lazy-rules
+            >
+              <template v-slot:before>
+                <q-icon name="mdi-microsoft-excel" />
+              </template>
+            </q-file>
+
+            <!-- 測試組檔案 -->
+            <q-file
+              v-model="testingSampleFile"
+              multiple
+              append
+              use-chips
+              color="deep-orange-6"
+              stack-label
+              label="Testing samples"
+              :rules="[(val) => (val && val.length != 0) || `Please select at least ONE testing sample`]"
+              accept=".xlsx"
+              lazy-rules
+            >
+              <template v-slot:before>
+                <q-icon name="mdi-microsoft-excel" />
+              </template>
+            </q-file>
+          </div>
+
+        </div>
 
         <!-- 分析按鈕 -->
         <div class="row q-mt-lg justify-end">
@@ -68,7 +79,7 @@
 
 <script setup>
 // 導入模組
-import { ref, onMounted, watch } from 'vue';
+import { ref, onMounted, watch, computed } from 'vue';
 import { useStore } from 'vuex';
 import { useQuasar, QSpinnerFacebook } from 'quasar';
 import { v4 as uuidv4 } from 'uuid';
@@ -113,6 +124,10 @@ const $q = useQuasar();
 const props = defineProps({
   analysis_name: {
     type: String,
+    required: true,
+  },
+  testing_data: {
+    type: Array,
     required: true,
   },
 });
@@ -224,6 +239,16 @@ const HTD_assessmentValue = (value) => {
   }
 };
 
+// 更新 currentAnalysisID
+function updateCurrentAnalysisID() {
+  const new_id = `analysis_${uuidv4()}`;
+  store.commit('analysis_setting/updateCurrentAnalysisID', {
+    analysis_name: props.analysis_name,
+    analysis_uuid: new_id,
+  });
+  currentAnalysisID.value = store.getters['analysis_setting/getCurrentAnalysisID'];
+}
+
 // 送出按鈕
 async function onSubmit() {
   // *. 顯示 loading 視窗
@@ -267,7 +292,7 @@ async function onSubmit() {
         resultObj.result);
 
       // 製作 EXPORT_RESULT
-      const sample_ids = Object.keys(resultObj.result);
+      const sample_ids = resultObj.result ? Object.keys(resultObj.result) : [];
       const exportResult = sample_ids.map((sample_id, index) => {
         let result_list = resultObj.sample_data[sample_id].selected_fx_peaks.map(peak => peak.average_repeatNum);
         if (result_list.length === 1) {
@@ -313,7 +338,7 @@ async function onSubmit() {
       );
 
       // 製作 EXPORT_RESULT
-      const sample_ids = Object.keys(HTD_Result.result_and_data);
+      const sample_ids = HTD_Result.result_and_data ? Object.keys(HTD_Result.result_and_data) : [];
       const exportResult = sample_ids.map((sample_id, index) => {
         let result_list = HTD_Result.result_and_data[sample_id].selected_target_peaks.map(peak => peak.repeat_num);
         if (result_list.length === 1) {
@@ -352,12 +377,7 @@ async function onSubmit() {
     }
 
     // 更新 currentAnalysisID
-    const new_id = `analysis_${uuidv4()}`;
-    store.commit('analysis_setting/updateCurrentAnalysisID', {
-      analysis_name: props.analysis_name,
-      analysis_uuid: new_id,
-    });
-    currentAnalysisID.value = store.getters['analysis_setting/getCurrentAnalysisID'];
+    updateCurrentAnalysisID();
 
     // 隱藏 loading 視窗
     $q.loading.hide();
@@ -373,6 +393,13 @@ async function onSubmit() {
     }, 500);
   }
   else if (analysisResult.status == 'error'){
+
+    // 更新 currentAnalysisID
+    updateCurrentAnalysisID();
+
+    // 清空 controlSampleFile 和 testingSampleFile
+    initInputs();
+
     // 通知
     $q.notify({
       progress: true,
@@ -392,7 +419,6 @@ async function onSubmit() {
 
 // 選擇後上傳檔案
 async function uploadFile(files, type) {
-
   // 如果沒有檔案, 則返回
   if (!files) return;
 
@@ -449,8 +475,104 @@ async function uploadFile(files, type) {
   $q.loading.hide();
 }
 
+// 取得試劑
+const getReagent = (dataset_class, reagent) => {
+  let reagent_value = null;
+  let reagent_label = null;
+  switch (dataset_class) {
+    case 'FXS':
+      switch (reagent) {
+        case 'FXS_v1':
+          reagent_value = 'accuinFx1';
+          reagent_label = 'ACCUiN BioTech Fragile X v1';
+          break;
+        case 'FXS_v2':
+          reagent_value = 'accuinFx2';
+          reagent_label = 'ACCUiN BioTech Fragile X v2';
+          break;
+        default:
+          break;
+      }
+    case 'HTD':
+      switch (reagent) {
+        case 'HTD_v1':
+          reagent_value = 'accuinHD1';
+          reagent_label = 'ACCUiN BioTech HTD v1';
+          break;
+        default:
+          break;
+      }
+    default:
+      break;
+  }
+  return {
+    reagent_value: reagent_value,
+    reagent_label: reagent_label,
+  }
+}
+
+// 執行測試資料集
+async function runTestingDataset(dataset_name) {
+
+  // 取得測試資料集
+  const testing_data = props.testing_data.find(item => item.dataset_name === dataset_name);
+
+  // 決定該 Dataset 使用的儀器和試劑
+  const usedInstrument = testing_data.instrument;
+  const { reagent_value, reagent_label } = getReagent(testing_data.dataset_class, testing_data.reagent);
+
+  // 取得 settingProps
+  const currentSettingProps = store.getters["analysis_setting/getSettingProps"];
+  const updatedSettingProps = {
+    ...currentSettingProps,
+    instrument: usedInstrument,
+    reagent: reagent_value,
+    reagentLabel: reagent_label,
+  }
+
+  // 更新 settingProps
+  store.commit("analysis_setting/updateSettingProps", updatedSettingProps);
+
+  // 創建一個空的 Blob 物件作為檔案內容
+  const emptyBlob = new Blob([''], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+
+  // 載入 Control Sample - 創建模擬 File 物件
+  const controlFileName = testing_data.controlFile.split('/').pop();
+  const controlFileObj = new File([emptyBlob], controlFileName, {
+    type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+  });
+  // 添加 path 屬性
+  Object.defineProperty(controlFileObj, 'path', {
+    value: testing_data.controlFile,
+    writable: true
+  });
+  controlSampleFile.value = controlFileObj;
+
+  // 載入 Testing Samples - 創建模擬 File 物件
+  testingSampleFile.value = testing_data.sampleFiles.map(file => {
+    const fileName = file.split('/').pop();
+    const fileObj = new File([emptyBlob], fileName, {
+      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    });
+    // 添加 path 屬性
+    Object.defineProperty(fileObj, 'path', {
+      value: file,
+      writable: true
+    });
+    return fileObj;
+  });
+
+  // 送出
+  onSubmit();
+}
+
+// Expose
+defineExpose({
+  runTestingDataset,
+});
+
 // 掛載時
-onMounted(() => {
+onMounted(async () => {
   // 取得使用者身份
   const { login_status } = updateGetUserInfo();
   is_login.value = login_status.value.is_login;
@@ -467,14 +589,18 @@ onMounted(() => {
 // 監聽 controlSampleFile
 watch(controlSampleFile, async(newVal, oldVal) => {
   if (newVal !== oldVal) {
-    await uploadFile([newVal], 'control');
+    if (newVal && newVal.size) {
+      await uploadFile([newVal], 'control');
+    }
   }
 });
 
 // 監聽 testingSampleFile
 watch(testingSampleFile, async(newVal, oldVal) => {
-  if (newVal !== oldVal) {
-    await uploadFile(newVal, 'samples');
+  if (newVal && newVal !== oldVal) {
+    if (newVal.length > 0 && newVal[0].size) {
+      await uploadFile(newVal, 'samples');
+    }
   }
 });
 

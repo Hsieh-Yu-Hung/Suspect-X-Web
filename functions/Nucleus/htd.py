@@ -175,7 +175,7 @@ def HTD(control_file_path, samples_file_list, user_info):
     logger.warn(f"Error: 終止 HTD 分析, 因為 Standard Peak 問題!", tmp_source)
     htd_output.qc_status = QCStatus.FAILED.value
     htd_output.errMsg = "Standard Peak 不足 2 個"
-    return htd_output
+    return htd_output.toJson()
 
   # log 印出 standard_peaks
   for peak in standard_peaks:
@@ -189,7 +189,7 @@ def HTD(control_file_path, samples_file_list, user_info):
     logger.warn(f"Error: 終止 HTD 分析, 因為 Standard Peak 不在指定範圍內!", tmp_source)
     htd_output.qc_status = QCStatus.FAILED.value
     htd_output.errMsg = "Standard Peak 不在指定範圍內"
-    return htd_output
+    return htd_output.toJson()
 
   # 更新 htd_output
   htd_output.qc_status = QCStatus.PASSED.value
@@ -207,6 +207,7 @@ def HTD(control_file_path, samples_file_list, user_info):
       data.assessment = AssessmentStatus.INCONCLUSIVE
       data.error_message = f"Sample {sample_id} 缺少 internal_ctrl_peaks"
       data.sample_qc_status = QCStatus.FAILED.value
+      data.selected_target_peaks = []
       continue
 
     # 若 target_peaks 不足 1 個, 則判定 "Invalid"
@@ -241,11 +242,11 @@ def HTD(control_file_path, samples_file_list, user_info):
     tmp_source = "htd.py line. 240"
     logger.analysis(f"\n\
       Sample Name: {sample_id} \n\
-      Assessment List: {[assessment.value for assessment in data.assessmentList]} \n\
+      Assessment List: {[assessment.value for assessment in data.assessmentList] if data.assessmentList else []} \n\
       ErrMessage: {data.error_message} \n\
-      Internal Ctrl Peaks: {data.internal_ctrl_peaks} \n\
+      Internal Ctrl Peaks: {data.internal_ctrl_peaks if data.internal_ctrl_peaks else None} \n\
       Selected Target Peaks: \n\
-      \t{'\n\t'.join([str(peak) for peak in data.selected_target_peaks])}", tmp_source)
+      \t{'\n\t'.join([str(peak) for peak in data.selected_target_peaks] if data.selected_target_peaks else [])}", tmp_source)
 
   # 更新 htd_output
   htd_output.errMsg += ";" + ";".join([data.error_message for data in sampleData.values() if data.error_message != ""])

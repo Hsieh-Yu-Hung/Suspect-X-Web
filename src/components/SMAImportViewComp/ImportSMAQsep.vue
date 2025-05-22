@@ -23,7 +23,8 @@
 
         <!-- 功能按鈕區 -->
         <div style="margin-top: 1.5em;">
-          <q-btn style="margin-right: 5px;" color="primary" icon="mdi-upload" label="Upload" @click="smav4FileInputs.$el.click();"/>
+          <q-toggle style="margin-right: 1em;" v-model="usedSMN" :label="usedSMN === 'smn1' ? 'SMN1' : 'SMN2'" color="teal" false-value="smn1" true-value="smn2" />
+          <q-btn style="margin-right: 0.5em;" color="primary" icon="mdi-upload" label="Upload" @click="smav4FileInputs.$el.click();"/>
           <q-btn-group push>
             <q-btn color="deep-orange" push glossy icon="save_as" label="New" @click="saveConfig('', true, false)"/>
             <q-btn color="brown-5" push glossy icon="auto_mode" label="Save" @click="saveConfig(currentDisplayedConfig, false, false)" ref="saveConfigBtn"/>
@@ -191,6 +192,7 @@ import { update_userAnalysisData, getData, dataset_list, ANALYSIS_RESULT, EXPORT
 import { deleteData } from '@/firebase/firebaseDatabase';
 import { submitWorkflow } from '@/composables/submitWorkflow';
 import loggerV2 from '@/composables/loggerV2';
+import getTestingData from '@/composables/useGetTestingData';
 
 // import component
 import WarningDialog from '@/components/WarningDialog.vue';
@@ -225,6 +227,7 @@ const typeColor = {
   std2: 'pink-4',
   sample: 'teal-4',
 }
+const usedSMN = ref('smn1');
 
 /* Config 相關 */
 const searchConfig = ref('');                     // 搜尋列用 Config name
@@ -431,7 +434,7 @@ const DEFINED_SMAV4FILE = (file_name, file_path) => {
   const defined_file = {
     file_name: file_name,
     path: file_path,
-    smnType: 'smn1',
+    smnType: usedSMN.value,
     expType: 'sample',
   }
   return defined_file;
@@ -697,8 +700,20 @@ const smnTypeInterpretation = (smn1, smn2) => {
   }
 };
 
+// 更新 currentAnalysisID
+function updateCurrentAnalysisID() {
+  const new_id = `analysis_${uuidv4()}`;
+  store.commit('analysis_setting/updateCurrentAnalysisID', {
+    analysis_name: 'SMAv4',
+    analysis_uuid: new_id,
+  });
+  currentAnalysisID.value = store.getters['analysis_setting/getCurrentAnalysisID'];
+}
+
 /* 主程式 */
 async function onSubmit() {
+
+  console.log("smav4Files.value", smav4Files.value);
 
   // 先存設定
   saveConfigBtn.value.click();
@@ -792,12 +807,7 @@ async function onSubmit() {
     });
 
     // 更新 currentAnalysisID
-    const new_id = `analysis_${uuidv4()}`;
-    store.commit('analysis_setting/updateCurrentAnalysisID', {
-      analysis_name: 'SMAv4',
-      analysis_uuid: new_id,
-    });
-    currentAnalysisID.value = store.getters['analysis_setting/getCurrentAnalysisID'];
+    updateCurrentAnalysisID();
 
     // 清除 store 的 subjectInfoTable 和 LabInfomation
     store.commit("export_page_setting/initExportPageSetting");
@@ -811,6 +821,12 @@ async function onSubmit() {
     }, 500);
   }
   else if (analysisResult.status == 'error'){
+    // 更新 currentAnalysisID
+    updateCurrentAnalysisID();
+
+    // 清空 smav4Files
+    smav4Files.value = [];
+
     // 通知
     $q.notify({
       progress: true,
@@ -827,6 +843,46 @@ async function onSubmit() {
     $q.loading.hide();
   }
 }
+
+// 執行資料集
+async function runTestingDataset(dataset_name) {
+  const testing_data = await getTestingData('SMA_CE');
+  const selected_data = testing_data.find(data => data.name === dataset_name);
+  const totalFiles = [
+    ...selected_data.SMN1_SC_C,
+    ...selected_data.SMN1_SC_N,
+    ...selected_data.SMN2_SC_C,
+    ...selected_data.SMN2_SC_N,
+    ...selected_data.SMN1_Samples,
+    ...selected_data.SMN2_Samples
+  ];
+  currentDisplayedConfig.value = '';
+  smav4Files.value = totalFiles.map(file => ({
+    ...file,
+    file_name: file.name
+  }));
+
+  // 決定該 Dataset 使用的儀器和試劑
+  const usedInstrument = selected_data.instrument;
+
+  // 取得 settingProps
+  const currentSettingProps = store.getters["analysis_setting/getSettingProps"];
+  const updatedSettingProps = {
+    ...currentSettingProps,
+    instrument: usedInstrument
+  }
+
+  // 更新 settingProps
+  store.commit("analysis_setting/updateSettingProps", updatedSettingProps);
+
+  // 執行 onSubmit
+  onSubmit();
+}
+
+// Expose
+defineExpose({
+  runTestingDataset,
+});
 
 // 掛載時執行
 onMounted(async () => {

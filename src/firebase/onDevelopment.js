@@ -19,12 +19,9 @@ import {
   Database, login_method, getData, addLoginInfoDatabase, addEmailListDatabase,
   USER_INFO, EMAIL_INFO, getSoftwareVersionDatabase, getOrganizationDatabase,
   addSoftwareVersionDatabase, addOrganizationDatabase, SOFTWARE_DATA, ORGAN_DATA,
-  addTestingSample, getPermissionDatabase, addPermissionDatabase, PERMISSION,
+  getPermissionDatabase, addPermissionDatabase, PERMISSION,
   getRoleDatabase, addRoleDatabase, ROLE, ACTION
 } from "./firebaseDatabase";
-
-// 設定
-import config from "../../config.js";
 
 // 設定模擬用預設權限
 const default_permission = [
@@ -131,26 +128,6 @@ async function dev_add_role() {
   }
 }
 
-// 開發環境時，加入 Beta Thal 測試樣本
-async function dev_add_beta_thal_testing_samples() {
-
-  // 取得測試樣本設定
-  const beta_thal_testing_sample = config.testing_samples.beta_thal;
-  const hbb_mutant_testing_sample = config.testing_samples.hbb_mutant;
-  const hbb_wild_type_testing_sample = config.testing_samples.hbb_wild_type;
-  const sanger_low_signal_testing_sample = config.testing_samples.sanger_low_signal;
-  const non_hbb_sanger_testing_sample = config.testing_samples.non_hbb_sanger;
-  const non_hbb_highbg_testing_sample = config.testing_samples.non_hbb_highbg;
-
-  // 加入到 firestore
-  await addTestingSample(beta_thal_testing_sample, 'test_betaThal');
-  await addTestingSample(hbb_mutant_testing_sample, 'test_hbb_mutant');
-  await addTestingSample(hbb_wild_type_testing_sample, 'test_hbb_wild_type');
-  await addTestingSample(sanger_low_signal_testing_sample, 'test_sanger_low_signal');
-  await addTestingSample(non_hbb_sanger_testing_sample, 'test_non_hbb_sanger');
-  await addTestingSample(non_hbb_highbg_testing_sample, 'test_non_hbb_highbg');
-}
-
 // 主程式
 export default async function onDevelopment() {
 
@@ -181,8 +158,5 @@ export default async function onDevelopment() {
 
   // 開發環境時，加入角色資料
   await dev_add_role();
-
-  // 開發環境時，加入 Beta Thal 測試樣本
-  await dev_add_beta_thal_testing_samples();
 }
 

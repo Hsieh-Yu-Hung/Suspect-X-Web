@@ -27,6 +27,13 @@
               </q-th>
             </template>
 
+            <!-- 設定 Result 的顯示 -->
+            <template v-slot:body-cell-result="props">
+              <q-td :props="props">
+                {{ props.row.result.split(separator)[0] }}
+              </q-td>
+            </template>
+
             <!-- 設定 QC Status 的顯示 -->
             <template v-slot:body-cell-qcStatus="props">
               <q-td :props="props">
@@ -108,7 +115,7 @@
         </div>
 
         <!-- 顯示 Basecalling peaks-->
-        <div ref="basecall_peaks_plot_container" id="basecall_peaks" class="row flex flex-center" style="height:40em; width: 100%;"></div>
+        <div ref="basecall_peaks_plot_container" id="basecall_peaks" class="row flex flex-center" :style="expandBaseCallViewPlot ? 'height: 40em; width: 100%;' : 'height: 100%; width: 100%;'"></div>
 
         <!-- 沒有圖顯示提示 -->
         <div ref="fail_to_plot_hint" class="row flex flex-center text-subtitle1 text-red-7 text-weight-bold" style="display: none;">
@@ -144,7 +151,7 @@
               Result:
             </div>
             <div class="col text-h5 text-bold text-subtitle2 text-left" style="margin-block: 1em;">
-              {{ displayResult }}
+              {{ displayResult.split(separator)[0] }}
             </div>
           </div>
 
@@ -202,10 +209,10 @@
               <q-td :props="props">
                 <div style="display: flex; flex-direction: column; align-items: center; gap: 0.5em;">
                 <q-chip
-                  v-for="item in props.row.ClinSigList"
-                    :key="item"
-                    :label="item"
-                    :color="ClinicalSignificance[item.replaceAll(' ', '_')].color"
+                  v-for="(item, index) in props.row.ClinSigList"
+                    :key="index"
+                    :label="item.split(separator)[0]"
+                    :color="ClinicalSignificance[item.split(separator)[0].replaceAll(' ', '_')].color"
                     text-color="white"
                   />
                 </div>
@@ -499,6 +506,7 @@ const plot_peak_data = computed(() => store.getters["Beta_thal_analysis_data/get
 const plot_basecall_data = computed(() => store.getters["Beta_thal_analysis_data/getPlotBasecallData"]);
 const basecall_peaks_plot_container = ref(null);
 const fail_to_plot_hint = ref(null);
+const expandBaseCallViewPlot = ref(false);
 
 // 取得當前顯示圖表的 Alignment Score
 const getCurrentDisplayAlign1Score = computed(() => {
@@ -543,7 +551,11 @@ function updateSummaryRows() {
 
       // 計算嚴重度(取最嚴重)
       if (row.ClinSigList.length > 0) {
-        const severity = row.ClinSigList.map(item => ClinicalSignificance[item.replaceAll(' ', '_')].severity_level);
+        const severity = row.ClinSigList.map(items => {
+          const item = items.split(separator);
+          const severity_level = item.map(i => ClinicalSignificance[i.replaceAll(' ', '_')].severity_level);
+          return Math.max(...severity_level);
+        });
         row["Severity"] = Math.max(...severity);
       }
       else {
@@ -1009,7 +1021,11 @@ watch(currentSelectedSampleIndex, () => {
 
       // 計算嚴重度(取最嚴重)
       if (row.ClinSigList.length > 0) {
-        const severity = row.ClinSigList.map(item => ClinicalSignificance[item.replaceAll(' ', '_')].severity_level);
+        const severity = row.ClinSigList.map(items => {
+          const item = items.split(separator);
+          const severity_level = item.map(i => ClinicalSignificance[i.replaceAll(' ', '_')].severity_level);
+          return Math.max(...severity_level);
+        });
         row["Severity"] = Math.max(...severity);
       }
       else {
@@ -1055,8 +1071,20 @@ watch(currentSelectedSampleIndex, () => {
 
 // 監控 currentDisplayBasecallFile 的變化
 watch(currentDisplayBasecallFile, (newVal, oldVal) => {
+
+  const canPlot = () => {
+    if (newVal !== oldVal &&  plot_peak_data.value[currentSelectedSampleName.value]) {
+      expandBaseCallViewPlot.value = true;
+      return true;
+    }
+    else {
+      expandBaseCallViewPlot.value = false;
+      return false;
+    }
+  }
+
   // 繪製互動式圖表
-  if (newVal !== oldVal) {
+  if (canPlot()) {
     const selected_file_name = currentDisplayBasecallFile.value.split('.')[0];
     const toPlotPeakData = plot_peak_data.value[currentSelectedSampleName.value][selected_file_name];
     const toPlotBasecallData = plot_basecall_data.value[currentSelectedSampleName.value][selected_file_name];

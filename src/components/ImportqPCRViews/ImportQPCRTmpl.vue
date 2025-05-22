@@ -52,6 +52,7 @@ import { setAnalysisID } from '@/composables/checkAnalysisStatus';
 import { updateGetUserInfo } from '@/composables/accessStoreUserInfo';
 import { submitWorkflow } from '@/composables/submitWorkflow';
 import { ANALYSIS_RESULT, EXPORT_RESULT, update_userAnalysisData } from '@/firebase/firebaseDatabase';
+import getTestingData from '@/composables/useGetTestingData';
 
 // 元件
 import WarningDialog from '@/components/WarningDialog.vue';
@@ -169,6 +170,16 @@ function initInputs() {
   NTCwell.value = null;
 }
 
+// 更新 currentAnalysisID
+function updateCurrentAnalysisID() {
+  const new_id = `analysis_${uuidv4()}`;
+  store.commit('analysis_setting/updateCurrentAnalysisID', {
+    analysis_name: props.analysis_name,
+    analysis_uuid: new_id,
+  });
+  currentAnalysisID.value = store.getters['analysis_setting/getCurrentAnalysisID'];
+}
+
 // 送出按鈕
 async function onSubmit() {
   // *. 顯示 loading 視窗
@@ -256,7 +267,7 @@ async function onSubmit() {
       );
 
       // 製作 EXPORT_RESULT
-      const exportResult = NUDT15_Result.resultList.map((result, index) => {
+      const exportResult = NUDT15_Result.resultList ? NUDT15_Result.resultList.map((result, index) => {
         return EXPORT_RESULT(
           index+1,
           result.sample_name,
@@ -264,15 +275,15 @@ async function onSubmit() {
           [result.sample_type.join("/")],
           result.assessment,
           nudt15Assessment(result.assessment),
-        );
-      });
+          );
+        }) : [];
 
       // 製作 ANALYSIS_RESULT
       const AnalysisResult = ANALYSIS_RESULT(
         currentAnalysisID.value.analysis_name,
         currentAnalysisID.value.analysis_uuid,
         resultObj.config,
-        [resultObj.controlData.sample_name],
+        [resultObj.controlData ? resultObj.controlData.sample_name : ''],
         resultObj.qc_status,
         resultObj.errMsg,
         NUDT15_Result,
@@ -290,12 +301,7 @@ async function onSubmit() {
     }
 
     // 更新 currentAnalysisID
-    const new_id = `analysis_${uuidv4()}`;
-    store.commit('analysis_setting/updateCurrentAnalysisID', {
-      analysis_name: props.analysis_name,
-      analysis_uuid: new_id,
-    });
-    currentAnalysisID.value = store.getters['analysis_setting/getCurrentAnalysisID'];
+    updateCurrentAnalysisID();
 
     // 初始化 inputResults (葉酸輸入)
     store.commit('MTHFR_analysis_data/initInputResults');
@@ -314,6 +320,16 @@ async function onSubmit() {
     }, 500);
   }
   else if (analysisResult.status == 'error'){
+    // 更新 currentAnalysisID
+    updateCurrentAnalysisID();
+
+    // 清空 resultFile, famFile, vicFile
+    resultFile.value = null;
+    famFile.value = null;
+    vicFile.value = null;
+    Ctrlwell.value = null;
+    NTCwell.value = null;
+
     // 通知
     $q.notify({
       progress: true,
@@ -359,6 +375,120 @@ function updateWells(well_type) {
     NTCwell.value = ref_qPCRImportSection.value.NTCwell;
   }
 }
+
+// 取得試劑
+const getReagent = (dataset_class, reagent) => {
+  switch (dataset_class) {
+    case "MTHFR":
+      switch (reagent) {
+        case "MTHFR_v1":
+          return { reagent_value: "accuinMTHFR1", reagent_label: "ACCUiN BioTech MTHFR v1" };
+        case "MTHFR_v2":
+          return { reagent_value: "accuinMTHFR2", reagent_label: "ACCUiN BioTech MTHFR v2" };
+        case "MTHFR_v3":
+          return { reagent_value: "accuinMTHFR3", reagent_label: "ACCUiN BioTech MTHFR v3" };
+        default:
+          return { reagent_value: null, reagent_label: null };
+      }
+    case "NUDT15":
+      switch (reagent) {
+        case "NUDT15_v1":
+          return { reagent_value: "accuinNUDT151", reagent_label: "ACCUiN BioTech NUDT15 v1" };
+        case "NUDT15_v2":
+          return { reagent_value: "accuinNUDT152", reagent_label: "ACCUiN BioTech NUDT15 v2" };
+        default:
+          return { reagent_value: null, reagent_label: null };
+      }
+    default:
+      return { reagent_value: null, reagent_label: null };
+  }
+}
+
+// 取得儀器
+const getInstrument = (instrument) => {
+  switch (instrument) {
+    case "qs3":
+      return { instrument_value: "qs3", instrument_label: "QuantStudio™ 3" };
+    case "tower":
+      return { instrument_value: "tower", instrument_label: "qTOWER³" };
+    case "z480":
+      return { instrument_value: "z480", instrument_label: "Roche Cobas® z 480" };
+    default:
+      return null;
+  }
+}
+
+// 製作檔案
+function makeFile(file_path) {
+
+  if (file_path == null) {
+    return null;
+  }
+
+  // 創建一個空的 Blob 物件作為檔案內容
+  const emptyBlob = new Blob([''], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+
+  // 載入 Result File - 創建模擬 File 物件
+  const resultFileName = file_path.split('/').pop();
+  const resultFileObj = new File([emptyBlob], resultFileName, {
+    type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+  });
+  // 添加 path 屬性
+  Object.defineProperty(resultFileObj, 'path', {
+    value: file_path,
+    writable: true
+  });
+  return resultFileObj;
+}
+
+// 運行 Testing Dataset
+async function runTestingDataset(dataset_name) {
+  // 取得 testing_data
+  const testing_data = await getTestingData(props.analysis_name);
+  const selected_dataset = testing_data.find((item) => item.name === dataset_name);
+
+  // 決定該 Dataset 使用的儀器和試劑
+  const usedInstrument = selected_dataset.instrument;
+  const { reagent_value, reagent_label } = getReagent(selected_dataset.dataset_class, selected_dataset.reagent);
+  const { instrument_value, instrument_label } = getInstrument(usedInstrument);
+
+  // 取得 settingProps
+  const currentSettingProps = store.getters["analysis_setting/getSettingProps"];
+  const updatedSettingProps = {
+    ...currentSettingProps,
+    instrument: instrument_value,
+    instrumentLabel: instrument_label,
+    reagent: reagent_value,
+    reagentLabel: reagent_label,
+  }
+
+  // 更新 settingProps
+  store.commit("analysis_setting/updateSettingProps", updatedSettingProps);
+
+  // 製作檔案
+  resultFile.value = makeFile(selected_dataset.resultFile);
+  famFile.value = makeFile(selected_dataset.FAM);
+  vicFile.value = makeFile(selected_dataset.VIC);
+
+  // Wells
+  Ctrlwell.value = [{
+    X: selected_dataset.controlWell[0],
+    Y: selected_dataset.controlWell.substring(1),
+  }];
+  NTCwell.value = {
+    X: selected_dataset.NTCWell[0],
+    Y: selected_dataset.NTCWell.substring(1),
+  };
+
+  // 執行 onSubmit
+  onSubmit();
+}
+
+// Expose
+defineExpose({
+  runTestingDataset
+});
+
 
 // 掛載時
 onMounted(() => {

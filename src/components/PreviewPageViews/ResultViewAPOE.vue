@@ -324,9 +324,9 @@ function updateAPOEAnalysisResult(apoeResult) {
   // 解析 well 資料
   function parseWellData(controlList, targetPeakGroup) {
     return APOE_WELL_DATA(
-      controlList.find(item => item.peak_group === targetPeakGroup).sample_id,
-      controlList.find(item => item.peak_group === targetPeakGroup).well,
-      controlList.find(item => item.peak_group === targetPeakGroup).file_name
+      controlList.find(item => item.peak_group === targetPeakGroup)?.sample_id,
+      controlList.find(item => item.peak_group === targetPeakGroup)?.well,
+      controlList.find(item => item.peak_group === targetPeakGroup)?.file_name
     );
   }
 

@@ -37,6 +37,20 @@ const getCurrentInstrument = () => {
 
 // functions
 
+// 執行資料集
+async function runTestingDataset(dataset_name) {
+  if (getCurrentInstrument() == 'qsep100') {
+    ref_import_sma_qsep.value.runTestingDataset(dataset_name);
+  } else {
+    ref_qPCRImportSection.value.runTestingDataset(dataset_name);
+  }
+}
+
+// Expose
+defineExpose({
+  runTestingDataset,
+});
+
 // 掛載時
 onMounted(() => {
   // 取得使用者身份

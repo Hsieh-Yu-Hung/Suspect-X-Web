@@ -57,6 +57,7 @@ import { ANALYSIS_RESULT, EXPORT_RESULT, update_userAnalysisData, simplifyFilePa
 // 元件
 import WarningDialog from '@/components/WarningDialog.vue';
 import qPCRImportSection from '@/components/ImportqPCRViews/qPCRImportSection.vue';
+import getTestingData from '@/composables/useGetTestingData';
 
 // Database Path
 const dbSMAResultPath = "sma_result";
@@ -103,6 +104,16 @@ const SMA_RESULT = (analyzerVersion,SC1_Data, SC2_Data, NTC_Data, sampleDataList
 }
 
 // Functions
+
+// 更新 currentAnalysisID
+function updateCurrentAnalysisID() {
+  const new_id = `analysis_${uuidv4()}`;
+  store.commit('analysis_setting/updateCurrentAnalysisID', {
+    analysis_name: 'SMA',
+    analysis_uuid: new_id,
+  });
+  currentAnalysisID.value = store.getters['analysis_setting/getCurrentAnalysisID'];
+}
 
 // 送出按鈕
 async function onSubmit() {
@@ -237,12 +248,7 @@ async function onSubmit() {
     });
 
     // 更新 currentAnalysisID
-    const new_id = `analysis_${uuidv4()}`;
-    store.commit('analysis_setting/updateCurrentAnalysisID', {
-      analysis_name: 'SMA',
-      analysis_uuid: new_id,
-    });
-    currentAnalysisID.value = store.getters['analysis_setting/getCurrentAnalysisID'];
+    updateCurrentAnalysisID();
 
     // 清除 store 的 subjectInfoTable 和 LabInfomation
     store.commit("export_page_setting/initExportPageSetting");
@@ -258,6 +264,17 @@ async function onSubmit() {
     }, 500);
   }
   else if (analysisResult.status == 'error'){
+    // 更新 currentAnalysisID
+    updateCurrentAnalysisID();
+
+    // 清空 resultFile, famFile, vicFile
+    resultFile.value = null;
+    famFile.value = null;
+    vicFile.value = null;
+    cy5File.value = null;
+    Ctrlwell.value = null;
+    NTCwell.value = null;
+
     // 通知
     $q.notify({
       progress: true,
@@ -340,6 +357,107 @@ function initInputs() {
   Ctrlwell.value = null;
   NTCwell.value = null;
 }
+
+// 取得試劑
+const convertReagent = (reagent) => {
+  switch (reagent) {
+    case 'SMA_v1':
+      return {
+        reagent_value: 'accuinSma1',
+        reagent_label: 'ACCUiN BioTech SMA v1',
+      }
+    case 'SMA_v2':
+      return {
+        reagent_value: 'accuinSma2',
+        reagent_label: 'ACCUiN BioTech SMA v2',
+      }
+    case 'SMA_v3':
+      return {
+        reagent_value: 'accuinSma3',
+        reagent_label: 'ACCUiN BioTech SMA v3',
+      }
+    default:
+      return {
+        reagent_value: 'accuinSma1',
+        reagent_label: 'ACCUiN BioTech SMA v1',
+      }
+  }
+}
+
+// 製作檔案
+function makeFile(file_path) {
+
+  if (file_path == null) {
+    return null;
+  }
+
+  // 創建一個空的 Blob 物件作為檔案內容
+  const emptyBlob = new Blob([''], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+
+  // 載入 Result File - 創建模擬 File 物件
+  const resultFileName = file_path.split('/').pop();
+  const resultFileObj = new File([emptyBlob], resultFileName, {
+    type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+  });
+  // 添加 path 屬性
+  Object.defineProperty(resultFileObj, 'path', {
+    value: file_path,
+    writable: true
+  });
+  return resultFileObj;
+}
+
+// 執行資料集
+async function runTestingDataset(dataset_name) {
+  const testing_data = await getTestingData("SMA");
+  const selected_dataset = testing_data.find((item) => item.name === dataset_name);
+
+  // 更新 Ctrlwell, NTCwell
+  Ctrlwell.value = [
+    {
+      X: selected_dataset.SC1Well[0],
+      Y: selected_dataset.SC1Well.substring(1),
+    },
+    {
+      X: selected_dataset.SC2Well[0],
+      Y: selected_dataset.SC2Well.substring(1),
+    },
+  ];
+  NTCwell.value = {
+    X: selected_dataset.NTCWell[0],
+    Y: selected_dataset.NTCWell.substring(1),
+  };
+
+  // 製作 Result File
+  resultFile.value = makeFile(selected_dataset.resultFile);
+  famFile.value = makeFile(selected_dataset.FAM);
+  vicFile.value = makeFile(selected_dataset.VIC);
+  cy5File.value = makeFile(selected_dataset.CY5);
+
+  // 決定該 Dataset 使用的儀器和試劑
+  const usedInstrument = selected_dataset.instrument;
+  const { reagent_value, reagent_label } = convertReagent(selected_dataset.reagent);
+
+  // 取得 settingProps
+  const currentSettingProps = store.getters["analysis_setting/getSettingProps"];
+  const updatedSettingProps = {
+    ...currentSettingProps,
+    instrument: usedInstrument,
+    reagent: reagent_value,
+    reagentLabel: reagent_label,
+  }
+
+  // 更新 settingProps
+  store.commit("analysis_setting/updateSettingProps", updatedSettingProps);
+
+  // 執行 onSubmit
+  onSubmit();
+}
+
+// Expose
+defineExpose({
+  runTestingDataset,
+});
 
 // 掛載時
 onMounted(() => {

@@ -62,6 +62,10 @@ import parseExportData from '@/composables/parseExportData.js';
 import parseInputExport from '@/composables/parseInputExport.js';
 import { Consequence } from '@/composables/useInterpretClinvar.js';
 import ExcelJS from 'exceljs';
+import { uploadFileToStorage } from '@/firebase/firebaseStorage';
+
+// 產品列表
+const productList = ['APOE_AD', 'FXSv1', 'FXSv2', 'HTD', 'MTHFR_c677', 'MTHFR_c677_c1298', 'NUDT15', 'SMA', 'SMAv4', 'THAL_ALPHA', 'THAL_BETA'];
 
 // 使用者身份
 const is_login = ref(false);
@@ -102,6 +106,29 @@ const exportOptions = [
   { label: 'JSON', value: 'json_enUS' },
   { label: 'Excel', value: 'xlsx_enUS'},
 ];
+
+// 取得分析產品名稱
+const getAnalysisProductName = (analysis_name) => {
+  switch (analysis_name) {
+    case 'APOE':
+      return 'apoe-import';
+    case 'MTHFR':
+      return 'mthfr-import';
+    case 'NUDT15':
+      return 'nudt15';
+    case 'FXS':
+      return 'fx';
+    case 'HTD':
+      return 'hd';
+    case 'SMA':
+      return 'sma';
+    case 'THAL_BETA':
+      return 'thal-import-beta';
+    default:
+      return null;
+  }
+}
+
 
 // 取得產品匯出資訊
 const getProductExportInfo = (product, reagent) => {
@@ -219,18 +246,38 @@ const getProductExportInfo = (product, reagent) => {
 };
 
 // 修改 runExportJSON 函數以直接下載 JSON 檔案
-function runExportJSON(exportObj) {
-  const jsonData = JSON.stringify(exportObj);
-  const blob = new Blob([jsonData], { type: 'application/json' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = `${exportObj.result.testing.sample.id}_${exportObj.product.name}.json`;
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  URL.revokeObjectURL(url);
-  return Promise.resolve({ isExported: true });
+async function runExportJSON(exportObj) {
+  try {
+    const jsonData = JSON.stringify(exportObj);
+    const blob = new Blob([jsonData], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${exportObj.result.testing.sample.id}_${exportObj.product.name}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+
+    // 上傳到 Firebase Storage (如果 product 在 productList 中)
+    if (productList.includes(exportObj.product.name)) {
+      const file = new File([blob], `${exportObj.result.testing.sample.id}_${exportObj.product.name}.json`, { type: 'application/json' });
+      const upload_path = `${user_info.value.uid}/${convertStorageFolderName(exportObj.product.name)}/${currentAnalysisResult.value.analysis_id}/${exportObj.result.testing.sample.id}_${exportObj.product.name}.json`;
+      const uploadResult = await uploadFileToStorage(file, upload_path);
+      if (uploadResult.status === 'error') {
+        console.error('Failed to upload file to Firebase Storage:', uploadResult.message);
+        $q.notify({
+          type: 'negative',
+          message: `Failed to upload file to Firebase Storage: ${uploadResult.message}`,
+        });
+      }
+    }
+
+    return Promise.resolve({ isExported: true });
+  } catch (err) {
+    console.error(err);
+    return Promise.reject({ isExported: false });
+  }
 }
 
 // 解析 ThalBeta 的 row_content
@@ -321,6 +368,35 @@ const addBetaThalTables = (workbook, result, index) => {
     { width: 30 },  // I 欄 - Disease
   ];
 };
+
+// 轉換firebase storage 存檔資料夾名稱
+const convertStorageFolderName = (product) => {
+  switch (product) {
+    case 'APOE_AD':
+      return 'APOE_results';
+    case 'FXSv1':
+      return 'FXS_results';
+    case 'FXSv2':
+      return 'FXS_results';
+    case 'HTD':
+      return 'HTD_results';
+    case 'MTHFR_c677':
+      return 'MTHFR_results';
+    case 'MTHFR_c677_c1298':
+      return 'MTHFR_results';
+    case 'NUDT15':
+      return 'NUDT15_results';
+    case 'SMA':
+      return 'SMA_results';
+    case 'SMAv4':
+      return 'SMAv4_results';
+    case 'THAL_ALPHA':
+      return 'THAL_ALPHA_results';
+    case 'THAL_BETA':
+      return 'THAL_BETA_results';
+  }
+}
+
 
 // 修改 downloadReportFile 函數以使用 ExcelJS
 async function downloadReportFile(data) {
@@ -492,9 +568,11 @@ async function downloadReportFile(data) {
       });
     });
 
-    // 下載 Excel 檔案
+    // 產生 Excel 檔案的 buffer
     const buffer = await workbook.xlsx.writeBuffer();
     const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+
+    // 下載 Excel 檔案
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
@@ -503,6 +581,21 @@ async function downloadReportFile(data) {
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
+
+    // 上傳到 Firebase Storage (如果 product 在 productList 中)
+    if (productList.includes(product)) {
+      const file = new File([blob], exportFilename, { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+      const upload_path = `${user_info.value.uid}/${convertStorageFolderName(product)}/${currentAnalysisResult.value.analysis_id}/${exportFilename}`;
+      const uploadResult = await uploadFileToStorage(file, upload_path);
+
+      if (uploadResult.status === 'error') {
+        console.error('Failed to upload file to Firebase Storage:', uploadResult.message);
+        $q.notify({
+          type: 'negative',
+          message: `Failed to upload file to Firebase Storage: ${uploadResult.message}`,
+        });
+      }
+    }
 
     return Promise.resolve(savePath);
   } catch (err) {
@@ -539,7 +632,7 @@ const onExport = async () => {
 
     try {
       const { exportSample, productExport } = getProductExportInfo(
-        currentSettingProps.value.product,
+        currentAnalysisResult.value && currentSettingProps.value.instrument !== ""  && currentSettingProps.value.reagent !== "" ? getAnalysisProductName(currentAnalysisResult.value.analysis_name) : currentSettingProps.value.product,
         currentSettingProps.value.reagent,
       );
 
@@ -632,13 +725,33 @@ const onExport = async () => {
           }),
           {
             product: productExport,
-            instrument: currentAnalysisResult.value.config.instrument,
-            analyzer: [ "ACCUiN BioTech Analyzer" ],
-            reagent: currentAnalysisResult.value.config.reagent,
-            assessmentTime: currentAnalysisResult.value.analysis_time,
-            controlId: Array.isArray(currentAnalysisResult.value.control_ids)
-              ? currentAnalysisResult.value.control_ids.join(', ')
-              : currentAnalysisResult.value.control_ids,
+            instrument: currentSettingProps.value.instrument !== "" &&
+              currentSettingProps.value.reagent !== "" ?
+              (currentAnalysisResult.value ?
+                currentAnalysisResult.value.config.instrument :
+                'N/A'
+              ) : 'NA',
+            analyzer: ["ACCUiN BioTech Analyzer"],
+            reagent: currentSettingProps.value.instrument !== "" &&
+              currentSettingProps.value.reagent !== "" ?
+              (currentAnalysisResult.value ?
+                currentAnalysisResult.value.config.reagent :
+                'N/A'
+              ) : 'NA',
+            assessmentTime: currentSettingProps.value.instrument !== "" &&
+              currentSettingProps.value.reagent !== "" ?
+              (currentAnalysisResult.value ?
+                currentAnalysisResult.value.analysis_time :
+                'N/A'
+              ) : 'NA',
+            controlId: currentSettingProps.value.instrument !== "" &&
+              currentSettingProps.value.reagent !== "" ?
+              (currentAnalysisResult.value ?
+                Array.isArray(currentAnalysisResult.value.control_ids) ?
+                  currentAnalysisResult.value.control_ids.join(', ') :
+                  currentAnalysisResult.value.control_ids :
+                'N/A'
+              ) : 'NA',
             labName: subjectOrder.value.labName,
             issuedPhysician: subjectOrder.value.issuedPhysician,
             issuedContact: subjectOrder.value.issuedContact,

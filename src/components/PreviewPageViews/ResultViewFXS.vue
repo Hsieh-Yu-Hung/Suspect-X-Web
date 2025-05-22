@@ -243,6 +243,9 @@ const getQCStatus = (status) => {
 
 // 取得線性
 const getLinear = (control_qc_obj) => {
+  if (!control_qc_obj) {
+    return null;
+  }
   const line1 = [control_qc_obj.line[0].x, control_qc_obj.line[0].y];
   const line2 = [control_qc_obj.line[1].x, control_qc_obj.line[1].y];
   return [line1, line2];
@@ -275,7 +278,7 @@ function update_FXS_RESULT_OBJ(fxs_result) {
   }
 
   // 製作 Result
-  const resultList = Object.keys(fxs_result.resultObj.result);
+  const resultList = fxs_result.resultObj.result ? Object.keys(fxs_result.resultObj.result) : [];
   let result_list = [];
   resultList.forEach(sample => {
     const raw_res = fxs_result.resultObj.result[sample];
@@ -321,10 +324,10 @@ const interpretationColor = (value) => {
   ) {
     return "yellow-8";
   } else if (
-    (value === "full") ||
-    (value === "normal/full") ||
-    (value === "intermediate/full") ||
-    (value === "premutation/full")
+    (value === "full-mutation") ||
+    (value === "normal/full-mutation") ||
+    (value === "intermediate/full-mutation") ||
+    (value === "premutation/full-mutation")
   ) {
     return "red";
   } else {
@@ -353,7 +356,7 @@ const interpretation = (value) => {
     (value === "Intermediate/Full mutation") ||
     (value === "Premutation/Full mutation")
   ) {
-    return "full";
+    return "full-mutation";
   } else if ("Inconclusive"){
     return "inconclusive";
   } else {
@@ -376,13 +379,13 @@ const adjuctInterpretation = (value) => {
     (value === "intermediate/premutation")
   ) {
     return "Premutation";
-  } else if (value === "full"){
+  } else if (value === "full-mutation"){
     return "Full mutation";
-  } else if (value === "normal/full") {
+  } else if (value === "normal/full-mutation") {
     return "Normal/Full mutation";
-  } else if (value === "intermediate/full") {
+  } else if (value === "intermediate/full-mutation") {
     return "Intermediate/Full mutation";
-  } else if (value === "premutation/full") {
+  } else if (value === "premutation/full-mutation") {
     return "Premutation/Full mutation";
   } else if (value === "Inconclusive"){
     return "Inconclusive";
@@ -446,6 +449,12 @@ onMounted(async () => {
     return;
   }
 
+  // 如果 failed the criteria, 則跳出
+  if (currentAnalysisResult.value.qc_status === "fail-the-criteria") {
+    showResult.value = false;
+    return;
+  }
+
   // 更新 FXS 結果
   update_FXS_RESULT_OBJ(currentAnalysisResult.value);
 
@@ -460,6 +469,8 @@ onMounted(async () => {
 
   // 更新圖表
   updateFxChart();
+
+  console.log("rows: ", resultTableFxProps.value);
 });
 
 // 組件卸載時移除事件監聽器
