@@ -449,6 +449,8 @@ async function runAllDataset() {
         targetData.validation = 'error';
       }
 
+      console.log("targetData", targetData)
+
       // 更新進度
       completedTasks++;
       $q.loading.show({

@@ -328,7 +328,7 @@ async function onSubmit() {
       );
 
       // 製作 EXPORT_RESULT
-      const sample_ids = Object.keys(HTD_Result.result_and_data);
+      const sample_ids = HTD_Result.result_and_data ? Object.keys(HTD_Result.result_and_data) : [];
       const exportResult = sample_ids.map((sample_id, index) => {
         let result_list = HTD_Result.result_and_data[sample_id].selected_target_peaks.map(peak => peak.repeat_num);
         if (result_list.length === 1) {

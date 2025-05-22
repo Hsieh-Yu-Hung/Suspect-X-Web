@@ -218,9 +218,9 @@ const getFXSResult = (analysisResult) => {
 
   // 取得結果
   const sampleData = resultObj.sample_data;
-  const results = Object.values(sampleData).map((sample) => {
+  const results = sampleData ? Object.values(sampleData).map((sample) => {
     return new ResultObject(sample.sample_id, getRepeatNumberString(sample));
-  });
+  }) : [];
 
   // 取得評估
   const sampleResult = resultObj.result
@@ -272,9 +272,9 @@ const getHTDResult = (analysisResult) => {
 
   // 取得結果和評估
   const sampleData = resultObj.result;
-  const results = Object.values(sampleData).map((sample) => {
+  const results = sampleData ? Object.values(sampleData).map((sample) => {
     return new ResultObject(sample.sample_id, getRepeatNumberString(sample));
-  });
+  }) : [];
   const assessments = sampleData ? Object.values(sampleData).map((sample) => {
     return new AssessmentObject(sample.sample_id, HTD_assessmentValue(sample.assessment));
   }) : [];

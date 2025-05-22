@@ -274,13 +274,13 @@ function updateChart() {
 function updateHdResult(analysis_result) {
   // 製作 control obj
   const control = HTD_CONTROL(
-    analysis_result.resultObj.standard_control_data[0].peak_size,
-    analysis_result.resultObj.standard_control_data[1].peak_size
+    analysis_result.resultObj.standard_control_data ? analysis_result.resultObj.standard_control_data[0].peak_size : '-',
+    analysis_result.resultObj.standard_control_data ? analysis_result.resultObj.standard_control_data[1].peak_size : '-'
   );
 
   // 製作 result obj
   let result_list = [];
-  const sample_list = Object.keys(analysis_result.resultObj.result_and_data);
+  const sample_list = analysis_result.resultObj.result_and_data ? Object.keys(analysis_result.resultObj.result_and_data) : [];
   sample_list.forEach((sample_id) => {
     const data = analysis_result.resultObj.result_and_data[sample_id];
     const repeats = data.selected_target_peaks.map((item) => item.repeat_num);
