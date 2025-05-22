@@ -324,7 +324,7 @@ const interpretationColor = (value) => {
   ) {
     return "yellow-8";
   } else if (
-    (value === "full") ||
+    (value === "full-mutation") ||
     (value === "normal/full-mutation") ||
     (value === "intermediate/full-mutation") ||
     (value === "premutation/full-mutation")
@@ -356,7 +356,7 @@ const interpretation = (value) => {
     (value === "Intermediate/Full mutation") ||
     (value === "Premutation/Full mutation")
   ) {
-    return "full";
+    return "full-mutation";
   } else if ("Inconclusive"){
     return "inconclusive";
   } else {
@@ -379,7 +379,7 @@ const adjuctInterpretation = (value) => {
     (value === "intermediate/premutation")
   ) {
     return "Premutation";
-  } else if (value === "full"){
+  } else if (value === "full-mutation"){
     return "Full mutation";
   } else if (value === "normal/full-mutation") {
     return "Normal/Full mutation";
