@@ -325,9 +325,9 @@ const interpretationColor = (value) => {
     return "yellow-8";
   } else if (
     (value === "full") ||
-    (value === "normal/full") ||
-    (value === "intermediate/full") ||
-    (value === "premutation/full")
+    (value === "normal/full-mutation") ||
+    (value === "intermediate/full-mutation") ||
+    (value === "premutation/full-mutation")
   ) {
     return "red";
   } else {
@@ -381,11 +381,11 @@ const adjuctInterpretation = (value) => {
     return "Premutation";
   } else if (value === "full"){
     return "Full mutation";
-  } else if (value === "normal/full") {
+  } else if (value === "normal/full-mutation") {
     return "Normal/Full mutation";
-  } else if (value === "intermediate/full") {
+  } else if (value === "intermediate/full-mutation") {
     return "Intermediate/Full mutation";
-  } else if (value === "premutation/full") {
+  } else if (value === "premutation/full-mutation") {
     return "Premutation/Full mutation";
   } else if (value === "Inconclusive"){
     return "Inconclusive";
@@ -469,6 +469,8 @@ onMounted(async () => {
 
   // 更新圖表
   updateFxChart();
+
+  console.log("rows: ", resultTableFxProps.value);
 });
 
 // 組件卸載時移除事件監聽器
