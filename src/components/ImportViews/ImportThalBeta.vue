@@ -640,6 +640,16 @@ function validateSampleList(sampleList) {
   return !(hasEmptySampleName || hasInvalidFileCount || hasDuplicateSampleName);
 }
 
+// 更新 currentAnalysisID
+function updateCurrentAnalysisID() {
+  const new_id = `analysis_${uuidv4()}`;
+  store.commit('analysis_setting/updateCurrentAnalysisID', {
+    analysis_name: 'THAL_BETA',
+    analysis_uuid: new_id,
+  });
+  currentAnalysisID.value = store.getters['analysis_setting/getCurrentAnalysisID'];
+}
+
 // 提交表單
 const onSubmit = async () => {
 
@@ -754,12 +764,7 @@ const onSubmit = async () => {
   });
 
   // 更新 currentAnalysisID
-  const new_id = `analysis_${uuidv4()}`;
-  store.commit('analysis_setting/updateCurrentAnalysisID', {
-    analysis_name: "THAL_BETA",
-    analysis_uuid: new_id,
-  });
-  currentAnalysisID.value = store.getters['analysis_setting/getCurrentAnalysisID'];
+  updateCurrentAnalysisID();
 
   // 清除 store 的 subjectInfoTable 和 LabInfomation
   store.commit("export_page_setting/initExportPageSetting");

@@ -155,6 +155,16 @@ const assessment = (value) => {
   }
 };
 
+// 更新 currentAnalysisID
+function updateCurrentAnalysisID() {
+  const new_id = `analysis_${uuidv4()}`;
+  store.commit('analysis_setting/updateCurrentAnalysisID', {
+    analysis_name: "APOE",
+    analysis_uuid: new_id,
+  });
+  currentAnalysisID.value = store.getters['analysis_setting/getCurrentAnalysisID'];
+}
+
 // 送出表單
 async function onSubmit() {
   // *. 顯示 loading 視窗
@@ -243,12 +253,7 @@ async function onSubmit() {
     });
 
     // 更新 currentAnalysisID
-    const new_id = `analysis_${uuidv4()}`;
-    store.commit('analysis_setting/updateCurrentAnalysisID', {
-      analysis_name: "APOE",
-      analysis_uuid: new_id,
-    });
-    currentAnalysisID.value = store.getters['analysis_setting/getCurrentAnalysisID'];
+    updateCurrentAnalysisID();
 
     // 清除 store 的 subjectInfoTable 和 LabInfomation
     store.commit("export_page_setting/initExportPageSetting");
@@ -264,6 +269,14 @@ async function onSubmit() {
     }, 500);
   }
   else if (analysisResult.status == 'error'){
+    // 更新 currentAnalysisID
+    updateCurrentAnalysisID();
+
+    // 清空 control1File 和 control2File
+    control1File.value = null;
+    control2File.value = null;
+    sampleFile.value = new Array(1).fill([]);
+
     // 通知
     $q.notify({
       progress: true,

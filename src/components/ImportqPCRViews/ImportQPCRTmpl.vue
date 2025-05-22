@@ -170,6 +170,16 @@ function initInputs() {
   NTCwell.value = null;
 }
 
+// 更新 currentAnalysisID
+function updateCurrentAnalysisID() {
+  const new_id = `analysis_${uuidv4()}`;
+  store.commit('analysis_setting/updateCurrentAnalysisID', {
+    analysis_name: props.analysis_name,
+    analysis_uuid: new_id,
+  });
+  currentAnalysisID.value = store.getters['analysis_setting/getCurrentAnalysisID'];
+}
+
 // 送出按鈕
 async function onSubmit() {
   // *. 顯示 loading 視窗
@@ -291,12 +301,7 @@ async function onSubmit() {
     }
 
     // 更新 currentAnalysisID
-    const new_id = `analysis_${uuidv4()}`;
-    store.commit('analysis_setting/updateCurrentAnalysisID', {
-      analysis_name: props.analysis_name,
-      analysis_uuid: new_id,
-    });
-    currentAnalysisID.value = store.getters['analysis_setting/getCurrentAnalysisID'];
+    updateCurrentAnalysisID();
 
     // 初始化 inputResults (葉酸輸入)
     store.commit('MTHFR_analysis_data/initInputResults');
@@ -315,6 +320,16 @@ async function onSubmit() {
     }, 500);
   }
   else if (analysisResult.status == 'error'){
+    // 更新 currentAnalysisID
+    updateCurrentAnalysisID();
+
+    // 清空 resultFile, famFile, vicFile
+    resultFile.value = null;
+    famFile.value = null;
+    vicFile.value = null;
+    Ctrlwell.value = null;
+    NTCwell.value = null;
+
     // 通知
     $q.notify({
       progress: true,

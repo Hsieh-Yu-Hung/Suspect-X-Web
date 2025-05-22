@@ -700,6 +700,16 @@ const smnTypeInterpretation = (smn1, smn2) => {
   }
 };
 
+// 更新 currentAnalysisID
+function updateCurrentAnalysisID() {
+  const new_id = `analysis_${uuidv4()}`;
+  store.commit('analysis_setting/updateCurrentAnalysisID', {
+    analysis_name: 'SMAv4',
+    analysis_uuid: new_id,
+  });
+  currentAnalysisID.value = store.getters['analysis_setting/getCurrentAnalysisID'];
+}
+
 /* 主程式 */
 async function onSubmit() {
 
@@ -797,12 +807,7 @@ async function onSubmit() {
     });
 
     // 更新 currentAnalysisID
-    const new_id = `analysis_${uuidv4()}`;
-    store.commit('analysis_setting/updateCurrentAnalysisID', {
-      analysis_name: 'SMAv4',
-      analysis_uuid: new_id,
-    });
-    currentAnalysisID.value = store.getters['analysis_setting/getCurrentAnalysisID'];
+    updateCurrentAnalysisID();
 
     // 清除 store 的 subjectInfoTable 和 LabInfomation
     store.commit("export_page_setting/initExportPageSetting");
@@ -816,6 +821,12 @@ async function onSubmit() {
     }, 500);
   }
   else if (analysisResult.status == 'error'){
+    // 更新 currentAnalysisID
+    updateCurrentAnalysisID();
+
+    // 清空 smav4Files
+    smav4Files.value = [];
+
     // 通知
     $q.notify({
       progress: true,
